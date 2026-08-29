@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.kirurobo.uniwinc": "https://github.com/kirurobo/UniWindowController.git#upm",
     "com.unity.collab-proxy": "2.13.3",
     "com.unity.feature.development": "1.0.2",
     "com.unity.inputsystem": "1.20.0",
