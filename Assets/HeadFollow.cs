@@ -35,6 +35,23 @@ using static UniVRM10.VRM10ObjectLookAt;
 /// the eyes their own, independent angular clamp by limiting how far
 /// internalTarget is allowed to sit from the neutral forward direction,
 /// completely decoupled from twistLimit.
+///
+/// EYE DISTANCE: "eyeTargetDistance" is fully independent from
+/// "targetDistance" — including the DIRECTION, not just the magnitude.
+/// It's not enough to rescale the body's target direction toward a
+/// different distance: mainCamera.ScreenToWorldPoint(mousePos) projects
+/// the mouse ray at a given depth FROM THE CAMERA, and since the camera
+/// and this transform (the head) sit at different world positions, two
+/// different depths along the SAME screen pixel's ray produce points
+/// that lie in DIFFERENT directions as seen from the head (parallax) —
+/// not just different distances. So the eyes get their own mouse
+/// projection at eyeTargetDistance (CalculateMouseTargetPosition is now
+/// parametrized by depth) and their own smoothed target
+/// (currentEyeTargetPosition), computed independently of
+/// currentTargetPosition/targetDistance end to end. The only place the
+/// two systems still meet is targetOverride, which is an explicit
+/// Transform position with no camera involved, so no parallax issue
+/// exists there.
 /// </summary>
 [RequireComponent(typeof(Animator))]
 public class HeadFollowMouseIK : MonoBehaviour
@@ -58,6 +75,8 @@ public class HeadFollowMouseIK : MonoBehaviour
     [Header("Eye-Specific Limit")]
     [Tooltip("Maximum angle (in degrees) the EYES are allowed to rotate away from the neutral forward direction. Independent from twistLimit — this only clamps the target passed to the VRM's eye LookAt, not the Animator head/body IK.")]
     public float maxEyeAngle = 35f;
+    [Tooltip("Distance (world units) from the head at which the EYES' target sits. Independent from Target Distance below, which is only used for the head/body IK and for projecting the mouse into world space. Lower this to make the eyes converge more (cross-eyed look) for close targets, or raise it for a more distant, parallel gaze.")]
+    public float eyeTargetDistance = 3f;
 
     [Header("Mouse Settings (default target)")]
     public float targetDistance = 3f;
@@ -75,12 +94,21 @@ public class HeadFollowMouseIK : MonoBehaviour
 
     private Vector3 currentTargetPosition;
     private Vector3 desiredTargetPosition;
+
+    // Eyes get their own independently-smoothed target so that
+    // eyeTargetDistance never has to derive from currentTargetPosition
+    // (which is projected using targetDistance and would carry that
+    // depth's parallax into the eyes' direction — see class doc comment).
+    private Vector3 currentEyeTargetPosition;
+    private Vector3 desiredEyeTargetPosition;
+
     private Transform targetOverride;
 
     // Lightweight internal transform that is what actually gets passed
     // to the Vrm10Instance as LookAtTarget. Never destroyed/recreated —
     // only repositioned every frame. Its position is what the eyes
-    // actually track, so this is what we clamp with maxEyeAngle.
+    // actually track, so this is what we clamp with maxEyeAngle and
+    // place at eyeTargetDistance.
     private Transform internalTarget;
 
     private Vector3 baseNeutralDirection; // "looking forward", captured once in Start
@@ -108,9 +136,10 @@ public class HeadFollowMouseIK : MonoBehaviour
 
         baseNeutralDirection = transform.forward;
         currentTargetPosition = transform.position + baseNeutralDirection * targetDistance;
+        currentEyeTargetPosition = transform.position + baseNeutralDirection * eyeTargetDistance;
 
         internalTarget = new GameObject("HeadFollow_InternalLookAtTarget").transform;
-        internalTarget.position = currentTargetPosition;
+        internalTarget.position = currentEyeTargetPosition;
 
         if (vrm10Instance != null)
         {
@@ -130,15 +159,33 @@ public class HeadFollowMouseIK : MonoBehaviour
 
     void Update()
     {
-        // 1. Sets the desired position
-        desiredTargetPosition = targetOverride != null
-            ? targetOverride.position
-            : CalculateMouseTargetPosition();
+        bool hasOverride = targetOverride != null;
 
-        // 2. Smooths the POSITION transition of the target
+        // 1. Sets the desired position — BODY at targetDistance depth,
+        // EYES at eyeTargetDistance depth. These are two separate calls
+        // to CalculateMouseTargetPosition (one per depth), not one call
+        // reused/rescaled, precisely because the camera's parallax means
+        // depth changes direction too (see class doc comment). When a
+        // Transform override is set there's no camera/depth involved, so
+        // both simply target its actual position.
+        desiredTargetPosition = hasOverride
+            ? targetOverride.position
+            : CalculateMouseTargetPosition(targetDistance);
+
+        desiredEyeTargetPosition = hasOverride
+            ? targetOverride.position
+            : CalculateMouseTargetPosition(eyeTargetDistance);
+
+        // 2. Smooths the POSITION transition of each target independently
         currentTargetPosition = Vector3.Lerp(
             currentTargetPosition,
             desiredTargetPosition,
+            Time.deltaTime * positionSmoothing
+        );
+
+        currentEyeTargetPosition = Vector3.Lerp(
+            currentEyeTargetPosition,
+            desiredEyeTargetPosition,
             Time.deltaTime * positionSmoothing
         );
 
@@ -153,12 +200,12 @@ public class HeadFollowMouseIK : MonoBehaviour
         // 4. The "weight" becomes a POSITION interpolation: at weight 0,
         // the internal target sits at a neutral position (in front of the
         // head, in the direction captured in Start) — at weight 1, it
-        // sits on the real mouse/target position.
-        // NOTE: currentTargetPosition (unclamped) is what gets sent to
-        // the Animator IK below, so twistLimit keeps controlling the
-        // head/body exactly as before.
-        Vector3 currentNeutralPosition = transform.position + baseNeutralDirection * targetDistance;
-        Vector3 eyeTargetPosition = Vector3.Lerp(currentNeutralPosition, currentTargetPosition, currentGlobalWeight);
+        // sits on the real target position. currentTargetPosition (body,
+        // at targetDistance) drives the Animator IK below; currentEyeTargetPosition
+        // (eyes, at eyeTargetDistance) drives the eyes — computed fully
+        // independently, so no depth/parallax leaks from one into the other.
+        Vector3 eyeNeutralPosition = transform.position + baseNeutralDirection * eyeTargetDistance;
+        Vector3 eyeTargetPosition = Vector3.Lerp(eyeNeutralPosition, currentEyeTargetPosition, currentGlobalWeight);
 
         // 5. Clamp ONLY the eye target's angle from the neutral forward
         // direction — this is what makes maxEyeAngle fully independent
@@ -213,16 +260,24 @@ public class HeadFollowMouseIK : MonoBehaviour
         }
     }
 
-    private Vector3 CalculateMouseTargetPosition()
+    /// <summary>
+    /// Projects the mouse into world space at the given depth from the
+    /// camera. Takes "depth" as a parameter (rather than always reading
+    /// targetDistance) so the body and the eyes can each project the
+    /// SAME screen-space mouse position at their OWN depth — which also
+    /// means each gets its own, correctly-parallaxed direction as seen
+    /// from this transform, not just a different distance.
+    /// </summary>
+    private Vector3 CalculateMouseTargetPosition(float depth)
     {
         Vector3 mousePos = Input.mousePosition;
-        mousePos.z = targetDistance;
+        mousePos.z = depth;
 
         // Returns the converted position only if the camera exists
         if (mainCamera != null)
             return mainCamera.ScreenToWorldPoint(mousePos);
 
-        return transform.position + transform.forward * targetDistance;
+        return transform.position + transform.forward * depth;
     }
 
     private IEnumerator NaturalGazeRoutine()

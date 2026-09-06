@@ -791,12 +791,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HeadFollowMouseIK
   vrm10Instance: {fileID: 174286446}
   globalWeight: 1
-  bodyWeight: 0.1
-  headWeight: 0.2
-  twistLimit: 0.2
-  maxEyeAngle: 99999
+  bodyWeight: 0.2
+  headWeight: 0.4
+  twistLimit: 0.9
+  maxEyeAngle: 999
+  eyeTargetDistance: 6
   targetDistance: 4
-  positionSmoothing: 5
+  positionSmoothing: 4
   useNaturalGaze: 1
   minLookTime: 60
   maxLookTime: 180

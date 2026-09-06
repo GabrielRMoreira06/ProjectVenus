@@ -43,7 +43,6 @@ from one_time_run.HardwareInspector import HardwareInspect
 from one_time_run.MemoryCleanupManager import MemoryCleanupCheck
 from one_time_run.OneTimeManager import OneTimeManager
 from ui.TextInput import start_input_window
-
 app = Flask(__name__)
 
 # ImageHolder.cs fetches images with UnityWebRequestTexture.GetTexture(),
@@ -213,6 +212,7 @@ def _run_on_call_action(handler, action, result):
         traceback.print_exc()
         outcome = f"The {action} action failed to run."
 
+    if not outcome: return
     remaining = ON_CALL_ACTION_MIN_DELAY - (time.time() - started_at)
     if remaining > 0:
         time.sleep(remaining)
@@ -232,8 +232,9 @@ def response():
     with _response_lock:
         pending = _response_queue.popleft() if _response_queue else None
 
-    if pending is None:
-        return "", 204
+    #PAUSE THE RETURN SPAM
+    #if pending is None:
+        #return "", 204
 
     return jsonify(pending)
 

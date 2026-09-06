@@ -59,7 +59,7 @@ FIRST_BOOT_MESSAGE = (
 
 class BootManager:
 
-    def __init__(self, state_file="boot_state.json", skip_boot_message=True):
+    def __init__(self, state_file="boot_state.json", skip_boot_message=False):
         self.state_file = Path(state_file)
         self.state = self._load_state()
         # Controls only the NORMAL boot greeting (see _run_normal_boot).
@@ -149,7 +149,10 @@ class BootManager:
         def builder():
             if self.skip_boot_message:
                 return
-            return worker.run(user_text="[SYSTEM MESSAGE: User just booted you. Greet them.]")
+            return worker.run(
+                user_text="[SYSTEM MESSAGE: User just booted you. Greet them.]",
+                include_memory=True
+            )
 
         orchestrator.add(Category.SYSTEM, builder)
 
@@ -158,27 +161,14 @@ class BootManager:
     # ------------------------------------------------------------------
 
     def handle_name_answer(self, orchestrator, name):
-        """
-        Called instead of the normal question flow when
-        is_waiting_for_name() is True. Greets the user by name (now
-        that Gemini actually has something to react to), marks first
-        boot as done, and resumes Orchestrator — this is the one place
-        that closes the pause() from _run_first_boot().
-        """
         self.waiting_for_name = False
 
-        # Must resume BEFORE submitting the sync request below — the
-        # worker thread refuses to dequeue anything while paused, so
-        # submitting a sync request first and resuming after would
-        # deadlock: add() blocks waiting for a result that can only be
-        # produced once dispatch is unpaused, and resume() is the next
-        # line, never reached. This was causing 60s TimeoutErrors on
-        # the name answer.
         orchestrator.resume()
 
         def builder():
             return worker.run(
-                user_text=f"[SYSTEM MESSAGE: User just installed you, their name is {name}.]"
+                user_text=f"[SYSTEM MESSAGE: User just installed you, their name is {name}.]",
+                include_memory=True
             )
 
         result = orchestrator.add(Category.SYSTEM, builder, sync=True)

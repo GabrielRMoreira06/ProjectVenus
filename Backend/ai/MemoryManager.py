@@ -1,13 +1,17 @@
 """
 memory_manager.py
 
-Persists long-term information about the user across sessions: facts,
-memories (dated events), and habits (patterns noticed across
-memories). Each entry can optionally expire after a fixed duration;
-entries with no expiration are kept forever.
+Persists long-term information about the user across sessions: facts
+and memories (dated events). Each entry gets an auto-generated id and
+can optionally expire after a fixed duration; entries with no
+expiration are kept forever.
+
+EDIT is not a stored type — it's an update to an existing entry,
+identified by id, wherever it lives (facts or memories).
 """
 
 import json
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -18,7 +22,7 @@ EXPIRATION_DURATIONS = {
     "1MONTH": timedelta(days=30),
 }
 
-VALID_TYPES = ("FACT", "MEMORY", "HABIT")
+VALID_TYPES = ("FACT", "MEMORY")
 
 
 class MemoryManager:
@@ -28,9 +32,8 @@ class MemoryManager:
         self.memory = self._load()
 
     def get_prompt(self):
-        facts = "\n".join(f"- {item['text']}" for item in self.memory["facts"])
+        facts = "\n".join(self._format_item(item) for item in self.memory["facts"])
         memories = "\n".join(self._format_item(item) for item in self.memory["memories"])
-        habits = "\n".join(self._format_item(item) for item in self.memory["habits"])
 
         return f"""
 FACTS:
@@ -38,22 +41,20 @@ FACTS:
 
 MEMORIES (with date/time/day of week, so you can notice routine patterns):
 {memories}
-
-HABITS:
-{habits}
 """
 
     def _format_item(self, item):
         created_at = self._parse_created_at(item.get("created_at"))
+        entry_id = item.get("id", "?")
 
         if created_at is None:
-            return f"- {item['text']}"
+            return f"- [{entry_id}] {item['text']}"
 
         date = created_at.strftime("%d/%m/%Y")
         time = created_at.strftime("%H:%M")
         weekday = created_at.strftime("%A")
 
-        return f"- {item['text']} ({date}, {time}, {weekday})"
+        return f"- [{entry_id}] {item['text']} ({date}, {time}, {weekday})"
 
     def _parse_created_at(self, value):
         if not value:
@@ -65,7 +66,7 @@ HABITS:
 
     def _load(self):
         if not self.file_path.exists():
-            return {"facts": [], "memories": [], "habits": []}
+            return {"facts": [], "memories": []}
 
         try:
             with open(self.file_path, "r", encoding="utf-8") as f:
@@ -82,7 +83,7 @@ HABITS:
 
         data.setdefault("facts", [])
         data.setdefault("memories", [])
-        data.setdefault("habits", [])
+        data.pop("habits", None)  # dropped category
 
         return data
 
@@ -100,6 +101,7 @@ HABITS:
             expires_in = "PERMANENT"
 
         entry = {
+            "id": uuid.uuid4().hex[:8],
             "text": text,
             "created_at": datetime.now().isoformat(timespec="minutes"),
             "expires_in": expires_in,
@@ -109,21 +111,38 @@ HABITS:
             self.memory["facts"].append(entry)
         elif entry_type == "MEMORY":
             self.memory["memories"].append(entry)
-        elif entry_type == "HABIT":
-            self.memory["habits"].append(entry)
 
         self._save()
 
+    def edit(self, entry_id, text=None, expires_in="NONE"):
+        """
+        Updates an existing entry in place, matched by id, wherever it
+        lives (facts or memories — searched regardless of which list
+        it's actually in, since Gemini doesn't track that). text=NONE
+        means "leave text as-is"; expires_in is always applied since
+        NONE is itself a meaningful value there (never expires).
+        """
+        if not entry_id or entry_id == "NONE":
+            print("[MemoryManager] EDIT requested with no MEMORY_ID — ignoring.")
+            return False
+
+        for category in ("facts", "memories"):
+            for item in self.memory.get(category, []):
+                if item.get("id") == entry_id:
+                    if text and text != "NONE":
+                        item["text"] = text
+                    item["expires_in"] = expires_in
+                    self._save()
+                    return True
+
+        print(f"[MemoryManager] EDIT requested for unknown id '{entry_id}' — ignoring.")
+        return False
+
     def clear_expired(self):
-        """
-        Removes entries whose lifetime (MEMORY_EXPIRE) has passed.
-        PERMANENT and NONE never expire. Meant to be called
-        periodically by a maintenance task.
-        """
         now = datetime.now()
         removed_count = 0
 
-        for category in ("facts", "memories", "habits"):
+        for category in ("facts", "memories"):
             remaining = []
 
             for item in self.memory.get(category, []):

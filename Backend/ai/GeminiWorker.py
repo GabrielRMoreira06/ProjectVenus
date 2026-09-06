@@ -14,16 +14,26 @@ Design notes:
     (defaulting to the shared instances) rather than hardcoded
     imports, so this class doesn't lock itself to one specific
     implementation of either.
+  - The memory block is no longer resent on a fixed request-count
+    interval. It's sent only when the caller explicitly asks for it
+    via include_memory=True — currently: once per boot greeting, and
+    once per GenericInteractionMonitor firing. Regular user messages
+    never carry the memory block.
 """
 
 from datetime import datetime
+import time
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
 from config import GEMINI_KEY
-from ai.Prompts import SYSTEM_INSTRUCTIONS, RESPONSE_RULES
+from ai.Prompts import (
+    SYSTEM_INSTRUCTIONS,
+    RESPONSE_RULES,
+    RESPONSE_RULES_EXPLANATION
+)
 from ai.ResponseParser import ResponseParser
 from ai.MoodController import mood
 from ai.MemoryManager import MemoryManager
@@ -33,20 +43,26 @@ from ai.ImageSearch import search_image as default_image_search
 
 load_dotenv()
 
-MODEL_NAME = "gemini-3.1-flash-lite"
+MODEL_NAME = "gemini-3.5-flash-lite"
 
-# How often (in requests) the full memory block is resent to the model.
-# The chat session already keeps prior turns in its own history, so
-# resending every request would be redundant — this just guards
-# against memory silently drifting out of context on very long
-# sessions.
-MEMORY_RESEND_INTERVAL = 10
+# How often (in requests) the response rules explanation is resent.
+RESPONSE_RULES_EXPLANATION_INTERVAL = 5
+
+# Retry configuration for temporary Gemini 503 errors.
+MAX_RETRIES = 3
+RETRY_DELAY = 2
 
 
 class GeminiWorker:
 
-    def __init__(self, mood_controller=None, memory_manager=None, tts_worker=None,
-                 image_search=None, model_name=MODEL_NAME):
+    def __init__(
+        self,
+        mood_controller=None,
+        memory_manager=None,
+        tts_worker=None,
+        image_search=None,
+        model_name=MODEL_NAME
+    ):
         self.client = genai.Client(api_key=GEMINI_KEY)
         self.mood = mood_controller or mood
         self.memory = memory_manager or MemoryManager()
@@ -58,46 +74,98 @@ class GeminiWorker:
             model=model_name,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_INSTRUCTIONS,
-                temperature=0.8,
             ),
         )
 
         self._request_count = 0
 
-    def run(self, user_text=None, image=None):
+    def run(self, user_text=None, image=None, include_memory=False):
         """
         Sends one message to the ongoing chat session and returns a
         parsed dict (text/action/image_query/mood_variant/mood_shift/
         memory_type/memory_text/memory_expire/audio_path/image_path).
 
+        include_memory: whether to include the full VENUS MEMORY block
+        in this prompt. Callers opt in explicitly — currently only the
+        boot greeting and GenericInteractionMonitor do this. Everything
+        else (normal user turns) omits it.
+
         Also applies the resulting mood shift, stores any memory the
         model asked to save, generates the spoken audio for the
         response text, and — if ACTION is OPENIMAGE — resolves
-        IMAGE_QUERY into an actual local file. This is the one place
-        all four side effects happen, so callers never have to
-        remember to do them.
+        IMAGE_QUERY into an actual local file.
         """
         try:
             self._request_count += 1
-            include_memory = (self._request_count - 1) % MEMORY_RESEND_INTERVAL == 0
 
-            prompt = self._build_prompt(user_text, include_memory)
+            include_rules_explanation = (
+                self._request_count % RESPONSE_RULES_EXPLANATION_INTERVAL == 0
+            )
+
+            prompt = self._build_prompt(
+                user_text,
+                include_memory,
+                include_rules_explanation
+            )
+
             content = [prompt] if image is None else [prompt, image]
 
-            response = self.chat.send_message(content)
+            # Automatic retry for temporary 503 errors.
+            response = None
+
+            for attempt in range(MAX_RETRIES):
+                try:
+                    response = self.chat.send_message(content)
+                    break
+
+                except Exception as error:
+                    error_text = str(error)
+
+                    # Only retry on 503 / service-unavailable errors.
+                    if "503" not in error_text and "UNAVAILABLE" not in error_text:
+                        raise
+
+                    if attempt == MAX_RETRIES - 1:
+                        raise
+
+                    delay = RETRY_DELAY * (2 ** attempt)
+
+                    print(
+                        f"[GeminiWorker] Gemini 503. "
+                        f"Retry {attempt + 1}/{MAX_RETRIES - 1} "
+                        f"in {delay}s..."
+                    )
+
+                    time.sleep(delay)
+
             parsed = self.parser.parse(response.text)
 
-            # Silent responses (empty TEXT) have nothing to speak — skip
-            # the ElevenLabs call entirely rather than generating audio
-            # for silence.
-            parsed["audio_path"] = self.tts.generate_audio(parsed["text"]) if parsed["text"] else None
+            # Silent responses (empty TEXT) have nothing to speak.
+            parsed["audio_path"] = (
+                self.tts.generate_audio(parsed["text"])
+                if parsed["text"]
+                else None
+            )
 
             parsed["image_path"] = self._resolve_image(parsed)
 
-            self.mood.apply_shift(parsed["mood_variant"], parsed["mood_shift"])
+            self.mood.apply_shift(
+                parsed["mood_variant"],
+                parsed["mood_shift"]
+            )
 
-            if parsed["memory_type"] != "NONE":
-                self.memory.save(parsed["memory_type"], parsed["memory_text"], parsed["memory_expire"])
+            if parsed["memory_type"] == "EDIT":
+                self.memory.edit(
+                    parsed["memory_id"],
+                    parsed["memory_text"],
+                    parsed["memory_expire"]
+                )
+            elif parsed["memory_type"] != "NONE":
+                self.memory.save(
+                    parsed["memory_type"],
+                    parsed["memory_text"],
+                    parsed["memory_expire"]
+                )
 
             return parsed
 
@@ -109,10 +177,7 @@ class GeminiWorker:
         """
         When Gemini's own ACTION is OPENIMAGE, it comes with an
         IMAGE_QUERY but no actual image yet — this is what turns that
-        query into a real local file via image_search. If the query is
-        missing or the search comes up empty, ACTION falls back to
-        NONE (mutating `parsed` directly) rather than shipping an
-        OPENIMAGE action with nothing to show for it.
+        query into a real local file via image_search.
         """
         if parsed["action"] != "OPENIMAGE":
             return None
@@ -130,24 +195,46 @@ class GeminiWorker:
 
         return image_path
 
-    def _build_prompt(self, user_text, include_memory):
+    def _build_prompt(
+        self,
+        user_text,
+        include_memory,
+        include_rules_explanation
+    ):
         sections = [
             f"TIME: {datetime.now().strftime('%H:%M')}",
             f"=== VENUS MOOD ===\n{self.mood.get_prompt()}",
             f"=== RESPONSE RULES ===\n{RESPONSE_RULES}",
-
         ]
 
+        if include_rules_explanation:
+            sections.append(
+                f"=== RESPONSE RULES EXPLANATION ===\n"
+                f"{RESPONSE_RULES_EXPLANATION}"
+            )
+
+            print(
+                f"[GeminiWorker] Request #{self._request_count} "
+                f"— including response rules explanation."
+            )
+
         if include_memory:
-            sections.append(f"=== VENUS MEMORY ===\n{self.memory.get_prompt()}")
-            print(f"[GeminiWorker] Request #{self._request_count} — including memory block.")
+            sections.append(
+                f"=== VENUS MEMORY ===\n{self.memory.get_prompt()}"
+            )
+
+            print(
+                f"[GeminiWorker] Request #{self._request_count} "
+                f"— including memory block."
+            )
 
         if user_text:
-            sections.append(f"=== USER INPUT ===\n{user_text}")
+            sections.append(
+                f"=== USER INPUT ===\n{user_text}"
+            )
 
         return "\n\n".join(sections)
 
 
-# Shared instance used by the rest of the backend — same pattern as
-# `mood` in mood_controller.py. There's only one Venus per process.
+# Shared instance used by the rest of the backend.
 worker = GeminiWorker()

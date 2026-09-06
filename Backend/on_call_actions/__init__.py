@@ -20,7 +20,9 @@ To add a new one:
 """
 
 from on_call_actions.FindFile import find_file
+from on_call_actions.KeyboardControl import keyboard_control
 
 ON_CALL_ACTIONS = {
     "FINDFILE": find_file,
+    "KEYBOARDCONTROL": keyboard_control,
 }
