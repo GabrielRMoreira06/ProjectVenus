@@ -13,7 +13,9 @@ VALID_ACTIONS = {
     "OPENIMAGE",
     "ALLOWPET",
     "FINDFILE",
-    "KEYBOARDCONTROL"
+    "KEYBOARDCONTROL",
+    "SCREAM",
+    "REMINDER",
 }
 
 
@@ -31,6 +33,8 @@ class ResponseParser:
         image_query = "NONE"
         file_query = "NONE"
         keyboardcontrol_query = "NONE"
+        reminder_query = "NONE"
+        reminder_minutes = "NONE"
 
         for line in response_text.splitlines():
 
@@ -67,6 +71,12 @@ class ResponseParser:
             elif line.startswith("KEYBOARDCONTROL_QUERY:"):
                 keyboardcontrol_query = line.replace("KEYBOARDCONTROL_QUERY:", "").strip()
 
+            elif line.startswith("REMINDER_QUERY:"):
+                reminder_query = line.replace("REMINDER_QUERY:", "").strip()
+
+            elif line.startswith("REMINDER_MINUTES:"):
+                reminder_minutes = line.replace("REMINDER_MINUTES:", "").strip()
+
         if action not in VALID_ACTIONS:
             print(f"[ResponseParser] Unknown ACTION received from Gemini: '{action}' — using NONE instead.")
             action = "NONE"
@@ -83,4 +93,6 @@ class ResponseParser:
             "image_query": image_query,
             "file_query": file_query,
             "keyboardcontrol_query": keyboardcontrol_query,
+            "reminder_query": reminder_query,
+            "reminder_minutes": reminder_minutes,
         }

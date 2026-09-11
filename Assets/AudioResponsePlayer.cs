@@ -32,7 +32,7 @@ public class AudioResponsePlayer : MonoBehaviour
 
     [Header("Configuration")]
     [Tooltip("Assumed format of the audio files returned by the backend.")]
-    public AudioType audioType = AudioType.MPEG;
+    public AudioType audioType = AudioType.WAV;
 
     /// <summary>Fired on the exact frame a new speech's playback begins.</summary>
     public event System.Action OnAudioStarted;

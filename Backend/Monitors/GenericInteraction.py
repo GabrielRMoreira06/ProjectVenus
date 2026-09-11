@@ -76,12 +76,12 @@ def get_open_windows():
 
 class GenericInteractionMonitor(BaseMonitor):
 
-    def __init__(self, orchestrator, interval=1800):
+    def __init__(self, orchestrator, interval=2000):
         super().__init__(orchestrator, interval)
 
         self.behavior_weights = {
-            "ask": 4,
-            "inspect": 6,
+            "ask": 5,
+            "inspect": 5,
         }
 
     def check(self):

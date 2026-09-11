@@ -43,6 +43,8 @@ from one_time_run.HardwareInspector import HardwareInspect
 from one_time_run.MemoryCleanupManager import MemoryCleanupCheck
 from one_time_run.OneTimeManager import OneTimeManager
 from ui.TextInput import start_input_window
+
+
 app = Flask(__name__)
 
 # ImageHolder.cs fetches images with UnityWebRequestTexture.GetTexture(),
@@ -81,23 +83,6 @@ def _register_image(path):
     return image_id
 
 
-@app.route("/image/<image_id>", methods=["GET"])
-def image(image_id):
-    with _pending_images_lock:
-        path = _pending_images.pop(image_id, None)
-
-    if not path:
-        return "", 404
-
-    return send_file(path)
-
-
-# ---------------------------------------------------------------------
-# Audio serving (Orchestrator -> Unity's AudioSource)
-# ---------------------------------------------------------------------
-# Same shape as image serving above — GeminiWorker.run() always attaches
-# a LOCAL audio_path (or None), never a URL. Registered under a
-# one-time id and served back over HTTP, same as images.
 
 _pending_audio_lock = threading.Lock()
 _pending_audio = {}  # audio_id -> local file path
@@ -111,6 +96,16 @@ def _register_audio(path):
 
     return audio_id
 
+@app.route("/image/<image_id>", methods=["GET"])
+def image(image_id):
+    with _pending_images_lock:
+        path = _pending_images.pop(image_id, None)
+
+    if not path:
+        return "", 404
+
+    return send_file(path, conditional=False)
+
 
 @app.route("/audio/<audio_id>", methods=["GET"])
 def audio(audio_id):
@@ -120,8 +115,43 @@ def audio(audio_id):
     if not path:
         return "", 404
 
-    return send_file(path)
+    return send_file(path, mimetype="audio/wav", conditional=False)
 
+
+@app.route("/debug_tts", methods=["GET"])
+def debug_tts():
+    """
+    Bypasses Gemini entirely — synthesizes a line via TTSWorker and
+    queues it for Unity exactly like a real response would be, for
+    tuning DSP parameters or exercising an ACTION/on-call handler
+    without burning a Gemini call. Not part of the normal pipeline;
+    remove before shipping.
+
+    command: curl.exe "http://127.0.0.1:5000/debug_tts?text=fine,+I%27ll+remind+you&action=NONE&reminder_query=die&reminder_minutes=1"
+    """
+    text = request.args.get("text", "Testing testing one two three.")
+    action = request.args.get("action", "NONE")
+
+    audio_path = worker.tts.generate_audio(text)
+
+    result = {
+        "text": text,
+        "action": action,
+        "mood_variant": None,
+        "mood_shift": None,
+        "memory_type": "NONE",
+        "memory_text": "NONE",
+        "memory_expire": "NONE",
+        "image_query": request.args.get("image_query", "NONE"),
+        "file_query": request.args.get("file_query", "NONE"),
+        "keyboardcontrol_query": request.args.get("keyboardcontrol_query", "NONE"),
+        "reminder_query": request.args.get("reminder_query", "NONE"),
+        "reminder_minutes": request.args.get("reminder_minutes", "NONE"),
+        "audio_path": audio_path,
+    }
+
+    queue_response(result)
+    return jsonify({"status": "queued", "text": text, "action": action})
 
 # ---------------------------------------------------------------------
 # Response queue (Orchestrator -> Unity)
@@ -160,6 +190,7 @@ def queue_response(result):
 
     action = result.get("action")
 
+
     if action in ON_CALL_ACTIONS:
         handler = ON_CALL_ACTIONS[action]
         threading.Thread(
@@ -170,6 +201,8 @@ def queue_response(result):
     # Backend-only field — never meant for Unity, whether or not an
     # on-call action actually fired this turn.
     result.pop("file_query", None)
+    result.pop("reminder_query", None)
+    result.pop("reminder_minutes", None)
 
     with _response_lock:
         _response_queue.append(result)
@@ -225,18 +258,10 @@ def _run_on_call_action(handler, action, result):
 
 @app.route("/response", methods=["GET"])
 def response():
-    """
-    Unity polls this endpoint to receive the next pending Venus
-    response, or 204 No Content if nothing is waiting.
-    """
     with _response_lock:
         pending = _response_queue.popleft() if _response_queue else None
 
-    #PAUSE THE RETURN SPAM
-    #if pending is None:
-        #return "", 204
-
-    return jsonify(pending)
+    return jsonify(pending if pending is not None else {})
 
 
 # ---------------------------------------------------------------------

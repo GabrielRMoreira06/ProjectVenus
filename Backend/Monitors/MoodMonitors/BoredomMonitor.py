@@ -48,7 +48,7 @@ def pick_random_image_from_disk():
 
 class BoredomMonitor(BaseMonitor):
 
-    def __init__(self, orchestrator, interval=2000, boredom_limit=70):
+    def __init__(self, orchestrator, interval=3000, boredom_limit=70):
         super().__init__(orchestrator, interval)
         self.boredom_limit = boredom_limit
 

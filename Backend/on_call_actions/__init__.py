@@ -9,6 +9,9 @@ Server.py's queue_response/_run_on_call_action), and its result is fed
 back to Gemini as a follow-up SYSTEM message so Venus can actually
 tell the user what happened.
 
+REMINDER is the one exception to "result is fed back immediately" —
+see Reminder.py's docstring for why.
+
 To add a new one:
   1. Write a `def handler(result: dict) -> str` function in its own
      file in this package. `result` is the full parsed response dict
@@ -21,8 +24,10 @@ To add a new one:
 
 from on_call_actions.FindFile import find_file
 from on_call_actions.KeyboardControl import keyboard_control
+from on_call_actions.Reminder import set_reminder
 
 ON_CALL_ACTIONS = {
     "FINDFILE": find_file,
     "KEYBOARDCONTROL": keyboard_control,
+    "REMINDER": set_reminder,
 }

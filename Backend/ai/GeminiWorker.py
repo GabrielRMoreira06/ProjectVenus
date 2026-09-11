@@ -17,7 +17,7 @@ Design notes:
   - The memory block is no longer resent on a fixed request-count
     interval. It's sent only when the caller explicitly asks for it
     via include_memory=True — currently: once per boot greeting, and
-    once per GenericInteractionMonitor firing. Regular user messages
+    once per GenericInteractionMonitor firing. Regular user messa       ges
     never carry the memory block.
 """
 
@@ -146,6 +146,9 @@ class GeminiWorker:
                 if parsed["text"]
                 else None
             )
+
+            if parsed["action"] == "SCREAM" and parsed["audio_path"]:
+                self.tts.apply_blowout(parsed["audio_path"])
 
             parsed["image_path"] = self._resolve_image(parsed)
 

@@ -4949,7 +4949,7 @@ MonoBehaviour:
   responseListener: {fileID: 1537105287}
   audioSource: {fileID: 1892439454}
   lipSync: {fileID: 174286457}
-  audioType: 13
+  audioType: 20
 --- !u!82 &1892439454
 AudioSource:
   m_ObjectHideFlags: 0
