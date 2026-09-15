@@ -31,7 +31,7 @@ class EnergyMonitor(BaseMonitor):
     def __init__(
         self,
         orchestrator,
-        interval=1800,               # 30 minutes
+        interval=5000,               # 60 minutes
         volume_reduction=0.05,       # fraction (0.05 = 5%)
         brightness_reduction=7,      # percentage points
         volume_reduction_cap=0.20,   # max accumulated per session

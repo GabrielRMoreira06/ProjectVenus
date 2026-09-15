@@ -22,7 +22,7 @@ from Monitors.BaseMonitor import BaseMonitor
 
 class UptimeMonitor(BaseMonitor):
 
-    def __init__(self, orchestrator, interval=1800, initial_threshold=4 * 3600, repeat_interval=2 * 3600):
+    def __init__(self, orchestrator, interval=72000, initial_threshold=4 * 3600, repeat_interval=2 * 3600):
         super().__init__(orchestrator, interval)
         self.initial_threshold = initial_threshold
         self.repeat_interval = repeat_interval

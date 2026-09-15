@@ -61,3 +61,9 @@ Backend/.env
 # Arquivos de estado/memória gerados em execução
 Backend/*.json
 Backend/*.bat
+Backend/piper/*.onnx
+Backend/.env
+Backend/piper/
+__pycache__/
+*.onnx
+Backend/piper/

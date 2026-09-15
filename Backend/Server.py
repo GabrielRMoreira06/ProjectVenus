@@ -36,6 +36,7 @@ import uuid
 from Orchestrator import Orchestrator, Category
 from Monitors.PassiveMonitor import PassiveMonitor
 from ai.BootManager import BootManager
+from ai.ChatHistory import chat_history
 from ai.GeminiWorker import worker
 from on_call_actions import ON_CALL_ACTIONS
 from one_time_run.DiskInspector import DiskInspect
@@ -182,6 +183,14 @@ def queue_response(result):
     before this response is queued for Unity, and the actual job runs
     on its own thread (see _run_on_call_action below).
     """
+    # Logged first, before anything below mutates `result` — this is
+    # Venus's side of the session chat (PanelWindow's History tab).
+    # Covers normal replies, monitor comments, and system messages
+    # alike, since all of them are things Venus actually said this
+    # session. Silent responses (DEADPIXEL, etc.) have empty text and
+    # chat_history.add() already no-ops on falsy text/image.
+    chat_history.add("venus", result.get("text"))
+
     image_path = result.pop("image_path", None)
     result["image"] = f"{BASE_URL}/image/{_register_image(image_path)}" if image_path else None
 
@@ -309,6 +318,16 @@ def process_question(text, image=None):
     straight back to this function instead. So delivery to Unity has
     to be done explicitly here, same as it would be anywhere else.
     """
+    # Logged as the user's side of the session chat regardless of which
+    # branch below actually handles it (normal question or the
+    # first-boot name answer) — both are genuinely something the user
+    # typed. `image` is whatever was pasted into the input window
+    # (see TextInput.py) — PanelWindow renders it as a thumbnail if
+    # present. /ask (Unity-triggered, e.g. pokes) also funnels through
+    # here with image=None, so poke-generated text ends up logged as
+    # "user" too; not worth special-casing for now.
+    chat_history.add("user", text, image=image)
+
     if boot_manager.is_waiting_for_name():
         result = boot_manager.handle_name_answer(orchestrator, text)
         queue_response(result)
