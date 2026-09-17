@@ -39,6 +39,7 @@ from ai.BootManager import BootManager
 from ai.ChatHistory import chat_history
 from ai.GeminiWorker import worker
 from on_call_actions import ON_CALL_ACTIONS
+from on_call_actions.Reminder import persistent_reminder_manager
 from one_time_run.DiskInspector import DiskInspect
 from one_time_run.HardwareInspector import HardwareInspect
 from one_time_run.MemoryCleanupManager import MemoryCleanupCheck
@@ -151,7 +152,10 @@ def debug_tts():
         "audio_path": audio_path,
     }
 
+    result.pop("select_days", None)
+    result.pop("reminder_time", None)
     queue_response(result)
+
     return jsonify({"status": "queued", "text": text, "action": action})
 
 # ---------------------------------------------------------------------
@@ -387,3 +391,9 @@ if __name__ == "__main__":
     # they're expected to answer. Any other time, it only opens via the
     # hotkey.
     start_input_window(process_question, open_automatically=boot_manager.is_waiting_for_name())
+
+if __name__ == "__main__":
+    orchestrator.start()
+    passive_monitor.start()
+    one_time_manager.start()
+    persistent_reminder_manager.start()

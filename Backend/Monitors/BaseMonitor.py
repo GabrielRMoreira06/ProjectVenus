@@ -15,6 +15,11 @@ everything else going on."
 Subclasses implement `check()`, which should decide whether its
 condition is met and, if so, build a zero-argument builder function
 and call `self.orchestrator.add(category, builder)`.
+
+`interval` and `enabled` are both read fresh on every loop iteration,
+not just once at construction — this is what lets PassiveMonitor apply
+a Preferences change (checkbox/slider in the panel) live, just by
+setting these two attributes, with no thread restart needed.
 """
 
 import threading
@@ -26,6 +31,11 @@ class BaseMonitor:
     def __init__(self, orchestrator, interval):
         self.orchestrator = orchestrator
         self.interval = interval
+        # Controlled by Preferences via PassiveMonitor — defaults to
+        # True so a monitor built without going through
+        # PassiveMonitor._build() (e.g. in a quick test script) still
+        # runs normally.
+        self.enabled = True
         self._running = False
 
     def start(self):
@@ -38,7 +48,8 @@ class BaseMonitor:
     def _loop(self):
         while self._running:
             time.sleep(self.interval)
-            self.check()
+            if self.enabled:
+                self.check()
 
     def check(self):
         raise NotImplementedError

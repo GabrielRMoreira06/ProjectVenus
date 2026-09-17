@@ -10,7 +10,7 @@ like this.
 VALID_ACTIONS = {
     "NONE",
     "STEALMOUSE",
-    "OPENIMAGE",
+    "SHOWIMAGE",
     "ALLOWPET",
     "FINDFILE",
     "KEYBOARDCONTROL",
@@ -35,6 +35,8 @@ class ResponseParser:
         keyboardcontrol_query = "NONE"
         reminder_query = "NONE"
         reminder_minutes = "NONE"
+        select_days = "NONE"
+        reminder_time = "NONE"
 
         for line in response_text.splitlines():
 
@@ -76,6 +78,11 @@ class ResponseParser:
 
             elif line.startswith("REMINDER_MINUTES:"):
                 reminder_minutes = line.replace("REMINDER_MINUTES:", "").strip()
+            elif line.startswith("SELECT_DAYS:"):
+                select_days = line.replace("SELECT_DAYS:", "").strip()
+
+            elif line.startswith("REMINDER_TIME:"):
+                reminder_time = line.replace("REMINDER_TIME:", "").strip()
 
         if action not in VALID_ACTIONS:
             print(f"[ResponseParser] Unknown ACTION received from Gemini: '{action}' — using NONE instead.")
@@ -95,4 +102,6 @@ class ResponseParser:
             "keyboardcontrol_query": keyboardcontrol_query,
             "reminder_query": reminder_query,
             "reminder_minutes": reminder_minutes,
+            "select_days": select_days,
+            "reminder_time": reminder_time,
         }

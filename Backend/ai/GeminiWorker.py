@@ -17,8 +17,13 @@ Design notes:
   - The memory block is no longer resent on a fixed request-count
     interval. It's sent only when the caller explicitly asks for it
     via include_memory=True — currently: once per boot greeting, and
-    once per GenericInteractionMonitor firing. Regular user messa       ges
+    once per GenericInteractionMonitor firing. Regular user messages
     never carry the memory block.
+  - The RESPONSE RULES / RESPONSE RULES EXPLANATION sent to Gemini are
+    no longer static strings — they're built fresh from
+    preferences.enabled_actions() on every prompt (see ai/Prompts.py),
+    so toggling an ACTION off in the Preferences tab takes effect on
+    the very next request, no restart needed.
 """
 
 from datetime import datetime
@@ -29,10 +34,11 @@ from google import genai
 from google.genai import types
 
 from config import GEMINI_KEY
+from Preferences import preferences
 from ai.Prompts import (
     SYSTEM_INSTRUCTIONS,
-    RESPONSE_RULES,
-    RESPONSE_RULES_EXPLANATION
+    build_response_rules,
+    build_response_rules_explanation,
 )
 from ai.ResponseParser import ResponseParser
 from ai.MoodController import mood
@@ -140,6 +146,14 @@ class GeminiWorker:
 
             parsed = self.parser.parse(response.text)
 
+            # Defense in depth: even though a disabled action is no
+            # longer offered in the prompt (see _build_prompt), the
+            # chat history may still contain older turns that mention
+            # it — force it back to NONE rather than let it leak
+            # through to Unity.
+            if parsed["action"] != "NONE" and parsed["action"] not in preferences.enabled_actions():
+                parsed["action"] = "NONE"
+
             # Silent responses (empty TEXT) have nothing to speak.
             parsed["audio_path"] = (
                 self.tts.generate_audio(parsed["text"])
@@ -204,16 +218,18 @@ class GeminiWorker:
         include_memory,
         include_rules_explanation
     ):
+        enabled_actions = preferences.enabled_actions()
+
         sections = [
             f"TIME: {datetime.now().strftime('%H:%M')}",
             f"=== VENUS MOOD ===\n{self.mood.get_prompt()}",
-            f"=== RESPONSE RULES ===\n{RESPONSE_RULES}",
+            f"=== RESPONSE RULES ===\n{build_response_rules(enabled_actions)}",
         ]
 
         if include_rules_explanation:
             sections.append(
                 f"=== RESPONSE RULES EXPLANATION ===\n"
-                f"{RESPONSE_RULES_EXPLANATION}"
+                f"{build_response_rules_explanation(enabled_actions)}"
             )
 
             print(
