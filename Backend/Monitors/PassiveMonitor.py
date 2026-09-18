@@ -29,6 +29,7 @@ from Monitors.HadwereMonitor import HardwareMonitor
 from Monitors.ProcessMonitor import ProcessMonitor
 from Monitors.ScreenPeakMonitor import ScreenPeekMonitor
 from Monitors.UptimeMonitor import UptimeMonitor
+from Monitors.EmailMonitor import EmailMonitor
 from Preferences import preferences
 
 
@@ -51,6 +52,7 @@ class PassiveMonitor:
             self._build("energy", EnergyMonitor),
             self._build("screenpeek", ScreenPeekMonitor),
             self._build("generic_interaction", GenericInteractionMonitor),
+            self._build("email", EmailMonitor),
         ]
 
     def _build(self, monitor_id, monitor_class):

@@ -65,6 +65,11 @@ MONITOR_CATALOG = {
         "Asks you something or comments on an open window when nothing else has happened in a while.",
         2000,
     ),
+    "email": (
+        "Email checking",
+        "Checks your inbox for new emails and comments on them.",
+        120,
+    ),
 }
 
 ACTION_CATALOG = {

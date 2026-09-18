@@ -32,7 +32,8 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QTextEdit, QPushButton, QLabel, QFileDialog,
 )
-
+import qtawesome as qta
+from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from ui.ImageUtils import qimage_to_pil, pil_to_qpixmap
 from ui.Theme import PINK, PINK_SOFT, BG_BUBBLE, BG_PANEL
 
@@ -195,10 +196,16 @@ class MessageComposer(QWidget):
         bar = QHBoxLayout()
         bar.setSpacing(10)
 
-        emoji_button = QPushButton("🙂")
+        emoji_button = QPushButton()
+        emoji_button.setIcon(qta.icon("fa5s.smile", color=PINK_SOFT, color_active="white"))
+        emoji_button.setIconSize(QSize(18, 18))
+
         emoji_button.clicked.connect(lambda: self._open_emoji_picker(emoji_button))
 
-        attach_button = QPushButton("📎")
+        attach_button = QPushButton()
+        attach_button.setIcon(qta.icon("fa5s.paperclip", color=PINK_SOFT, color_active="white"))
+        attach_button.setIconSize(QSize(18, 18))
+        attach_button.clicked.connect(self._open_attach_dialog)
         attach_button.clicked.connect(self._open_attach_dialog)
 
         self.text_edit = PastableTextEdit()
@@ -216,7 +223,9 @@ class MessageComposer(QWidget):
         self.text_edit.image_pasted.connect(self._on_image_pasted)
         self.text_edit.send_requested.connect(self.send)
 
-        self.send_button = QPushButton("➤")
+        self.send_button = QPushButton()
+        self.send_button.setIcon(qta.icon("fa5s.paper-plane", color="white", color_disabled="#888888"))
+        self.send_button.setIconSize(QSize(16, 16))
 
         for button in (emoji_button, attach_button, self.send_button):
             button.setFixedSize(36, 36)
@@ -326,9 +335,16 @@ class MessageComposer(QWidget):
     def _open_emoji_picker(self, anchor_button):
         picker = EmojiPicker(self)
         picker.emoji_selected.connect(self._insert_emoji)
+        picker.adjustSize()
 
-        anchor_point = anchor_button.mapToGlobal(anchor_button.rect().bottomLeft())
-        picker.move(anchor_point)
+        # Map the top-left corner of the button to global screen coordinates
+        button_top_left = anchor_button.mapToGlobal(anchor_button.rect().topLeft())
+
+        # Place the bottom of the picker above the top of the button (with a 6px margin)
+        x = button_top_left.x()
+        y = button_top_left.y() - picker.height() - 6
+
+        picker.move(x, y)
         picker.show()
 
     def _insert_emoji(self, emoji):
