@@ -11,7 +11,7 @@ was already passed into process_question/GeminiWorker) — not saved to
 disk, not converted to anything else. Only PanelWindow ever reads it,
 and only to build a QPixmap thumbnail for display. This only covers
 the USER's side of the conversation (an image pasted into the input
-window); Venus/monitor images go through the separate OPENIMAGE
+window); Venus/monitor images go through the separate SHOWIMAGE
 file-serving pipeline in Server.py and aren't logged here.
 
 Thread safety matters here: add() is called from Flask request

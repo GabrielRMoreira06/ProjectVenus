@@ -30,7 +30,7 @@ into a monolith.
 import threading
 import time
 from collections import deque
-
+from ai.EXPManager import exp_manager
 from flask import Flask, jsonify, request, send_file
 import uuid
 from Orchestrator import Orchestrator, Category
@@ -66,7 +66,7 @@ def health():
 # ---------------------------------------------------------------------
 # Image serving (Orchestrator -> Unity's ImageHolder)
 # ---------------------------------------------------------------------
-# A response with action="OPENIMAGE" carries a LOCAL file path
+# A response with action="SHOWIMAGE" carries a LOCAL file path
 # (image_path) rather than a URL — boredom_monitor.py is the only
 # source of that today. Unity can't fetch a Windows filesystem path
 # directly, so it's registered here under a one-time id and served
@@ -130,7 +130,7 @@ def debug_tts():
     without burning a Gemini call. Not part of the normal pipeline;
     remove before shipping.
 
-    command: curl.exe "http://127.0.0.1:5000/debug_tts?text=fine,+I%27ll+remind+you&action=NONE&reminder_query=die&reminder_minutes=1"
+    command: curl.exe "http://127.0.0.1:5000/debug_tts"
     """
     text = request.args.get("text", "Testing testing one two three.")
     action = request.args.get("action", "NONE")
@@ -138,14 +138,14 @@ def debug_tts():
     audio_path = worker.tts.generate_audio(text)
 
     result = {
-        "text": text,
-        "action": action,
+        "text": "DEBUG TEXT",
+        "action": "SHOWIMAGE",
         "mood_variant": None,
         "mood_shift": None,
         "memory_type": "NONE",
         "memory_text": "NONE",
         "memory_expire": "NONE",
-        "image_query": request.args.get("image_query", "NONE"),
+        "image_query": "dog stock image",
         "file_query": request.args.get("file_query", "NONE"),
         "keyboardcontrol_query": request.args.get("keyboardcontrol_query", "NONE"),
         "reminder_query": request.args.get("reminder_query", "NONE"),
@@ -156,6 +156,8 @@ def debug_tts():
     result.pop("select_days", None)
     result.pop("reminder_time", None)
     queue_response(result)
+
+
 
     return jsonify({"status": "queued", "text": text, "action": action})
 
@@ -224,7 +226,7 @@ def queue_response(result):
     print(f"[server] Response queued for Unity: {result}")
 
     one_time_manager.mark_interaction()
-
+    exp_manager.add_xp()
 
 # Minimum seconds between the initial response (the one carrying the
 # ACTION) and its follow-up being submitted to Orchestrator. Most
@@ -392,6 +394,9 @@ if __name__ == "__main__":
     # they're expected to answer. Any other time, it only opens via the
     # hotkey.
     start_input_window(process_question, open_automatically=boot_manager.is_waiting_for_name())
+
+
+
 
 if __name__ == "__main__":
     orchestrator.start()

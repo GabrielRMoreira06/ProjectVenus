@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Uses the Animator's IK (Humanoid) to raise the left hand towards a
 /// target, without replacing the base animation (e.g. idle). Used to
-/// raise the hand holding the image during the OPENIMAGE action.
+/// raise the hand holding the image during the SHOWIMAGE action.
 /// </summary>
 [RequireComponent(typeof(Animator))]
 public class ArmReachIK : MonoBehaviour

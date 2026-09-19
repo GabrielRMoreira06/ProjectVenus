@@ -2,7 +2,7 @@
 image_search.py
 
 Searches for an image matching a text description and downloads it
-locally. Used whenever a response's action is OPENIMAGE and Gemini
+locally. Used whenever a response's action is SHOWIMAGE and Gemini
 provided an IMAGE_QUERY (see GeminiWorker._resolve_image) — the local
 file is later served to Unity through the /image/<id> endpoint in
 server.py.

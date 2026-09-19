@@ -1,6 +1,6 @@
 import os
 import sys
-
+from ai.EXPManager import exp_manager
 import keyboard
 import qtawesome as qta
 from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal
@@ -38,6 +38,9 @@ def _load_oxanium_family():
     families = QFontDatabase.applicationFontFamilies(font_id) if font_id != -1 else []
     _oxanium_family = families[0] if families else "Segoe UI"
     return _oxanium_family
+
+
+
 
 
 class DraggableFrame(QFrame):
@@ -390,11 +393,11 @@ class PanelWindow(QWidget):
         name_row.addWidget(name_heart)
         name_row.addStretch()
 
-        level_label = QLabel("Lv. —")
-        level_label.setStyleSheet(f"color: {PINK_SOFT}; font-size: 11px; border: none; background: transparent;")
+        self.level_label = QLabel("Lv. —")
+        self.level_label.setStyleSheet(f"color: {PINK_SOFT}; font-size: 11px; border: none; background: transparent;")
 
         name_column.addLayout(name_row)
-        name_column.addWidget(level_label)
+        name_column.addWidget(self.level_label)
 
         header.addLayout(name_column)
         header.addStretch()
@@ -403,19 +406,20 @@ class PanelWindow(QWidget):
         xp_row = QHBoxLayout()
         xp_caption = QLabel("XP")
         xp_caption.setStyleSheet(f"color: {PINK_SOFT}; font-size: 11px; border: none; background: transparent;")
-        xp_value = QLabel("— / —")
-        xp_value.setStyleSheet(f"color: {PINK_SOFT}; font-size: 11px; border: none; background: transparent;")
+        self.xp_value_label = QLabel("— / —")
+        self.xp_value_label.setStyleSheet(
+            f"color: {PINK_SOFT}; font-size: 11px; border: none; background: transparent;")
         xp_row.addWidget(xp_caption)
         xp_row.addStretch()
-        xp_row.addWidget(xp_value)
+        xp_row.addWidget(self.xp_value_label)
         layout.addLayout(xp_row)
 
-        xp_bar = QProgressBar()
-        xp_bar.setRange(0, 100)
-        xp_bar.setValue(0)
-        xp_bar.setTextVisible(False)
-        xp_bar.setFixedHeight(10)
-        xp_bar.setStyleSheet(f"""
+        self.xp_bar = QProgressBar()
+        self.xp_bar.setRange(0, 100)
+        self.xp_bar.setValue(0)
+        self.xp_bar.setTextVisible(False)
+        self.xp_bar.setFixedHeight(10)
+        self.xp_bar.setStyleSheet(f"""
             QProgressBar {{
                 background-color: #16051a;
                 border: none;
@@ -426,7 +430,7 @@ class PanelWindow(QWidget):
                 border-radius: 2px;
             }}
         """)
-        layout.addWidget(xp_bar)
+        layout.addWidget(self.xp_bar)
 
         stats_row = QHBoxLayout()
         stats_row.setSpacing(6)
@@ -448,6 +452,16 @@ class PanelWindow(QWidget):
         self.energy_bar.set_value(mood.energy)
         self.boredom_bar.set_value(mood.boredom)
         self.affection_bar.set_value(mood.affection)
+        self._refresh_exp()
+
+    def _refresh_exp(self):
+        current_xp, xp_needed = exp_manager.progress()
+        self.level_label.setText(f"Lv. {exp_manager.level}")
+        self.xp_value_label.setText(f"{current_xp} / {xp_needed}")
+        percent = int(100 * current_xp / xp_needed) if xp_needed else 0
+        self.xp_bar.setValue(max(0, min(100, percent)))
+
+
 
     def _build_main_area(self):
         container = DraggableFrame()

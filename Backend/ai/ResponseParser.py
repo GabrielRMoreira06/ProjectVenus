@@ -16,6 +16,7 @@ VALID_ACTIONS = {
     "KEYBOARDCONTROL",
     "SCREAM",
     "REMINDER",
+    "FLIP",
 }
 
 

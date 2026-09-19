@@ -98,7 +98,7 @@ class GeminiWorker:
 
         Also applies the resulting mood shift, stores any memory the
         model asked to save, generates the spoken audio for the
-        response text, and — if ACTION is OPENIMAGE — resolves
+        response text, and — if ACTION is SHOWIMAGE — resolves
         IMAGE_QUERY into an actual local file.
         """
         try:
@@ -192,11 +192,11 @@ class GeminiWorker:
 
     def _resolve_image(self, parsed):
         """
-        When Gemini's own ACTION is OPENIMAGE, it comes with an
+        When Gemini's own ACTION is SHOWIMAGE, it comes with an
         IMAGE_QUERY but no actual image yet — this is what turns that
         query into a real local file via image_search.
         """
-        if parsed["action"] != "OPENIMAGE":
+        if parsed["action"] != "SHOWIMAGE":
             return None
 
         query = parsed["image_query"]

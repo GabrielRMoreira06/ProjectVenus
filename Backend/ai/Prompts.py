@@ -58,6 +58,9 @@ ACTIONS = {
     "REMINDER": [
         "REMINDER: set a reminder for REMINDER_MINUTES from now about REMINDER_QUERY.",
     ],
+    "FLIP": [
+        "FLIP: Spins your whole body 360 degrees clockwise — use for excitement, showing off, or a dramatic reaction.",
+    ],
 }
 
 # The subset of ACTIONS that's specifically about interacting with the

@@ -26,7 +26,7 @@ public class ImageHolder : MonoBehaviour
     public ArmReachIK armReachIK;
 
     [Header("Testing")]
-    [Tooltip("While AcaoExecutor hasn't been rebuilt to consume ResponseListener yet, this component listens directly and shows any OPENIMAGE response on its own — a stand-in so the pipeline is testable end-to-end. Turn this off once AcaoExecutor owns action dispatch instead, to avoid both handling the same response.")]
+    [Tooltip("While AcaoExecutor hasn't been rebuilt to consume ResponseListener yet, this component listens directly and shows any SHOWIMAGE response on its own — a stand-in so the pipeline is testable end-to-end. Turn this off once AcaoExecutor owns action dispatch instead, to avoid both handling the same response.")]
     public bool listenDirectlyForTesting = true;
 
     [Tooltip("Found automatically in the scene if left empty.")]
@@ -113,7 +113,8 @@ public class ImageHolder : MonoBehaviour
     /// </summary>
     private void HandleVenusResponse(VenusResponse response)
     {
-        if (response.action != "OPENIMAGE") return;
+        print("ImageHolder: HandleVenusResponse called with action: " + response.action + ", image URL: " + response.image);
+        if (response.action != "SHOWIMAGE") return;
         if (string.IsNullOrEmpty(response.image)) return;
 
         ShowImage(response.image);
@@ -121,6 +122,7 @@ public class ImageHolder : MonoBehaviour
 
     public void ShowImage(string url, float duration = -1f)
     {
+         
         if (string.IsNullOrEmpty(url)) return;
         if (grabPoint == null)
         {

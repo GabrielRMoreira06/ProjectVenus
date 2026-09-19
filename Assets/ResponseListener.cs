@@ -18,7 +18,7 @@ public class VenusResponse
     public string memory_expire;
     public string image_query;
 
-    [Tooltip("Full, absolute URL to fetch when action is OPENIMAGE — pass this straight to ImageHolder.MostrarImagem(). Null/empty when there's no image to show.")]
+    [Tooltip("Full, absolute URL to fetch when action is SHOWIMAGE — pass this straight to ImageHolder.MostrarImagem(). Null/empty when there's no image to show.")]
     public string image;
 
     [Tooltip("Full, absolute URL to fetch and play as the spoken response. Null/empty when the response is silent (e.g. DEADPIXEL).")]

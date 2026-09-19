@@ -836,9 +836,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LipSyncFake
   vrm10Instance: {fileID: 174286446}
-  sensitivity: 400
+  sensitivity: 500
   smoothing: 15
   visemeRandomizeInterval: 0.12
+--- !u!114 &174286458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 174286439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5af53069f660b047a8ef7aab24014cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlipController
+  responseListener: {fileID: 0}
+  modelRoot: {fileID: 0}
+  duration: 0.8
 --- !u!114 &183979928 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3471891252140187456, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -2279,6 +2294,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 65284393}
+    - target: {fileID: 7146093304296209568, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7895011871079805138, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -2347,6 +2366,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -1728013695380148634, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
       insertIndex: -1
       addedObject: {fileID: 174286457}
+    - targetCorrespondingSourceObject: {fileID: -1728013695380148634, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 174286458}
     - targetCorrespondingSourceObject: {fileID: -1708467997492835518, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1645505462}
@@ -5077,7 +5099,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StealMouse
   responseListener: {fileID: 1537105287}
-  duration: 5
+  duration: 3
   dragDistance: 300
   tremorIntensity: 15
 --- !u!114 &1903130761 stripped
@@ -5219,8 +5241,8 @@ MonoBehaviour:
   impulsoMaximo: 25
   forcaInclinacaoFrente: 3
   eixoInclinacaoFrenteLocal: {x: 1, y: 0, z: 0}
-  inclinacaoMaximaMao: 15
-  curvaInclinacaoMao: 2
+  inclinacaoMaximaMao: 17
+  curvaInclinacaoMao: 2.5
   headFollowMouseIK: {fileID: 174286450}
   autoBlink: {fileID: 174286440}
   dragMoveCanvas: {fileID: 904689048}
@@ -5232,9 +5254,15 @@ MonoBehaviour:
   barraCarinho: {fileID: 123542165}
   containerBarraCarinho: {fileID: 1796001813}
   distanciaAngularParaCompletar: 720
-  particulasConclusao: {fileID: 0}
-  pontoParticulasConclusao: {fileID: 0}
-  responseListener: {fileID: 0}
+  textoEfeitoConclusao: "\u2764"
+  pontoEfeitoConclusao: {fileID: 1319326409}
+  fonteEfeitoConclusao: {fileID: 11400000, guid: 051fac532de57304f858aa04788a9566, type: 2}
+  corEfeitoConclusao: {r: 1, g: 0.4, b: 0.7, a: 1}
+  tamanhoFonteEfeitoConclusao: 3
+  distanciaSubidaEfeitoConclusao: 0.5
+  duracaoEfeitoConclusao: 1.5
+  tempoLimiteSegundos: 180
+  responseListener: {fileID: 1537105287}
 --- !u!136 &1990866546
 CapsuleCollider:
   m_ObjectHideFlags: 0

@@ -4,11 +4,11 @@ boredom_monitor.py
 Watches boredom. When it's low enough, Venus comments on a random
 image from the user's Downloads folder.
 
-KNOWN GAP: this monitor forces action="OPENIMAGE" with a path to a
+KNOWN GAP: this monitor forces action="SHOWIMAGE" with a path to a
 LOCAL file, but the current /response pipeline (server.py) only
 delivers text/action/mood fields — there's no image-serving endpoint
 yet (the old /imagem/<id> route + static file registry hasn't been
-rebuilt in this rewrite). Until that exists, an OPENIMAGE response from
+rebuilt in this rewrite). Until that exists, an SHOWIMAGE response from
 this monitor will reach Unity, but ImageHolder will have nothing to
 actually fetch. Left in place — with image_path attached — so wiring
 up real delivery later is a small addition here, not a rewrite.
@@ -73,7 +73,7 @@ class BoredomMonitor(BaseMonitor):
                 user_text="[SYSTEM MESSAGE: you found this image on the user's downloads.]",
                 image=image,
             )
-            result["action"] = "OPENIMAGE"       # forced, not decided by Gemini
+            result["action"] = "SHOWIMAGE"       # forced, not decided by Gemini
             result["image_path"] = str(image_path)  # see module docstring — not yet served to Unity
             return result
 

@@ -1,3 +1,5 @@
+using System.Collections;
+using TMPro;
 using UniVRM10;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,7 +20,17 @@ using UnityEngine.UI;
 ///
 /// A sessão agora tem um critério de término real: uma barra de
 /// progresso (pet_bar) enche conforme a mão se movimenta; ao encher
-/// por completo, partículas aparecem na cabeça e a sessão é encerrada.
+/// por completo, um texto flutuante (ex: um coração) sobe e some na
+/// cabeça, e a sessão é encerrada.
+///
+/// A sessão também tem um CRONÔMETRO: o tempo entre Iniciar() e a
+/// conclusão (ou o timeout) é reportado de volta ao backend Python via
+/// VenusRequester.Ask(), como uma mensagem de sistema — igual a um
+/// poke. Se o usuário completar a barra dentro de tempoLimiteSegundos,
+/// Gemini recebe quanto tempo levou; se o tempo limite estourar antes
+/// da conclusão, Gemini recebe um aviso de que o usuário não fez o
+/// carinho. Em ambos os casos a resposta chega depois, normalmente,
+/// via ResponseListener — este script não espera por ela.
 ///
 /// [DEBUG BUILD] Three temporary Debug.Log calls added (Start(),
 /// Iniciar(), Encerrar()) to trace an issue where the hand stays
@@ -103,11 +115,30 @@ public class AllowPetController : MonoBehaviour
     public float distanciaAngularParaCompletar = 720f;
 
     [Header("Conclusão")]
-    [Tooltip("Sistema de partículas tocado quando a barra enche por completo.")]
-    public ParticleSystem particulasConclusao;
+    [Tooltip("Texto/símbolo mostrado quando a barra enche por completo (ex: um coração '❤'). Sobe e desaparece, no mesmo estilo do MoodChangeIndicator — bem mais leve que um ParticleSystem.")]
+    public string textoEfeitoConclusao = "❤";
 
-    [Tooltip("Onde as partículas de conclusão aparecem. Se vazio, usa o centro do colisorCabeca.")]
-    public Transform pontoParticulasConclusao;
+    [Tooltip("Onde o texto de conclusão aparece. Se vazio, usa o centro do colisorCabeca.")]
+    public Transform pontoEfeitoConclusao;
+
+    [Tooltip("Fonte TMP usada no texto de conclusão. Se vazio, usa a fonte padrão do TextMeshPro.")]
+    public TMP_FontAsset fonteEfeitoConclusao;
+
+    [Tooltip("Cor do texto de conclusão.")]
+    public Color corEfeitoConclusao = new Color(1f, 0.4f, 0.7f);
+
+    [Tooltip("Tamanho da fonte do texto de conclusão.")]
+    public float tamanhoFonteEfeitoConclusao = 3f;
+
+    [Tooltip("Distância (em unidades de mundo) que o texto sobe antes de desaparecer.")]
+    public float distanciaSubidaEfeitoConclusao = 0.5f;
+
+    [Tooltip("Duração total da animação de subida/desaparecimento, em segundos.")]
+    public float duracaoEfeitoConclusao = 1.5f;
+
+    [Header("Cronômetro (relatado ao Gemini)")]
+    [Tooltip("Tempo máximo, em segundos, que o usuário tem — a partir de Iniciar() — pra completar o carinho antes de a sessão expirar. Se estourar sem conclusão, um aviso de timeout é enviado ao backend e a sessão é encerrada.")]
+    public float tempoLimiteSegundos = 180f; // 3 minutos
 
     [Header("Resposta do Python")]
     [Tooltip("ResponseListener que recebe as respostas do backend Python. Se vazio, tenta achar um na cena.")]
@@ -131,6 +162,12 @@ public class AllowPetController : MonoBehaviour
 
     private float progressoAcumulado = 0f;
     private bool concluido = false;
+
+    // Marca o Time.time em que a sessão atual começou (definido em
+    // Iniciar(), só quando a sessão de fato reinicia — ver comentário
+    // lá). Usado tanto pra calcular quanto tempo levou até concluir
+    // quanto pra saber se tempoLimiteSegundos já estourou.
+    private float tempoInicioSessao = 0f;
 
 
 
@@ -235,9 +272,10 @@ public class AllowPetController : MonoBehaviour
     /// <summary>
     /// Chamado ao receber uma resposta com action == "ALLOWPET" (ver
     /// HandleResponseReceived acima). Recalcula o raio/direção de
-    /// repouso do arco, zera o ângulo e o progresso da barra, e torna a
-    /// mão (e a barra) visíveis/clicáveis. Chamar de novo enquanto já
-    /// está em arrasto não reseta nada (evita "puxar" a mão do usuário
+    /// repouso do arco, zera o ângulo, o progresso da barra e o
+    /// cronômetro da sessão, e torna a mão (e a barra) visíveis/
+    /// clicáveis. Chamar de novo enquanto já está em arrasto não reseta
+    /// nada (evita "puxar" a mão do usuário ou reiniciar o cronômetro
     /// no meio de uma interação).
     /// </summary>
     public void Iniciar()
@@ -264,6 +302,11 @@ public class AllowPetController : MonoBehaviour
 
             progressoAcumulado = 0f;
             concluido = false;
+
+            // Cronômetro da sessão começa agora — usado tanto pra medir
+            // quanto tempo o carinho levou (NotificarConcluido) quanto
+            // pra detectar o timeout (VerificarTimeout).
+            tempoInicioSessao = Time.time;
 
             if (barraCarinho != null)
             {
@@ -292,8 +335,11 @@ public class AllowPetController : MonoBehaviour
 
     /// <summary>
     /// Esconde a mão e a barra, e encerra a sessão de carinho. Chamado
-    /// automaticamente ao completar a barra, ou manualmente se algum
-    /// dia for necessário.
+    /// automaticamente ao completar a barra ou ao estourar o tempo
+    /// limite, ou manualmente se algum dia for necessário. Não envia
+    /// nada ao backend por conta própria — isso é responsabilidade de
+    /// quem chama Encerrar() (ConcluirCarinho ou VerificarTimeout), já
+    /// que só eles sabem POR QUE a sessão está terminando.
     /// </summary>
     public void Encerrar()
     {
@@ -340,6 +386,13 @@ public class AllowPetController : MonoBehaviour
     {
         if (!gameObject.activeSelf) return;
 
+        // Checado ANTES de qualquer outra coisa: se o tempo limite já
+        // estourou, a sessão é encerrada (e o backend avisado) neste
+        // mesmo frame, sem processar arrasto/clique — VerificarTimeout()
+        // já chama Encerrar() internamente, o que desativa o
+        // gameObject, então nada mais deste método deveria rodar.
+        if (VerificarTimeout()) return;
+
         if (Input.GetMouseButtonDown(0))
         {
             VerificarInicioArrasto();
@@ -355,6 +408,26 @@ public class AllowPetController : MonoBehaviour
         }
 
         AtualizarFechamentoOlhos();
+    }
+
+    /// <summary>
+    /// Retorna true (e já encerra a sessão, avisando o backend) se
+    /// tempoLimiteSegundos se passaram desde tempoInicioSessao sem que
+    /// concluido tenha se tornado true. Não faz nada se a sessão já foi
+    /// concluída — o carinho completo tem prioridade sobre o timeout,
+    /// mesmo que os dois caiam no mesmo frame.
+    /// </summary>
+    private bool VerificarTimeout()
+    {
+        if (concluido) return false;
+        if (Time.time - tempoInicioSessao < tempoLimiteSegundos) return false;
+
+        Debug.Log("[AllowPetController] Tempo limite do carinho estourou sem conclusão — avisando o backend e encerrando.");
+
+        NotificarNaoConcluido();
+        Encerrar();
+
+        return true;
     }
 
     private void VerificarInicioArrasto()
@@ -499,7 +572,8 @@ public class AllowPetController : MonoBehaviour
     /// <summary>
     /// Soma a variação angular deste frame ao progresso acumulado e
     /// atualiza a barra. Ao atingir distanciaAngularParaCompletar,
-    /// dispara a conclusão (partículas + Encerrar()) uma única vez.
+    /// dispara a conclusão (partículas + aviso ao backend + Encerrar())
+    /// uma única vez.
     /// </summary>
     private void AcumularProgresso(float variacaoAngular)
     {
@@ -515,25 +589,105 @@ public class AllowPetController : MonoBehaviour
     }
 
     /// <summary>
-    /// Toca as partículas de conclusão na cabeça e encerra a sessão.
-    /// concluido evita disparar isso mais de uma vez no mesmo frame ou
-    /// em frames seguintes antes do GameObject desativar de verdade.
+    /// Toca as partículas de conclusão na cabeça, avisa o backend
+    /// quanto tempo o carinho levou, e encerra a sessão. concluido
+    /// evita disparar isso mais de uma vez no mesmo frame ou em frames
+    /// seguintes antes do GameObject desativar de verdade — e também
+    /// impede que VerificarTimeout() dispare um timeout logo depois de
+    /// uma conclusão bem-sucedida.
     /// </summary>
     private void ConcluirCarinho()
     {
         concluido = true;
 
-        if (particulasConclusao != null)
-        {
-            Vector3 posicaoParticulas = pontoParticulasConclusao != null
-                ? pontoParticulasConclusao.position
-                : (colisorCabeca != null ? colisorCabeca.bounds.center : transform.position);
-
-            particulasConclusao.transform.position = posicaoParticulas;
-            particulasConclusao.Play();
-        }
+        MostrarEfeitoConclusao();
+        NotificarConcluido();
 
         Encerrar();
+    }
+
+    /// <summary>
+    /// Dispara o texto flutuante de conclusão (ex: um coração que sobe
+    /// e desaparece) na posição configurada — mesma ideia do
+    /// MoodChangeIndicator, só que reaproveitada aqui em vez de um
+    /// ParticleSystem, que era pesado demais pra esse feedback simples.
+    /// </summary>
+    private void MostrarEfeitoConclusao()
+    {
+        if (string.IsNullOrEmpty(textoEfeitoConclusao)) return;
+
+        Vector3 posicaoEfeito = pontoEfeitoConclusao != null
+            ? pontoEfeitoConclusao.position
+            : (colisorCabeca != null ? colisorCabeca.bounds.center : transform.position);
+
+        StartCoroutine(AnimarEfeitoConclusao(posicaoEfeito));
+    }
+
+    private IEnumerator AnimarEfeitoConclusao(Vector3 posicaoInicial)
+    {
+        GameObject obj = new GameObject("PetConclusaoTexto");
+        TextMeshPro tmp = obj.AddComponent<TextMeshPro>();
+
+        tmp.text = textoEfeitoConclusao;
+        tmp.color = corEfeitoConclusao;
+        tmp.fontSize = tamanhoFonteEfeitoConclusao;
+        tmp.alignment = TextAlignmentOptions.Center;
+
+        if (fonteEfeitoConclusao != null)
+            tmp.font = fonteEfeitoConclusao;
+
+        obj.transform.position = posicaoInicial;
+
+        Vector3 posicaoFinal = posicaoInicial + Vector3.up * distanciaSubidaEfeitoConclusao;
+
+        float elapsedTime = 0f;
+
+        while (elapsedTime < duracaoEfeitoConclusao)
+        {
+            elapsedTime += Time.deltaTime;
+            float progresso = Mathf.Clamp01(elapsedTime / duracaoEfeitoConclusao);
+
+            obj.transform.position = Vector3.Lerp(posicaoInicial, posicaoFinal, progresso);
+
+            if (Camera.main != null)
+                obj.transform.rotation = Camera.main.transform.rotation;
+
+            // Só começa a desaparecer na segunda metade da animação —
+            // mesma curva usada em MoodChangeIndicator.AnimateText.
+            if (progresso > 0.5f)
+            {
+                Color corAtual = tmp.color;
+                corAtual.a = Mathf.Lerp(1f, 0f, (progresso - 0.5f) / 0.5f);
+                tmp.color = corAtual;
+            }
+
+            yield return null;
+        }
+
+        Destroy(obj);
+    }
+
+    /// <summary>
+    /// Avisa o backend Python (via VenusRequester, o mesmo entry point
+    /// que PokeController usa) que o usuário completou o carinho,
+    /// informando quanto tempo — em segundos inteiros, desde o
+    /// Iniciar() que deu início a esta sessão — isso levou. A mensagem
+    /// vai pra fila normal do /ask; a resposta de Venus chega depois,
+    /// como sempre, via ResponseListener.
+    /// </summary>
+    private void NotificarConcluido()
+    {
+        float segundosDecorridos = Time.time - tempoInicioSessao;
+        VenusRequester.Ask($"[System message: User petted your head in {segundosDecorridos:F0} seconds]");
+    }
+
+    /// <summary>
+    /// Avisa o backend que o usuário não completou o carinho dentro de
+    /// tempoLimiteSegundos.
+    /// </summary>
+    private void NotificarNaoConcluido()
+    {
+        VenusRequester.Ask("[System message: User didn't pet your head.]");
     }
 
     /// <summary>

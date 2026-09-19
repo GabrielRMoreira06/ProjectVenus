@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 /// <summary>
 /// Downloads and plays the audio for each VenusResponse coming from the
 /// Python backend. Follows the same pattern as ImageHolder for
-/// OPENIMAGE: subscribes to ResponseListener.OnResponseReceived,
+/// SHOWIMAGE: subscribes to ResponseListener.OnResponseReceived,
 /// downloads the content via UnityWebRequest and plays it on the local
 /// AudioSource.
 ///

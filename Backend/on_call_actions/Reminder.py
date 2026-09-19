@@ -14,7 +14,7 @@ Two kinds of reminder, distinguished by SELECT_DAYS:
     every REMINDER_TIME (HH:MM, 24h) on each selected day, indefinitely
     — there's no removal path yet, same "left in place" spirit as other
     partial features in this codebase (STEALMOUSE, boredom_monitor's
-    OPENIMAGE serving). Saved to disk (persistent_reminders.json) so it
+    SHOWIMAGE serving). Saved to disk (persistent_reminders.json) so it
     survives a restart: PersistentReminderManager reloads it at
     __init__ and keeps checking.
 

@@ -74,12 +74,13 @@ MONITOR_CATALOG = {
 
 ACTION_CATALOG = {
     "KEYBOARDCONTROL": ("Keyboard control", "Types on your keyboard directly."),
-    "OPENIMAGE": ("Open image", "Shows an image pulled from the internet alongside her text."),
+    "SHOWIMAGE": ("Open image", "Shows an image pulled from the internet alongside her text."),
     "ALLOWPET": ("Allow pet", "Lets you pet her head with a draggable hand."),
     "FINDFILE": ("Find file", "Searches your computer for a file and opens it in Explorer."),
     "STEALMOUSE": ("Steal mouse", "Tugs your cursor toward the close button, like she's fighting for control."),
     "SCREAM": ("Scream", "Distorts her voice into a harsh, blown-out scream for one line."),
     "REMINDER": ("Reminders", "Sets a timed reminder that she brings up again later."),
+    "FLIP": ("Flip", "Spins her whole body 360 degrees clockwise."),
 }
 
 
