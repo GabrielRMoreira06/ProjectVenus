@@ -28,15 +28,8 @@ public class DeadPixelSpawner : MonoBehaviour
 
     private List<GameObject> activePixels = new List<GameObject>();
 
-    public void Update()
-    {
-        // Debug: P key to manually spawn a dead pixel
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            DrawDeadPixel();
-        }
+ 
 
-    }
     void Awake()
     {
         if (responseListener == null)

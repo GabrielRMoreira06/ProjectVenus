@@ -145,7 +145,7 @@ def debug_tts():
         "memory_type": "NONE",
         "memory_text": "NONE",
         "memory_expire": "NONE",
-        "image_query": "dog stock image",
+        "image_query": "NONE",
         "file_query": request.args.get("file_query", "NONE"),
         "keyboardcontrol_query": request.args.get("keyboardcontrol_query", "NONE"),
         "reminder_query": request.args.get("reminder_query", "NONE"),

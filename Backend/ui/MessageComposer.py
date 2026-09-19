@@ -20,6 +20,16 @@ in what the CALLER does when send_started fires (InputWindow hides
 itself; PanelWindow does nothing extra, since it's meant to stay
 open). Emoji/attach buttons only exist in compact mode today — full
 mode (the popup) never had them, so there's nothing to wire there yet.
+
+Attach dialog accepts images AND PDFs, but they take different paths:
+an image is opened as a PIL.Image and sent straight through to
+process_question(image=...), same as a pasted image — it ends up as
+multimodal content in worker.chat. A PDF is NOT sent that way: it's
+resolved to a short text summary (via ai/PdfSummarizer.py, its own
+one-off Gemini call, outside worker.chat) right here in send(), and
+only that summary — folded into the plain text as a
+"[SYSTEM MESSAGE: ...]" block — reaches process_question. Server.py
+and GeminiWorker never see the PDF itself.
 """
 
 import threading
@@ -36,6 +46,7 @@ import qtawesome as qta
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from ui.ImageUtils import qimage_to_pil, pil_to_qpixmap
 from ui.Theme import PINK, PINK_SOFT, BG_BUBBLE, BG_PANEL
+from ai.PdfSummarizer import pdf_summarizer
 
 # Curated set rather than a full OS emoji panel — Qt has no built-in
 # emoji picker, and pulling in a native one is platform-specific for
@@ -49,7 +60,7 @@ EMOJI_CHOICES = [
     "💪", "🔥", "✨", "💯", "❤️", "💔",
 ]
 
-IMAGE_FILE_FILTER = "Images (*.png *.jpg *.jpeg *.webp *.bmp *.gif)"
+ATTACH_FILE_FILTER = "Images and PDFs (*.png *.jpg *.jpeg *.webp *.bmp *.gif *.pdf)"
 
 
 class PastableTextEdit(QTextEdit):
@@ -144,6 +155,7 @@ class MessageComposer(QWidget):
         self.process_question = process_question
         self.compact = compact
         self.pending_image = None
+        self.pending_pdf_path = None
         self.status_label = None  # only exists in full mode — see _build_full
 
         self.send_finished.connect(self._on_send_finished)
@@ -360,9 +372,13 @@ class MessageComposer(QWidget):
         start_dir = str(pictures_dir) if pictures_dir.is_dir() else ""
 
         path, _ = QFileDialog.getOpenFileName(
-            self, "Attach an image", start_dir, IMAGE_FILE_FILTER
+            self, "Attach a file", start_dir, ATTACH_FILE_FILTER
         )
         if not path:
+            return
+
+        if path.lower().endswith(".pdf"):
+            self._set_pending_pdf(path)
             return
 
         try:
@@ -375,13 +391,14 @@ class MessageComposer(QWidget):
         self._set_pending_image(image)
 
     # ------------------------------------------------------------------
-    # Image state (shared by paste and attach)
+    # Attachment state (image XOR pdf — only one pending at a time)
     # ------------------------------------------------------------------
 
     def _on_image_pasted(self, pil_image):
         self._set_pending_image(pil_image)
 
     def _set_pending_image(self, pil_image):
+        self.pending_pdf_path = None
         self.pending_image = pil_image
 
         pixmap = pil_to_qpixmap(pil_image).scaledToHeight(
@@ -391,8 +408,22 @@ class MessageComposer(QWidget):
         self.preview_label.setVisible(True)
         self.remove_image_button.setVisible(True)
 
+    def _set_pending_pdf(self, path):
+        """
+        Just remembers the path for send() to resolve later — no
+        summarization happens here. The preview only shows the
+        filename; there's nothing to thumbnail.
+        """
+        self.pending_image = None
+        self.pending_pdf_path = path
+
+        self.preview_label.setText(f"📄 {Path(path).name}")
+        self.preview_label.setVisible(True)
+        self.remove_image_button.setVisible(True)
+
     def _remove_image(self):
         self.pending_image = None
+        self.pending_pdf_path = None
         self.preview_label.clear()
         self.preview_label.setVisible(False)
         self.remove_image_button.setVisible(False)
@@ -404,8 +435,9 @@ class MessageComposer(QWidget):
     def send(self):
         text = self.text_edit.toPlainText().strip()
         image = self.pending_image
+        pdf_path = self.pending_pdf_path
 
-        if not text and image is None:
+        if not text and image is None and pdf_path is None:
             return
 
         # Disabled immediately — prevents a double send (double Enter,
@@ -422,8 +454,25 @@ class MessageComposer(QWidget):
         if self.status_label is not None:
             self.status_label.setText("")
 
-        def _work(text=text, image=image):
+        def _work(text=text, image=image, pdf_path=pdf_path):
             try:
+                if pdf_path is not None:
+                    # Resolved here, on this background thread, NOT
+                    # inside process_question/worker.run — the PDF
+                    # itself never reaches worker.chat, only whatever
+                    # short summary comes back.
+                    summary = pdf_summarizer.summarize(pdf_path)
+                    filename = Path(pdf_path).name
+
+                    note = (
+                        f"[SYSTEM MESSAGE: user attached the PDF '{filename}'. Summary: {summary}]"
+                        if summary else
+                        f"[SYSTEM MESSAGE: user attached the PDF '{filename}', but no text could be extracted from it.]"
+                    )
+
+                    text = f"{text}\n\n{note}" if text else note
+                    image = None
+
                 self.process_question(text, image=image)
             except Exception:
                 import traceback

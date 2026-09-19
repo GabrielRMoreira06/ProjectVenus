@@ -17,6 +17,8 @@ VALID_ACTIONS = {
     "SCREAM",
     "REMINDER",
     "FLIP",
+    "ORGANIZEFILES",
+    "JUDGE",
 }
 
 

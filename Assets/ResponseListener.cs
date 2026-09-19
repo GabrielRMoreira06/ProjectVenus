@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
@@ -59,6 +60,9 @@ public class ResponseListener : MonoBehaviour
             timeSinceLastPoll = 0f;
             StartCoroutine(PythonConnection.Instance.Get(responseEndpoint, HandleResponse));
         }
+
+        //fake  response for testing purposes
+        
     }
 
     private void HandleResponse(bool success, string responseBody)

@@ -25,7 +25,7 @@ public class ArmReachIK : MonoBehaviour
         animator = GetComponent<Animator>();
     }
 
-
+    
     public void ActivatePose()
     {
         targetWeight = 1f;

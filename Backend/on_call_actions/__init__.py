@@ -21,7 +21,7 @@ To add a new one:
   3. Add that ACTION (and any query field it needs) to
      ResponseParser.py's VALID_ACTIONS and Prompts.py's RESPONSE_RULES.
 """
-
+from on_call_actions.FileOrganizer import organize_files
 from on_call_actions.FindFile import find_file
 from on_call_actions.KeyboardControl import keyboard_control
 from on_call_actions.Reminder import set_reminder
@@ -30,4 +30,5 @@ ON_CALL_ACTIONS = {
     "FINDFILE": find_file,
     "KEYBOARDCONTROL": keyboard_control,
     "REMINDER": set_reminder,
+    "ORGANIZEFILES": organize_files,
 }

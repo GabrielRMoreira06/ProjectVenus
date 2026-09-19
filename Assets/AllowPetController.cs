@@ -1,5 +1,3 @@
-using System.Collections;
-using TMPro;
 using UniVRM10;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,8 +18,7 @@ using UnityEngine.UI;
 ///
 /// A sessão agora tem um critério de término real: uma barra de
 /// progresso (pet_bar) enche conforme a mão se movimenta; ao encher
-/// por completo, um texto flutuante (ex: um coração) sobe e some na
-/// cabeça, e a sessão é encerrada.
+/// por completo, a sessão é encerrada.
 ///
 /// A sessão também tem um CRONÔMETRO: o tempo entre Iniciar() e a
 /// conclusão (ou o timeout) é reportado de volta ao backend Python via
@@ -72,6 +69,13 @@ public class AllowPetController : MonoBehaviour
     [Tooltip("Eixo LOCAL do osso da cabeça usado como eixo de rotação da inclinação pra frente (tipicamente o eixo lateral do osso, pra fazer a cabeça 'balançar' pra baixo/frente).")]
     public Vector3 eixoInclinacaoFrenteLocal = Vector3.right;
 
+    [Header("Inclinação lateral da cabeça (oposta ao movimento da mão)")]
+    [Tooltip("Força do impulso lateral que inclina a cabeça levemente pro lado OPOSTO ao movimento horizontal da mão nesse frame — como se a cabeça se afastasse de leve do lado que está sendo acariciado. Zero desativa.")]
+    public float forcaInclinacaoLateralCabeca = 2f;
+
+    [Tooltip("Eixo LOCAL do osso da cabeça usado como eixo de rotação dessa inclinação lateral (tipicamente o eixo 'frente' do osso, pra fazer a cabeça girar pro lado — ajuste conforme a orientação do rig).")]
+    public Vector3 eixoInclinacaoLateralLocal = Vector3.forward;
+
     [Header("Inclinação da mão perto do limite do arco")]
     [Tooltip("Ângulo máximo (graus) que a mão inclina (roll) ao se aproximar do limite do arco. Zero desativa.")]
     public float inclinacaoMaximaMao = 15f;
@@ -113,28 +117,6 @@ public class AllowPetController : MonoBehaviour
 
     [Tooltip("Soma total de graus de movimento do arco (valor absoluto — ida e volta contam igual) necessária pra encher a barra por completo.")]
     public float distanciaAngularParaCompletar = 720f;
-
-    [Header("Conclusão")]
-    [Tooltip("Texto/símbolo mostrado quando a barra enche por completo (ex: um coração '❤'). Sobe e desaparece, no mesmo estilo do MoodChangeIndicator — bem mais leve que um ParticleSystem.")]
-    public string textoEfeitoConclusao = "❤";
-
-    [Tooltip("Onde o texto de conclusão aparece. Se vazio, usa o centro do colisorCabeca.")]
-    public Transform pontoEfeitoConclusao;
-
-    [Tooltip("Fonte TMP usada no texto de conclusão. Se vazio, usa a fonte padrão do TextMeshPro.")]
-    public TMP_FontAsset fonteEfeitoConclusao;
-
-    [Tooltip("Cor do texto de conclusão.")]
-    public Color corEfeitoConclusao = new Color(1f, 0.4f, 0.7f);
-
-    [Tooltip("Tamanho da fonte do texto de conclusão.")]
-    public float tamanhoFonteEfeitoConclusao = 3f;
-
-    [Tooltip("Distância (em unidades de mundo) que o texto sobe antes de desaparecer.")]
-    public float distanciaSubidaEfeitoConclusao = 0.5f;
-
-    [Tooltip("Duração total da animação de subida/desaparecimento, em segundos.")]
-    public float duracaoEfeitoConclusao = 1.5f;
 
     [Header("Cronômetro (relatado ao Gemini)")]
     [Tooltip("Tempo máximo, em segundos, que o usuário tem — a partir de Iniciar() — pra completar o carinho antes de a sessão expirar. Se estourar sem conclusão, um aviso de timeout é enviado ao backend e a sessão é encerrada.")]
@@ -556,7 +538,7 @@ public class AllowPetController : MonoBehaviour
         // som pausar/retomar em flicker a cada frame.
         bool maoEstaMovendo = Mathf.Abs(deltaMouseX) > 0.01f;
 
-        AplicarImpulsoNaCabeca(movimentoMundoNoFrame);
+        AplicarImpulsoNaCabeca(movimentoMundoNoFrame, deltaMouseX);
         AtualizarSomCarinho(maoEstaMovendo);
 
         transform.position = novaPosicao;
@@ -572,8 +554,8 @@ public class AllowPetController : MonoBehaviour
     /// <summary>
     /// Soma a variação angular deste frame ao progresso acumulado e
     /// atualiza a barra. Ao atingir distanciaAngularParaCompletar,
-    /// dispara a conclusão (partículas + aviso ao backend + Encerrar())
-    /// uma única vez.
+    /// dispara a conclusão (aviso ao backend + Encerrar()) uma única
+    /// vez.
     /// </summary>
     private void AcumularProgresso(float variacaoAngular)
     {
@@ -589,82 +571,19 @@ public class AllowPetController : MonoBehaviour
     }
 
     /// <summary>
-    /// Toca as partículas de conclusão na cabeça, avisa o backend
-    /// quanto tempo o carinho levou, e encerra a sessão. concluido
-    /// evita disparar isso mais de uma vez no mesmo frame ou em frames
-    /// seguintes antes do GameObject desativar de verdade — e também
-    /// impede que VerificarTimeout() dispare um timeout logo depois de
-    /// uma conclusão bem-sucedida.
+    /// Avisa o backend quanto tempo o carinho levou, e encerra a
+    /// sessão. concluido evita disparar isso mais de uma vez no mesmo
+    /// frame ou em frames seguintes antes do GameObject desativar de
+    /// verdade — e também impede que VerificarTimeout() dispare um
+    /// timeout logo depois de uma conclusão bem-sucedida.
     /// </summary>
     private void ConcluirCarinho()
     {
         concluido = true;
 
-        MostrarEfeitoConclusao();
         NotificarConcluido();
 
         Encerrar();
-    }
-
-    /// <summary>
-    /// Dispara o texto flutuante de conclusão (ex: um coração que sobe
-    /// e desaparece) na posição configurada — mesma ideia do
-    /// MoodChangeIndicator, só que reaproveitada aqui em vez de um
-    /// ParticleSystem, que era pesado demais pra esse feedback simples.
-    /// </summary>
-    private void MostrarEfeitoConclusao()
-    {
-        if (string.IsNullOrEmpty(textoEfeitoConclusao)) return;
-
-        Vector3 posicaoEfeito = pontoEfeitoConclusao != null
-            ? pontoEfeitoConclusao.position
-            : (colisorCabeca != null ? colisorCabeca.bounds.center : transform.position);
-
-        StartCoroutine(AnimarEfeitoConclusao(posicaoEfeito));
-    }
-
-    private IEnumerator AnimarEfeitoConclusao(Vector3 posicaoInicial)
-    {
-        GameObject obj = new GameObject("PetConclusaoTexto");
-        TextMeshPro tmp = obj.AddComponent<TextMeshPro>();
-
-        tmp.text = textoEfeitoConclusao;
-        tmp.color = corEfeitoConclusao;
-        tmp.fontSize = tamanhoFonteEfeitoConclusao;
-        tmp.alignment = TextAlignmentOptions.Center;
-
-        if (fonteEfeitoConclusao != null)
-            tmp.font = fonteEfeitoConclusao;
-
-        obj.transform.position = posicaoInicial;
-
-        Vector3 posicaoFinal = posicaoInicial + Vector3.up * distanciaSubidaEfeitoConclusao;
-
-        float elapsedTime = 0f;
-
-        while (elapsedTime < duracaoEfeitoConclusao)
-        {
-            elapsedTime += Time.deltaTime;
-            float progresso = Mathf.Clamp01(elapsedTime / duracaoEfeitoConclusao);
-
-            obj.transform.position = Vector3.Lerp(posicaoInicial, posicaoFinal, progresso);
-
-            if (Camera.main != null)
-                obj.transform.rotation = Camera.main.transform.rotation;
-
-            // Só começa a desaparecer na segunda metade da animação —
-            // mesma curva usada em MoodChangeIndicator.AnimateText.
-            if (progresso > 0.5f)
-            {
-                Color corAtual = tmp.color;
-                corAtual.a = Mathf.Lerp(1f, 0f, (progresso - 0.5f) / 0.5f);
-                tmp.color = corAtual;
-            }
-
-            yield return null;
-        }
-
-        Destroy(obj);
     }
 
     /// <summary>
@@ -707,7 +626,7 @@ public class AllowPetController : MonoBehaviour
         fonteSomCarinho.volume = volumeSomAtual;
     }
 
-    private void AplicarImpulsoNaCabeca(Vector3 movimentoMundoNoFrame)
+    private void AplicarImpulsoNaCabeca(Vector3 movimentoMundoNoFrame, float deltaMouseXFrame)
     {
         if (springCabeca == null || ossoCabeca == null) return;
         if (movimentoMundoNoFrame.sqrMagnitude < 0.0000001f) return;
@@ -733,6 +652,24 @@ public class AllowPetController : MonoBehaviour
                 : Vector3.right;
 
             springCabeca.ApplyImpulse(eixoFrenteLocal, forcaInclinacaoFrente * Time.deltaTime);
+        }
+
+        // Inclinação lateral pro lado OPOSTO ao movimento do mouse nesse
+        // frame: usa deltaMouseXFrame (entrada crua), não
+        // movimentoMundoNoFrame, pelo mesmo motivo documentado em
+        // AtualizarArrasto — a posição mundial da mão se mexe sozinha um
+        // pouco por causa do idle, o que geraria sinal instável. O sinal
+        // é invertido (-Sign) pra que a cabeça se afaste de leve do lado
+        // que a mão está empurrando, em vez de seguir a mão.
+        if (forcaInclinacaoLateralCabeca > 0f && Mathf.Abs(deltaMouseXFrame) > 0.01f)
+        {
+            Vector3 eixoLateralLocal = eixoInclinacaoLateralLocal.sqrMagnitude > 0.0001f
+                ? eixoInclinacaoLateralLocal.normalized
+                : Vector3.forward;
+
+            float sinalOposto = -Mathf.Sign(deltaMouseXFrame);
+
+            springCabeca.ApplyImpulse(eixoLateralLocal, sinalOposto * forcaInclinacaoLateralCabeca * Time.deltaTime);
         }
     }
 

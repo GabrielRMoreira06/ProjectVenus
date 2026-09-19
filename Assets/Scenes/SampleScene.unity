@@ -2909,6 +2909,7 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
+  - component: {fileID: 963194229}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -2990,6 +2991,46 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &963194229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f627bf0553c66f4478a7c7e9865edb07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PingPongMover
+  pointA: {fileID: 2070031565}
+  pointB: {fileID: 1025640419}
+  moveDuration: 2
+  waitTime: 5
+  easing:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!114 &967423637 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: -3212963471410073333, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -3034,6 +3075,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
+--- !u!4 &1025640419 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+  m_PrefabInstance: {fileID: 1451538355}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1081268543 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1167450774845303786, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -3725,6 +3771,63 @@ MonoBehaviour:
   useFixedDirection: 1
   pokeDirection: {x: 0, y: 1, z: 1}
   useFixedBaseRotation: 0
+--- !u!1001 &1451538355
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.005
+      objectReference: {fileID: 0}
+    - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.681
+      objectReference: {fileID: 0}
+    - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.308
+      objectReference: {fileID: 0}
+    - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.0115292175
+      objectReference: {fileID: 0}
+    - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.0042974264
+      objectReference: {fileID: 0}
+    - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.9375149
+      objectReference: {fileID: 0}
+    - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.3477275
+      objectReference: {fileID: 0}
+    - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -40.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 178.592
+      objectReference: {fileID: 0}
+    - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -0.003
+      objectReference: {fileID: 0}
+    - target: {fileID: 8921116976025517005, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
+      propertyPath: m_Name
+      value: camera_judge_anchor (1)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
 --- !u!114 &1470489273 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8791349455627530152, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -5236,11 +5339,13 @@ MonoBehaviour:
   colisorCabeca: {fileID: 1648487616}
   ossoCabeca: {fileID: 28482346}
   anguloMaximoArco: 45
-  sensibilidadeArrasto: 0.2
+  sensibilidadeArrasto: 0.8
   sensibilidadeImpulso: 40
   impulsoMaximo: 25
   forcaInclinacaoFrente: 3
   eixoInclinacaoFrenteLocal: {x: 1, y: 0, z: 0}
+  forcaInclinacaoLateralCabeca: 2
+  eixoInclinacaoLateralLocal: {x: 0, y: 0, z: 1}
   inclinacaoMaximaMao: 17
   curvaInclinacaoMao: 2.5
   headFollowMouseIK: {fileID: 174286450}
@@ -5254,13 +5359,6 @@ MonoBehaviour:
   barraCarinho: {fileID: 123542165}
   containerBarraCarinho: {fileID: 1796001813}
   distanciaAngularParaCompletar: 720
-  textoEfeitoConclusao: "\u2764"
-  pontoEfeitoConclusao: {fileID: 1319326409}
-  fonteEfeitoConclusao: {fileID: 11400000, guid: 051fac532de57304f858aa04788a9566, type: 2}
-  corEfeitoConclusao: {r: 1, g: 0.4, b: 0.7, a: 1}
-  tamanhoFonteEfeitoConclusao: 3
-  distanciaSubidaEfeitoConclusao: 0.5
-  duracaoEfeitoConclusao: 1.5
   tempoLimiteSegundos: 180
   responseListener: {fileID: 1537105287}
 --- !u!136 &1990866546
@@ -5358,6 +5456,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
+--- !u!1 &2070031564
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2070031565}
+  m_Layer: 0
+  m_Name: camera_main_anchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2070031565
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2070031564}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: 0, y: 0.76, z: 6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &2078956225 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: -2163051166863604616, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -5433,3 +5562,5 @@ SceneRoots:
   - {fileID: 1828601338}
   - {fileID: 1796001814}
   - {fileID: 855955699}
+  - {fileID: 2070031565}
+  - {fileID: 1451538355}
