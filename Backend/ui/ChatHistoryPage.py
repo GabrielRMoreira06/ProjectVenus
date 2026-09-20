@@ -105,6 +105,14 @@ class ChatHistoryPage(QWidget):
         self.messages_layout.addStretch()
 
         self.chat_scroll.setWidget(content)
+
+        # rangeChanged fires exactly when the scrollable content height changes
+        # (e.g. right after a new bubble is inserted), so it's a more reliable
+        # trigger than a singleShot(0) call placed right after insertWidget.
+        self.chat_scroll.verticalScrollBar().rangeChanged.connect(
+            lambda _min, _max: self._scroll_to_bottom()
+        )
+
         return self.chat_scroll
 
     def _build_input_bar(self):
@@ -137,8 +145,9 @@ class ChatHistoryPage(QWidget):
 
         insert_index = self.messages_layout.count() - 1
         self.messages_layout.insertWidget(insert_index, bubble)
-
-        QTimer.singleShot(0, self._scroll_to_bottom)
+        # rangeChanged (connected in _build_chat_area) now handles scrolling,
+        # so the previous QTimer.singleShot(0, self._scroll_to_bottom) call
+        # is no longer needed here.
 
     def _scroll_to_bottom(self):
         scrollbar = self.chat_scroll.verticalScrollBar()

@@ -59,7 +59,7 @@ FIRST_BOOT_MESSAGE = (
 
 class BootManager:
 
-    def __init__(self, state_file="boot_state.json", skip_boot_message=False):
+    def __init__(self, state_file="boot_state.json", skip_boot_message=True):
         self.state_file = Path(state_file)
         self.state = self._load_state()
         # Controls only the NORMAL boot greeting (see _run_normal_boot).

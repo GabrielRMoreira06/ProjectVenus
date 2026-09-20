@@ -81,6 +81,7 @@ ACTION_CATALOG = {
     "SCREAM": ("Scream", "Distorts her voice into a harsh, blown-out scream for one line."),
     "REMINDER": ("Reminders", "Sets a timed reminder that she brings up again later."),
     "FLIP": ("Flip", "Spins her whole body 360 degrees clockwise."),
+    "JUDGE": ("Judge stare", "Moves in close to stare at you for a moment."),
     "ORGANIZEFILES": ("Organize downloads", "Sorts loose files in your Downloads folder into subfolders by type."),
 }
 

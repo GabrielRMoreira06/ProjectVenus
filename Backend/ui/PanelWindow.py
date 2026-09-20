@@ -79,12 +79,23 @@ class NavButton(QPushButton):
 
     def set_active(self, active):
         self._active = active
+        self._update_icon_color()
+        self._apply_style()
 
-        icon_color = "white" if active else PINK_SOFT
+    def _update_icon_color(self, hovered=False):
+        icon_color = "white" if (self._active or hovered) else PINK_SOFT
         self.setIcon(qta.icon(self.icon_name, color=icon_color))
         self.setIconSize(QSize(20, 20))
 
-        self._apply_style()
+    def enterEvent(self, event):
+        if not self._active:
+            self._update_icon_color(hovered=True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        if not self._active:
+            self._update_icon_color(hovered=False)
+        super().leaveEvent(event)
 
     def _apply_style(self):
         if self._active:
@@ -122,7 +133,10 @@ class AvatarCircle(QLabel):
         super().__init__()
         self.setFixedSize(78, 78)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.initials = initials
+        self.set_image(image_path)
 
+    def set_image(self, image_path):
         if image_path and os.path.exists(image_path):
             pixmap = QPixmap(image_path)
             if not pixmap.isNull():
@@ -131,7 +145,7 @@ class AvatarCircle(QLabel):
                 return
 
         # Fallback if image path is invalid or missing
-        self.setText(initials)
+        self.setText(self.initials)
         self.setStyleSheet(f"""
             background-color: {BG_BUBBLE};
             border: 2px solid {PINK};
@@ -140,6 +154,7 @@ class AvatarCircle(QLabel):
             font-size: 24px;
             font-weight: bold;
         """)
+
 
     def _make_circular_pixmap(self, src_pixmap, size, border_width=2):
         scaled = src_pixmap.scaled(
@@ -377,7 +392,21 @@ class PanelWindow(QWidget):
 
         header = QHBoxLayout()
         header.setSpacing(10)
-        header.addWidget(AvatarCircle(image_path=profile_image_path, initials="V"))
+        self.avatar = AvatarCircle(image_path=profile_image_path, initials="V")
+        header.addWidget(self.avatar)
+
+        MOOD_IMAGE_MAP = {
+            "ANGER": "venus_angry.png",
+            "BORED": "venus_bored.png",
+            "TIRED": "venus_tired.png",
+            "POUTY": "venus_pouty.png",
+            "NORMAL": "venus_profile.png",
+        }
+
+        def set_avatar_mood(self, mood_state):
+            filename = MOOD_IMAGE_MAP.get(mood_state.upper(), "venus_profile.png")
+            image_path = os.path.join(ASSETS_DIR, filename)
+            self.avatar.set_image(image_path)
 
         name_column = QVBoxLayout()
         name_column.setSpacing(2)
@@ -427,7 +456,7 @@ class PanelWindow(QWidget):
             }}
             QProgressBar::chunk {{
                 background-color: {PINK};
-                border-radius: 2px;
+                border-radius: 5px;
             }}
         """)
         layout.addWidget(self.xp_bar)

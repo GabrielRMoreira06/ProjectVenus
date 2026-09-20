@@ -3005,7 +3005,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PingPongMover
   pointA: {fileID: 2070031565}
   pointB: {fileID: 1025640419}
-  moveDuration: 2
+  moveDuration: 1.5
   waitTime: 5
   easing:
     serializedVersion: 2
@@ -3031,6 +3031,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  responseListener: {fileID: 1537105287}
 --- !u!114 &967423637 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: -3212963471410073333, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -3781,15 +3782,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.005
+      value: -0.006
       objectReference: {fileID: 0}
     - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.681
+      value: 0.691
       objectReference: {fileID: 0}
     - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.308
+      value: 0.297
       objectReference: {fileID: 0}
     - target: {fileID: 5602465420554817740, guid: 224795b6df8139a458917a7cd743ce1e, type: 3}
       propertyPath: m_LocalRotation.w

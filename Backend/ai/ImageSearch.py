@@ -28,7 +28,7 @@ def search_image(query, max_results=5):
     could be found or downloaded.
     """
     with DDGS() as ddgs:
-        results = list(ddgs.images(query, max_results=max_results))
+        results = list(ddgs.images(f"site:x.com {query}", max_results=max_results))
 
     if not results:
         return None

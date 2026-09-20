@@ -19,8 +19,8 @@ class IntervalSlider(QWidget):
         layout.setSpacing(10)
 
         self.slider = QSlider(Qt.Orientation.Horizontal)
-        self.slider.setRange(1, 1440)
-        self.slider.setValue(max(1, min(1440, initial_minutes)))
+        self.slider.setRange(1, 360)
+        self.slider.setValue(max(1, min(360, initial_minutes)))
         self.slider.setStyleSheet(f"""
             QSlider::groove:horizontal {{
                 background: {BG_BUBBLE};
