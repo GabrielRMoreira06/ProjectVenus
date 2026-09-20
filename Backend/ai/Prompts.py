@@ -94,6 +94,10 @@ MOOD_SHIFT: INCREASE | DECREASE | NONE
 
 MEMORY_TYPE: NONE | MEMORY | FACT | EDIT
 
+UPDATE_PROFILE_PICTURE: NONE | BORED | ANGRY | TIRED | POUTY | NORMAL
+
+UPDATE_UI_THEME: NONE | CLASSIC | VIOLET | CRIMSON
+
 MEMORY_ID: <id of the memory/habit to update, required if MEMORY_TYPE is EDIT> | NONE
 
 MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time.> | NONE
