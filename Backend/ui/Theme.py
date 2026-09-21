@@ -31,6 +31,13 @@ THEMES = {
     },
 }
 
+# Maps Gemini's UPDATE_UI_THEME enum values to THEMES keys.
+THEME_ALIASES = {
+    "CLASSIC": "classic_pink",
+    "VIOLET": "violet_dusk",
+    "CRIMSON": "crimson_night",
+}
+
 _current_scheme_name = "classic_pink"
 
 

@@ -45,7 +45,8 @@ from one_time_run.HardwareInspector import HardwareInspect
 from one_time_run.MemoryCleanupManager import MemoryCleanupCheck
 from one_time_run.OneTimeManager import OneTimeManager
 from ui.TextInput import start_input_window
-
+import ui.Theme as Theme
+from ui.PanelWindow import avatar_signals
 
 
 app = Flask(__name__)
@@ -203,6 +204,14 @@ def queue_response(result):
 
     audio_path = result.pop("audio_path", None)
     result["audio"] = f"{BASE_URL}/audio/{_register_audio(audio_path)}" if audio_path else None
+
+    update_ui_theme = result.pop("update_ui_theme", "NONE")
+    if update_ui_theme in Theme.THEME_ALIASES:
+        Theme.set_theme(Theme.THEME_ALIASES[update_ui_theme])
+
+    update_profile_picture = result.pop("update_profile_picture", "NONE")
+    if update_profile_picture != "NONE":
+        avatar_signals.mood_changed.emit(update_profile_picture)
 
     action = result.get("action")
 

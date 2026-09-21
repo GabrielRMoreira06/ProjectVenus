@@ -82,6 +82,7 @@ ACTION_CATALOG = {
     "REMINDER": ("Reminders", "Sets a timed reminder that she brings up again later."),
     "FLIP": ("Flip", "Spins her whole body 360 degrees clockwise."),
     "JUDGE": ("Judge stare", "Moves in close to stare at you for a moment."),
+    "CLEANDISK": ("Clean disk", "Deletes temp files to free up disk space."),
     "ORGANIZEFILES": ("Organize downloads", "Sorts loose files in your Downloads folder into subfolders by type."),
 }
 

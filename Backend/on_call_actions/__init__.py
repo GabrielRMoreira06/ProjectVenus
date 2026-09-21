@@ -25,10 +25,12 @@ from on_call_actions.FileOrganizer import organize_files
 from on_call_actions.FindFile import find_file
 from on_call_actions.KeyboardControl import keyboard_control
 from on_call_actions.Reminder import set_reminder
-
+from on_call_actions.CleanDIsk import clean_disk
 ON_CALL_ACTIONS = {
     "FINDFILE": find_file,
     "KEYBOARDCONTROL": keyboard_control,
     "REMINDER": set_reminder,
     "ORGANIZEFILES": organize_files,
+    "CLEANDISK": clean_disk,
+
 }

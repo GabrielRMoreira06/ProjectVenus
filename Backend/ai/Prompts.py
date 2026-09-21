@@ -68,6 +68,9 @@ ACTIONS = {
     "ORGANIZEFILES": [
         "ORGANIZEFILES: sort loose files in the user's Downloads folder into subfolders by type (Images, Documents, Videos, Music). Doesn't need a query — you won't know the result yet, a short follow-up will come later.",
     ],
+    "CLEANDISK": [
+    "CLEANDISK: clear temporary files to free up disk space. Doesn't need a query — you won't know the result yet, a short follow-up will come later.",
+    ],
 }
 
 # The subset of ACTIONS that's specifically about interacting with the
@@ -94,7 +97,7 @@ MOOD_SHIFT: INCREASE | DECREASE | NONE
 
 MEMORY_TYPE: NONE | MEMORY | FACT | EDIT
 
-UPDATE_PROFILE_PICTURE: NONE | BORED | ANGRY | TIRED | POUTY | NORMAL
+UPDATE_PROFILE_PICTURE: NONE | BORED | ANGER | TIRED | POUTY | NORMAL
 
 UPDATE_UI_THEME: NONE | CLASSIC | VIOLET | CRIMSON
 

@@ -36,7 +36,7 @@ import threading
 from pathlib import Path
 
 from PIL import Image
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QImage
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
@@ -45,7 +45,7 @@ from PyQt6.QtWidgets import (
 import qtawesome as qta
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from ui.ImageUtils import qimage_to_pil, pil_to_qpixmap
-from ui.Theme import PINK, PINK_SOFT, BG_BUBBLE, BG_PANEL
+import ui.Theme as Theme
 from ai.PdfSummarizer import pdf_summarizer
 
 # Curated set rather than a full OS emoji panel — Qt has no built-in
@@ -74,10 +74,77 @@ class PastableTextEdit(QTextEdit):
       in keyPressEvent, rather than via QShortcut: QTextEdit consumes
       Key_Return itself in its own keyPressEvent, so a WidgetShortcut
       on Key_Return never reliably wins against it.
+    - The widget grows in height as text wraps onto more lines (up to
+      max_lines), instead of staying a fixed height with an internal
+      scrollbar from the first character.
     """
 
     image_pasted = pyqtSignal(object)  # emits a PIL.Image
     send_requested = pyqtSignal()
+
+    def __init__(self, min_lines=1, max_lines=5, parent=None):
+        """
+        min_lines/max_lines bound the auto-grow range: the box starts
+        at min_lines tall and expands as the user types, up to
+        max_lines, at which point a scrollbar takes over instead of
+        the widget growing further.
+        """
+        super().__init__(parent)
+        self._min_lines = min_lines
+        self._max_lines = max_lines
+
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+
+        # documentSizeChanged fires on every content change (typing,
+        # pasting, programmatic clear()) - textChanged would also work
+        # but fires before layout has settled on the wrapped line
+        # count, which would make the height lag one keystroke behind.
+        #
+        # We don't resize synchronously from inside this signal: Qt
+        # can emit it mid-layout/mid-stylesheet-polish, and calling
+        # setFixedHeight() right then re-enters that same layout pass.
+        # That reentrancy is what was causing the stylesheet (icons,
+        # borders) to intermittently fall back to native/unstyled
+        # rendering - not a crash, just a corrupted paint. Deferring
+        # the actual resize to the next event-loop turn via
+        # QTimer.singleShot(0, ...) lets the current layout/style pass
+        # finish first, so it doesn't fight itself.
+        self.document().documentLayout().documentSizeChanged.connect(self._schedule_adjust_height)
+        self._adjust_height()
+
+    def _line_height(self):
+        return self.fontMetrics().lineSpacing()
+
+    def _schedule_adjust_height(self, *_args):
+        QTimer.singleShot(0, self._adjust_height)
+
+    def _adjust_height(self, *_args):
+        # document().size().height() already bakes in documentMargin()
+        # on both top and bottom - it is NOT extra padding on top of
+        # that, so it must only be added once here (for min/max_height,
+        # which are derived from line count rather than from the
+        # document itself) and never added again on top of
+        # content_height, or every size ends up ~2*doc_margin too
+        # tall (visually: the box looks like it starts a whole line
+        # taller than it should).
+        margins = self.contentsMargins()
+        doc_margin = self.document().documentMargin()
+        frame = self.frameWidth()
+        chrome = margins.top() + margins.bottom() + 2 * frame
+
+        min_height = self._line_height() * self._min_lines + 2 * doc_margin + chrome
+        max_height = self._line_height() * self._max_lines + 2 * doc_margin + chrome
+        content_height = self.document().size().height() + chrome
+
+        target_height = max(min_height, min(content_height, max_height))
+        self.setFixedHeight(int(round(target_height)))
+
+        self.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+            if content_height > max_height
+            else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
 
     def insertFromMimeData(self, source):
         if source.hasImage():
@@ -103,6 +170,11 @@ class EmojiPicker(QWidget):
     Small popup grid of emoji buttons, anchored below whatever button
     opened it. Qt.WindowType.Popup closes it automatically on any
     click outside — no manual dismiss logic needed.
+
+    Short-lived by nature (opens, picks/dismisses, closes), so it just
+    reads Theme.* once at build time rather than subscribing to
+    theme_signals — nothing to keep in sync for a widget that won't
+    outlive a single click.
     """
 
     emoji_selected = pyqtSignal(str)
@@ -112,8 +184,8 @@ class EmojiPicker(QWidget):
 
         self.setStyleSheet(f"""
             QWidget {{
-                background-color: {BG_PANEL};
-                border: 1px solid {PINK};
+                background-color: {Theme.BG_PANEL};
+                border: 1px solid {Theme.PINK};
                 border-radius: 8px;
             }}
             QPushButton {{
@@ -122,7 +194,7 @@ class EmojiPicker(QWidget):
                 font-size: 18px;
             }}
             QPushButton:hover {{
-                background-color: {BG_BUBBLE};
+                background-color: {Theme.BG_BUBBLE};
                 border-radius: 4px;
             }}
         """)
@@ -165,6 +237,9 @@ class MessageComposer(QWidget):
         else:
             self._build_full(placeholder)
 
+        Theme.theme_signals.changed.connect(self._apply_style)
+        self._apply_style()  # apply immediately too - don't rely solely on the theme signal firing
+
     # ------------------------------------------------------------------
     # Layouts
     # ------------------------------------------------------------------
@@ -190,15 +265,6 @@ class MessageComposer(QWidget):
         self.remove_image_button.setFixedSize(22, 22)
         self.remove_image_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.remove_image_button.clicked.connect(self._remove_image)
-        self.remove_image_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: transparent;
-                border: 1px solid {PINK};
-                border-radius: 11px;
-                color: {PINK_SOFT};
-            }}
-            QPushButton:hover {{ color: white; }}
-        """)
 
         preview_row.addWidget(self.preview_label)
         preview_row.addWidget(self.remove_image_button)
@@ -208,68 +274,35 @@ class MessageComposer(QWidget):
         bar = QHBoxLayout()
         bar.setSpacing(10)
 
-        emoji_button = QPushButton()
-        emoji_button.setIcon(qta.icon("fa5s.smile", color=PINK_SOFT, color_active="white"))
-        emoji_button.setIconSize(QSize(18, 18))
+        self.emoji_button = QPushButton()
+        self.emoji_button.clicked.connect(lambda: self._open_emoji_picker(self.emoji_button))
 
-        emoji_button.clicked.connect(lambda: self._open_emoji_picker(emoji_button))
+        self.attach_button = QPushButton()
+        self.attach_button.clicked.connect(self._open_attach_dialog)
+        self.attach_button.clicked.connect(self._open_attach_dialog)
 
-        attach_button = QPushButton()
-        attach_button.setIcon(qta.icon("fa5s.paperclip", color=PINK_SOFT, color_active="white"))
-        attach_button.setIconSize(QSize(18, 18))
-        attach_button.clicked.connect(self._open_attach_dialog)
-        attach_button.clicked.connect(self._open_attach_dialog)
-
-        self.text_edit = PastableTextEdit()
+        # min_lines=1/max_lines=5: starts as a single-line bar and
+        # grows upward as the user types multi-line messages, instead
+        # of staying pinned at 36px with a scrollbar from line two.
+        self.text_edit = PastableTextEdit(min_lines=1, max_lines=5)
         self.text_edit.setPlaceholderText(placeholder)
-        self.text_edit.setFixedHeight(36)
-        self.text_edit.setStyleSheet("""
-            QTextEdit {
-                background-color: transparent;
-                color: white;
-                border: none;
-                padding: 6px 2px;
-                font-size: 13px;
-            }
-        """)
         self.text_edit.image_pasted.connect(self._on_image_pasted)
         self.text_edit.send_requested.connect(self.send)
 
         self.send_button = QPushButton()
-        self.send_button.setIcon(qta.icon("fa5s.paper-plane", color="white", color_disabled="#888888"))
-        self.send_button.setIconSize(QSize(16, 16))
 
-        for button in (emoji_button, attach_button, self.send_button):
+        for button in (self.emoji_button, self.attach_button, self.send_button):
             button.setFixedSize(36, 36)
             button.setCursor(Qt.CursorShape.PointingHandCursor)
-            button.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: transparent;
-                    border: 1px solid {PINK};
-                    border-radius: 8px;
-                    color: {PINK_SOFT};
-                }}
-                QPushButton:hover {{ color: white; }}
-                QPushButton:disabled {{ color: #666; border-color: #555; }}
-            """)
 
-        self.send_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {PINK};
-                border: none;
-                border-radius: 8px;
-                color: white;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{ background-color: {PINK_SOFT}; }}
-            QPushButton:disabled {{ background-color: #555; }}
-        """)
         self.send_button.clicked.connect(self.send)
 
-        bar.addWidget(emoji_button)
+        # Aligned to the bottom so the icon row stays put against the
+        # panel's bottom edge while the text field grows upward.
+        bar.addWidget(self.emoji_button, alignment=Qt.AlignmentFlag.AlignBottom)
         bar.addWidget(self.text_edit, stretch=1)
-        bar.addWidget(attach_button)
-        bar.addWidget(self.send_button)
+        bar.addWidget(self.attach_button, alignment=Qt.AlignmentFlag.AlignBottom)
+        bar.addWidget(self.send_button, alignment=Qt.AlignmentFlag.AlignBottom)
 
         outer.addLayout(bar)
 
@@ -279,18 +312,11 @@ class MessageComposer(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(8)
 
-        self.text_edit = PastableTextEdit()
+        # min_lines=3/max_lines=10: this popup already started taller
+        # than the compact bar, so it gets a taller auto-grow range
+        # before it starts scrolling internally.
+        self.text_edit = PastableTextEdit(min_lines=3, max_lines=10)
         self.text_edit.setPlaceholderText(placeholder)
-        self.text_edit.setStyleSheet(f"""
-            QTextEdit {{
-                background-color: {BG_BUBBLE};
-                color: white;
-                border: 1px solid {PINK};
-                border-radius: 8px;
-                padding: 8px;
-                font-size: 13px;
-            }}
-        """)
         self.text_edit.image_pasted.connect(self._on_image_pasted)
         self.text_edit.send_requested.connect(self.send)
         outer.addWidget(self.text_edit)
@@ -303,42 +329,122 @@ class MessageComposer(QWidget):
         button_row = QHBoxLayout()
 
         self.status_label = QLabel("")
-        self.status_label.setStyleSheet(f"color: {PINK_SOFT}; font-size: 11px;")
         button_row.addWidget(self.status_label)
         button_row.addStretch()
 
         self.remove_image_button = QPushButton("Remove image")
         self.remove_image_button.setVisible(False)
         self.remove_image_button.clicked.connect(self._remove_image)
-        self.remove_image_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: transparent;
-                border: 1px solid {PINK};
-                border-radius: 6px;
-                color: {PINK_SOFT};
-                padding: 4px 10px;
-            }}
-            QPushButton:hover {{ color: white; }}
-        """)
         button_row.addWidget(self.remove_image_button)
 
         self.send_button = QPushButton("Send")
         self.send_button.clicked.connect(self.send)
+        button_row.addWidget(self.send_button)
+
+        outer.addLayout(button_row)
+
+    # ------------------------------------------------------------------
+    # Theming
+    # ------------------------------------------------------------------
+
+    def _apply_style(self):
+        if self.compact:
+            self._apply_compact_style()
+        else:
+            self._apply_full_style()
+
+    def _apply_compact_style(self):
+        self.remove_image_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: 1px solid {Theme.PINK};
+                border-radius: 11px;
+                color: {Theme.PINK_SOFT};
+            }}
+            QPushButton:hover {{ color: white; }}
+        """)
+
+        self.emoji_button.setIcon(qta.icon("fa5s.smile", color=Theme.PINK_SOFT, color_active="white"))
+        self.emoji_button.setIconSize(QSize(18, 18))
+
+        self.attach_button.setIcon(qta.icon("fa5s.paperclip", color=Theme.PINK_SOFT, color_active="white"))
+        self.attach_button.setIconSize(QSize(18, 18))
+
+        self.text_edit.setStyleSheet("""
+            QTextEdit {
+                background-color: transparent;
+                color: white;
+                border: none;
+                padding: 6px 2px;
+                font-size: 13px;
+            }
+        """)
+
+        self.send_button.setIcon(qta.icon("fa5s.paper-plane", color="white", color_disabled="#888888"))
+        self.send_button.setIconSize(QSize(16, 16))
+
+        for button in (self.emoji_button, self.attach_button):
+            button.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: transparent;
+                    border: 1px solid {Theme.PINK};
+                    border-radius: 8px;
+                    color: {Theme.PINK_SOFT};
+                }}
+                QPushButton:hover {{ color: white; }}
+                QPushButton:disabled {{ color: #666; border-color: #555; }}
+            """)
+
         self.send_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {PINK};
+                background-color: {Theme.PINK};
+                border: none;
+                border-radius: 8px;
+                color: white;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{ background-color: {Theme.PINK_SOFT}; }}
+            QPushButton:disabled {{ background-color: #555; }}
+        """)
+
+    def _apply_full_style(self):
+        self.text_edit.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {Theme.BG_BUBBLE};
+                color: white;
+                border: 1px solid {Theme.PINK};
+                border-radius: 8px;
+                padding: 8px;
+                font-size: 13px;
+            }}
+        """)
+
+        if self.status_label is not None:
+            self.status_label.setStyleSheet(f"color: {Theme.PINK_SOFT}; font-size: 11px;")
+
+        self.remove_image_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                border: 1px solid {Theme.PINK};
+                border-radius: 6px;
+                color: {Theme.PINK_SOFT};
+                padding: 4px 10px;
+            }}
+            QPushButton:hover {{ color: white; }}
+        """)
+
+        self.send_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Theme.PINK};
                 border: none;
                 border-radius: 8px;
                 color: white;
                 font-weight: bold;
                 padding: 6px 14px;
             }}
-            QPushButton:hover {{ background-color: {PINK_SOFT}; }}
+            QPushButton:hover {{ background-color: {Theme.PINK_SOFT}; }}
             QPushButton:disabled {{ background-color: #555; }}
         """)
-        button_row.addWidget(self.send_button)
-
-        outer.addLayout(button_row)
 
     # ------------------------------------------------------------------
     # Emoji picker

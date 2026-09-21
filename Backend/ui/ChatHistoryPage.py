@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollAr
 from ai.ChatHistory import chat_history
 from ui.ImageUtils import pil_to_qpixmap
 from ui.MessageComposer import MessageComposer
-from ui.Theme import PINK, PINK_SOFT, BG_BUBBLE
+import ui.Theme as Theme
 
 THUMBNAIL_MAX_SIZE = (200, 150)
 
@@ -31,24 +31,15 @@ class ChatBubble(QFrame):
                 alignment=Qt.AlignmentFlag.AlignRight if side == "right" else Qt.AlignmentFlag.AlignLeft,
             )
 
+        self._text_bubble = None
         if text:
-            bubble = QLabel(text)
-            bubble.setWordWrap(True)
-            bubble.setStyleSheet(f"""
-                QLabel {{
-                    background-color: {BG_BUBBLE};
-                    color: white;
-                    padding: 14px 18px;
-                    border-radius: 12px;
-                    font-size: 16px;
-                }}
-            """)
-            column.addWidget(bubble)
+            self._text_bubble = QLabel(text)
+            self._text_bubble.setWordWrap(True)
+            column.addWidget(self._text_bubble)
 
-        time_label = QLabel(timestamp)
-        time_label.setStyleSheet(f"color: {PINK_SOFT}; font-size: 11px;")
+        self._time_label = QLabel(timestamp)
         column.addWidget(
-            time_label,
+            self._time_label,
             alignment=Qt.AlignmentFlag.AlignRight if side == "right" else Qt.AlignmentFlag.AlignLeft,
         )
 
@@ -61,6 +52,22 @@ class ChatBubble(QFrame):
         else:
             row.addStretch()
             row.addLayout(column)
+
+        self._apply_style()
+        Theme.theme_signals.changed.connect(self._apply_style)
+
+    def _apply_style(self):
+        if self._text_bubble is not None:
+            self._text_bubble.setStyleSheet(f"""
+                QLabel {{
+                    background-color: {Theme.BG_BUBBLE};
+                    color: white;
+                    padding: 14px 18px;
+                    border-radius: 12px;
+                    font-size: 16px;
+                }}
+            """)
+        self._time_label.setStyleSheet(f"color: {Theme.PINK_SOFT}; font-size: 11px;")
 
 
 class ChatHistoryPage(QWidget):
@@ -85,17 +92,19 @@ class ChatHistoryPage(QWidget):
 
         chat_history.subscribe(lambda message: self.message_added.emit(message))
 
+        Theme.theme_signals.changed.connect(self._apply_input_bar_style)
+
     def _build_chat_area(self):
         self.chat_scroll = QScrollArea()
         self.chat_scroll.setWidgetResizable(True)
-        self.chat_scroll.setStyleSheet(f"""
-            QScrollArea {{
+        self.chat_scroll.setStyleSheet("""
+            QScrollArea {
                 background-color: #080108;
                 border: none;
-            }}
-            QScrollArea > QWidget > QWidget {{
+            }
+            QScrollArea > QWidget > QWidget {
                 background-color: #080108;
-            }}
+            }
         """)
 
         content = QWidget()
@@ -116,17 +125,10 @@ class ChatHistoryPage(QWidget):
         return self.chat_scroll
 
     def _build_input_bar(self):
-        bar = QFrame()
-        bar.setStyleSheet(f"""
-            QFrame {{
-                background-color: #16051a;
-                border: 2px solid {PINK};
-                border-radius: 16px;
-            }}
-        """)
-        bar.setMinimumHeight(64)
+        self._input_bar = QFrame()
+        self._input_bar.setMinimumHeight(64)
 
-        layout = QHBoxLayout(bar)
+        layout = QHBoxLayout(self._input_bar)
         layout.setContentsMargins(14, 10, 14, 10)
 
         self.composer = MessageComposer(
@@ -134,7 +136,18 @@ class ChatHistoryPage(QWidget):
         )
         layout.addWidget(self.composer)
 
-        return bar
+        self._apply_input_bar_style()
+
+        return self._input_bar
+
+    def _apply_input_bar_style(self):
+        self._input_bar.setStyleSheet(f"""
+            QFrame {{
+                background-color: #16051a;
+                border: 2px solid {Theme.PINK};
+                border-radius: 16px;
+            }}
+        """)
 
     def _append_message(self, message):
         side = "right" if message["role"] == "user" else "left"

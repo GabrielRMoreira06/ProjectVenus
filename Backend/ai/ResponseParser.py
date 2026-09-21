@@ -19,6 +19,7 @@ VALID_ACTIONS = {
     "FLIP",
     "ORGANIZEFILES",
     "JUDGE",
+    "CLEANDISK",
 }
 
 
@@ -40,6 +41,8 @@ class ResponseParser:
         reminder_minutes = "NONE"
         select_days = "NONE"
         reminder_time = "NONE"
+        update_profile_picture = "NONE"
+        update_ui_theme = "NONE"
 
         for line in response_text.splitlines():
 
@@ -87,6 +90,12 @@ class ResponseParser:
             elif line.startswith("REMINDER_TIME:"):
                 reminder_time = line.replace("REMINDER_TIME:", "").strip()
 
+            elif line.startswith("UPDATE_PROFILE_PICTURE:"):
+                update_profile_picture = line.replace("UPDATE_PROFILE_PICTURE:", "").strip()
+
+            elif line.startswith("UPDATE_UI_THEME:"):
+                update_ui_theme = line.replace("UPDATE_UI_THEME:", "").strip()
+
         if action not in VALID_ACTIONS:
             print(f"[ResponseParser] Unknown ACTION received from Gemini: '{action}' — using NONE instead.")
             action = "NONE"
@@ -107,4 +116,6 @@ class ResponseParser:
             "reminder_minutes": reminder_minutes,
             "select_days": select_days,
             "reminder_time": reminder_time,
+            "update_profile_picture": update_profile_picture,
+            "update_ui_theme": update_ui_theme,
         }

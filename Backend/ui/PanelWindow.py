@@ -3,7 +3,7 @@ import sys
 from ai.EXPManager import exp_manager
 import keyboard
 import qtawesome as qta
-from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal, QObject
 from PyQt6.QtGui import QFontDatabase, QPixmap, QPainter, QPainterPath, QColor, QPen
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
@@ -32,6 +32,17 @@ MOOD_IMAGE_MAP = {
     "POUTY": "venus_pouty.png",
     "NORMAL": "venus_profile.png",
 }
+
+
+class _AvatarSignals(QObject):
+    mood_changed = pyqtSignal(str)
+
+
+# Cross-thread bridge for set_avatar_mood(): Orchestrator's worker
+# thread can't touch PanelWindow's QLabel/QPixmap directly, so
+# Server.py emits this instead of calling the method — same pattern
+# as Theme.theme_signals.
+avatar_signals = _AvatarSignals()
 
 _oxanium_family = None
 
@@ -321,6 +332,7 @@ class PanelWindow(QWidget):
         self.resize(950, 560)
 
         self.toggle_requested.connect(self.toggle)
+        avatar_signals.mood_changed.connect(self.set_avatar_mood)
 
         root = QHBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -460,11 +472,15 @@ class PanelWindow(QWidget):
         layout.addSpacing(4)
         layout.addWidget(self._divider)
 
-        layout.addWidget(self._build_profile_section())
-        layout.addStretch()
-
+        # Created before _build_profile_section() — that method's last
+        # line calls _apply_heart_icon(), which needs this to already
+        # exist. Layout position (after the stretch, below) is set by
+        # addWidget() order, not by when the widget was created.
         self._sidebar_heart = QLabel()
         self._sidebar_heart.setStyleSheet("border: none; background: transparent;")
+
+        layout.addWidget(self._build_profile_section())
+        layout.addStretch()
         layout.addWidget(self._sidebar_heart, alignment=Qt.AlignmentFlag.AlignLeft)
 
         return sidebar
