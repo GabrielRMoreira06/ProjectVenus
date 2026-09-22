@@ -140,6 +140,7 @@ class NavButton(QPushButton):
                     background-color: #16051a;
                     color: {Theme.PINK_SOFT};
                     border: none;
+                    border-radius: 12px;
                     font-size: 18px;
                 }}
                 QPushButton:hover {{
@@ -336,7 +337,7 @@ class PanelWindow(QWidget):
 
         root = QHBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(14)
+        root.setSpacing(4)
 
         self._sidebar_frame = self._build_sidebar()
         root.addWidget(self._sidebar_frame)

@@ -12,7 +12,7 @@ THEMES = {
         "PINK": "#ff2fb0",
         "PINK_SOFT": "#ff7fce",
         "BG_DARK": "#0a0007",
-        "BG_PANEL": "#170a14",
+        "BG_PANEL": "#170a14",#1b0c16
         "BG_BUBBLE": "#1f0f1c",
     },
     "violet_dusk": {

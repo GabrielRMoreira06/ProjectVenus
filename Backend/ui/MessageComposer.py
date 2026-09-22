@@ -283,7 +283,8 @@ class MessageComposer(QWidget):
 
         # min_lines=1/max_lines=5: starts as a single-line bar and
         # grows upward as the user types multi-line messages, instead
-        # of staying pinned at 36px with a scrollbar from line two.
+        # of staying pinned at a fixed height with a scrollbar from
+        # line two.
         self.text_edit = PastableTextEdit(min_lines=1, max_lines=5)
         self.text_edit.setPlaceholderText(placeholder)
         self.text_edit.image_pasted.connect(self._on_image_pasted)
@@ -291,18 +292,24 @@ class MessageComposer(QWidget):
 
         self.send_button = QPushButton()
 
+        # Smaller than before (was 36) so the whole bar sits closer to
+        # the height of one line of text instead of towering over it.
         for button in (self.emoji_button, self.attach_button, self.send_button):
-            button.setFixedSize(36, 36)
+            button.setFixedSize(28, 28)
             button.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.send_button.clicked.connect(self.send)
 
-        # Aligned to the bottom so the icon row stays put against the
-        # panel's bottom edge while the text field grows upward.
-        bar.addWidget(self.emoji_button, alignment=Qt.AlignmentFlag.AlignBottom)
-        bar.addWidget(self.text_edit, stretch=1)
-        bar.addWidget(self.attach_button, alignment=Qt.AlignmentFlag.AlignBottom)
-        bar.addWidget(self.send_button, alignment=Qt.AlignmentFlag.AlignBottom)
+        # Vertically centered rather than bottom-aligned: with the
+        # icons now shorter than a single line of text, bottom-aligning
+        # them left visible daylight above each icon. Centering keeps
+        # everything sitting on the same visual midline while the text
+        # field is at its 1-line resting height, and still looks fine
+        # once it grows.
+        bar.addWidget(self.emoji_button, alignment=Qt.AlignmentFlag.AlignVCenter)
+        bar.addWidget(self.text_edit, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter)
+        bar.addWidget(self.attach_button, alignment=Qt.AlignmentFlag.AlignVCenter)
+        bar.addWidget(self.send_button, alignment=Qt.AlignmentFlag.AlignVCenter)
 
         outer.addLayout(bar)
 
@@ -365,30 +372,30 @@ class MessageComposer(QWidget):
         """)
 
         self.emoji_button.setIcon(qta.icon("fa5s.smile", color=Theme.PINK_SOFT, color_active="white"))
-        self.emoji_button.setIconSize(QSize(18, 18))
+        self.emoji_button.setIconSize(QSize(14, 14))
 
         self.attach_button.setIcon(qta.icon("fa5s.paperclip", color=Theme.PINK_SOFT, color_active="white"))
-        self.attach_button.setIconSize(QSize(18, 18))
+        self.attach_button.setIconSize(QSize(14, 14))
 
         self.text_edit.setStyleSheet("""
             QTextEdit {
                 background-color: transparent;
                 color: white;
                 border: none;
-                padding: 6px 2px;
+                padding: 2px 2px;
                 font-size: 13px;
             }
         """)
 
         self.send_button.setIcon(qta.icon("fa5s.paper-plane", color="white", color_disabled="#888888"))
-        self.send_button.setIconSize(QSize(16, 16))
+        self.send_button.setIconSize(QSize(13, 13))
 
         for button in (self.emoji_button, self.attach_button):
             button.setStyleSheet(f"""
                 QPushButton {{
                     background-color: transparent;
                     border: 1px solid {Theme.PINK};
-                    border-radius: 8px;
+                    border-radius: 14px;
                     color: {Theme.PINK_SOFT};
                 }}
                 QPushButton:hover {{ color: white; }}
@@ -399,7 +406,7 @@ class MessageComposer(QWidget):
             QPushButton {{
                 background-color: {Theme.PINK};
                 border: none;
-                border-radius: 8px;
+                border-radius: 14px;
                 color: white;
                 font-weight: bold;
             }}
