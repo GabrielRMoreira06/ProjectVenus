@@ -33,7 +33,7 @@ import wave
 import numpy as np
 from scipy import signal
 from config import PIPER_MODEL_PATH
-
+from Preferences import preferences
 
 class TTSWorker:
 
@@ -185,11 +185,6 @@ class TTSWorker:
             wf.writeframes(output.tobytes())
 
     def generate_audio(self, text):
-        """
-        Returns the path to a WAV file with `text` spoken in Venus's
-        voice. While skip_synthesis is True, returns a placeholder file
-        instead of running the model at all.
-        """
         if self.skip_synthesis:
             return r"C:\Users\User\Documents\ProjectVenus\Backend\audio.wav"
 
@@ -202,7 +197,12 @@ class TTSWorker:
             with wave.open(output_file.name, "wb") as wav_file:
                 voice.synthesize_wav(text, wav_file)
 
-            self._apply_robotic_effect(output_file.name)
+            if preferences.is_robotic_effect_enabled():
+                self._apply_robotic_effect(output_file.name)
+
+            volume = preferences.get_voice_volume()
+            if volume != 100:
+                self._apply_volume(output_file.name, volume)
 
             return output_file.name
 
@@ -210,6 +210,26 @@ class TTSWorker:
             import traceback
             traceback.print_exc()
             raise
+
+    @staticmethod
+    def _apply_volume(wav_path, volume_percent):
+        gain = max(0, volume_percent) / 100.0
+
+        with wave.open(wav_path, "rb") as wf:
+            n_channels = wf.getnchannels()
+            sampwidth = wf.getsampwidth()
+            framerate = wf.getframerate()
+            n_frames = wf.getnframes()
+            raw = wf.readframes(n_frames)
+
+        audio = np.frombuffer(raw, dtype=np.int16).astype(np.float32)
+        scaled = np.clip(audio * gain, -32768, 32767).astype(np.int16)
+
+        with wave.open(wav_path, "wb") as wf:
+            wf.setnchannels(n_channels)
+            wf.setsampwidth(sampwidth)
+            wf.setframerate(framerate)
+            wf.writeframes(scaled.tobytes())
 
 
 # Shared instance, same pattern as `mood` and `worker` elsewhere —

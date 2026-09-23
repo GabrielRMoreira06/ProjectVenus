@@ -2,9 +2,10 @@
 Preferences.py
 
 Persists which "interactions" — passive monitors and Gemini-decided
-ACTIONS — are enabled, and at what interval the monitors poll. Same
-pattern as MoodController/MemoryManager: one JSON file, loaded once,
-rewritten on every change.
+ACTIONS — are enabled, and at what interval the monitors poll. Also
+persists standalone app settings (voice volume, effects) that aren't
+tied to a monitor or action. Same pattern as MoodController/
+MemoryManager: one JSON file, loaded once, rewritten on every change.
 
 Two kinds of interaction, because they're controlled differently:
   - MONITORS: background threads with a real polling interval (see
@@ -15,6 +16,9 @@ Two kinds of interaction, because they're controlled differently:
     ai/Prompts.py). There's no polling interval — Gemini decides
     per-turn — so only `enabled` applies. Disabling one removes it
     from the prompt entirely the next time GeminiWorker builds one.
+
+SETTINGS: plain key/value app settings with no catalog — no
+enable/interval split needed, just a value each.
 
 id -> (label, description, default_interval_seconds) for monitors,
 id -> (label, description) for actions. These double as the catalog
@@ -86,6 +90,10 @@ ACTION_CATALOG = {
     "ORGANIZEFILES": ("Organize downloads", "Sorts loose files in your Downloads folder into subfolders by type."),
 }
 
+DEFAULT_VOICE_VOLUME = 100
+DEFAULT_ROBOTIC_EFFECT = True
+DEFAULT_START_WITH_WINDOWS = False
+
 
 class Preferences:
 
@@ -106,6 +114,13 @@ class Preferences:
             saved = state.get("actions", {}).get(action_id, {})
             self.actions[action_id] = {"enabled": saved.get("enabled", True)}
 
+        saved_settings = state.get("settings", {})
+        self.settings = {
+            "voice_volume": saved_settings.get("voice_volume", DEFAULT_VOICE_VOLUME),
+            "robotic_effect": saved_settings.get("robotic_effect", DEFAULT_ROBOTIC_EFFECT),
+            "start_with_windows": saved_settings.get("start_with_windows", DEFAULT_START_WITH_WINDOWS),
+        }
+
         self._listeners = []
 
     def _load(self):
@@ -121,15 +136,15 @@ class Preferences:
             return {}
 
     def _save(self):
-        state = {"monitors": self.monitors, "actions": self.actions}
+        state = {"monitors": self.monitors, "actions": self.actions, "settings": self.settings}
         with open(self.file_path, "w", encoding="utf-8") as f:
             json.dump(state, f, ensure_ascii=False, indent=4)
 
     def subscribe(self, listener):
         """
         listener(kind, item_id) is called after any change — kind is
-        "monitor" or "action". PassiveMonitor uses this to push
-        enabled/interval changes into the actual running monitor
+        "monitor", "action", or "setting". PassiveMonitor uses this to
+        push enabled/interval changes into the actual running monitor
         threads without a restart.
         """
         self._listeners.append(listener)
@@ -178,6 +193,34 @@ class Preferences:
         self.actions[action_id]["enabled"] = enabled
         self._save()
         self._notify("action", action_id)
+
+    # ------------------------------------------------------------------
+    # Settings
+    # ------------------------------------------------------------------
+
+    def get_voice_volume(self):
+        return self.settings.get("voice_volume", DEFAULT_VOICE_VOLUME)
+
+    def set_voice_volume(self, percent):
+        self.settings["voice_volume"] = max(0, min(100, int(percent)))
+        self._save()
+        self._notify("setting", "voice_volume")
+
+    def is_robotic_effect_enabled(self):
+        return self.settings.get("robotic_effect", DEFAULT_ROBOTIC_EFFECT)
+
+    def set_robotic_effect_enabled(self, enabled):
+        self.settings["robotic_effect"] = bool(enabled)
+        self._save()
+        self._notify("setting", "robotic_effect")
+
+    def is_start_with_windows_enabled(self):
+        return self.settings.get("start_with_windows", DEFAULT_START_WITH_WINDOWS)
+
+    def set_start_with_windows_enabled(self, enabled):
+        self.settings["start_with_windows"] = bool(enabled)
+        self._save()
+        self._notify("setting", "start_with_windows")
 
 
 # Shared instance, same pattern as `mood`/`worker` elsewhere.

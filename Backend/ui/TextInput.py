@@ -1,4 +1,3 @@
-import os
 import sys
 
 import keyboard
@@ -6,13 +5,14 @@ import qtawesome as qta
 from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QFrame,
+    QApplication, QVBoxLayout, QHBoxLayout,
+    QLabel, QPushButton,
 )
 
 from ui.MessageComposer import MessageComposer
-from ui.PanelWindow import PanelWindow, DraggableFrame, _load_oxanium_family
-from ui.Theme import PINK, PINK_SOFT, BG_DARK, BG_PANEL, BG_BUBBLE
+from ui.PanelWindow import PanelWindow, DraggableFrame
+from ui.Constants import load_oxanium_family
+from ui.Theme import PINK, PINK_SOFT, BG_DARK
 
 
 class InputWindow(DraggableFrame):
@@ -26,7 +26,7 @@ class InputWindow(DraggableFrame):
         self.on_close = on_close or (lambda: None)
 
         self._positioned = False
-        self.font_family = _load_oxanium_family()
+        self.font_family = load_oxanium_family()
 
         self.setWindowTitle("Talk to Venus")
         self.setWindowFlags(
