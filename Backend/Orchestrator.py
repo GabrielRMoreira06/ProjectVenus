@@ -4,24 +4,13 @@ Orchestrator.py
 Single serialization point for every request Venus needs to process
 (user questions, system checks, monitor-triggered comments, ...).
 
-Why this exists:
-  - The AI chat session is a single, shared conversation — sending two
-    messages to it at the same time could interleave turns or corrupt
-    the history.
-  - Only one thing should ever be "in flight" toward the user (one
-    speech bubble, one audio clip) at a time.
+One worker thread processes one request at a time, in priority order,
+with a minimum spacing enforced between deliveries. Every request
+declares a `category`, which sets both its priority and its log label.
 
-This module solves both problems with a single worker thread that
-processes one request at a time, in priority order, with a minimum
-spacing enforced between deliveries.
-
-Every request submitted via `add()` must declare a `category`. The
-category is used for two things at once:
-  1. PRIORITY — determines processing order (user requests always jump
-     ahead of system/monitor ones).
-  2. LABEL — identifies the request in logs.
-There is no separate priority argument to keep in sync with a label —
-category is the single source of truth for both.
+Sync requests that time out on the caller's side are marked
+"abandoned": the builder still runs to completion, and its result is
+delivered through on_result instead of being dropped.
 """
 
 import heapq
@@ -31,14 +20,9 @@ import time
 
 
 class Category:
-    """
-    Built-in categories and their processing priority (lower runs
-    first). Add new categories here as new request sources are
-    introduced — each one just needs a priority tier.
-    """
-    USER = "user"        # direct question typed/spoken by the user
-    SYSTEM = "system"    # boot message, one-time checks (hardware, disk...)
-    MONITOR = "monitor"  # passive monitors (idle, mood, hardware alerts...)
+    USER = "user"
+    SYSTEM = "system"
+    MONITOR = "monitor"
 
     _PRIORITIES = {
         USER: 0,
@@ -57,23 +41,8 @@ class Category:
 
 
 class Orchestrator:
-    """
-    Sole manager of the request queue. Callers submit work via `add()`;
-    a background thread pulls requests in priority order and runs them
-    one at a time, never in parallel.
-    """
 
     def __init__(self, on_result=None, min_delivery_spacing=3.0):
-        """
-        on_result: called with the return value of any ASYNC request's
-        builder once it finishes. Sync requests (see add(..., sync=True))
-        return their result directly to the caller instead of going
-        through this callback.
-
-        min_delivery_spacing: minimum seconds enforced between the end
-        of one request and the start of the next, so deliveries never
-        stack on top of each other on the receiving end (Unity).
-        """
         self.on_result = on_result
         self.min_delivery_spacing = min_delivery_spacing
 
@@ -100,14 +69,6 @@ class Orchestrator:
             self._new_item.notify_all()
 
     def pause(self):
-        """
-        Halts dispatch: nothing new starts running until resume() is
-        called, no matter what's sitting in the queue or gets added
-        while paused. Requests can still be queued during a pause —
-        they just wait. Used for things like the first-boot name
-        question, where nothing else should interrupt until it's
-        answered.
-        """
         with self._new_item:
             self._paused = True
 
@@ -120,32 +81,13 @@ class Orchestrator:
 
         print("[Orchestrator] Resumed.")
 
-    def add(self, category, builder, sync=False, timeout=60):
+    def add(self, category, builder, sync=False, timeout=120):
         """
-        Submits a request to the queue.
-
-        category (required): one of the Category constants (or a custom
-        string registered in Category._PRIORITIES). Determines both the
-        processing order and the label used in logs.
-
-        builder: a zero-argument function that performs the actual work
-        (call the AI, generate audio, capture the screen, ...) and
-        returns a result. Passed as a function — not already executed —
-        so the work only starts once it's actually this request's turn.
-        This is what guarantees only one builder ever runs at a time.
-
-        sync: if True, blocks the calling thread until the request is
-        processed and returns the result directly. Any exception raised
-        by builder is re-raised here, in the caller's thread. Use this
-        for requests that need an immediate answer (e.g. an HTTP route
-        that must respond with a result).
-        If False (default), returns immediately (None) and the result,
-        once ready, is delivered asynchronously via on_result. Use this
-        for anything that doesn't have a caller waiting on the spot
-        (monitors, background checks).
-
-        timeout: only used when sync=True — seconds to wait before
-        raising TimeoutError if the request hasn't been processed yet.
+        sync=False: returns None immediately; the result goes to on_result.
+        sync=True: blocks until processed and returns the result. If
+        `timeout` elapses first, TimeoutError is raised in the caller,
+        but the request is NOT lost — its result is delivered through
+        on_result once it finishes.
         """
         priority = Category.priority_of(category)
 
@@ -160,7 +102,13 @@ class Orchestrator:
             return None
 
         if not event.wait(timeout=timeout):
-            raise TimeoutError(f"Request '{category}' was not processed in time.")
+            with self._lock:
+                if not event.is_set():
+                    request.abandoned = True
+                    print(f"[Orchestrator] Sync '{category}' timed out after {timeout}s "
+                          f"(paused={self._paused}, queued={len(self._queue)}) — "
+                          f"result will be delivered via on_result.")
+                    raise TimeoutError(f"Request '{category}' was not processed in time.")
 
         if request.error is not None:
             raise request.error
@@ -200,7 +148,10 @@ class Orchestrator:
             time.sleep(remaining)
 
     def _process(self, request):
-        print(f"[Orchestrator] Processing '{request.category}'.")
+        waited = time.time() - request.queued_at
+        print(f"[Orchestrator] Processing '{request.category}' (waited {waited:.1f}s in queue).")
+
+        started = time.time()
 
         try:
             result = request.builder()
@@ -211,11 +162,20 @@ class Orchestrator:
             request.error = error
             result = None
 
+        print(f"[Orchestrator] '{request.category}' builder took {time.time() - started:.1f}s.")
+
         self._last_delivery = time.time()
 
         if request.sync:
-            request.result = result
-            request.event.set()
+            with self._lock:
+                request.result = result
+                abandoned = request.abandoned
+                if not abandoned:
+                    request.event.set()
+
+            if abandoned and result is not None and self.on_result is not None:
+                self.on_result(result)
+
             return
 
         if result is not None and self.on_result is not None:
@@ -223,7 +183,7 @@ class Orchestrator:
 
 
 class _Request:
-    __slots__ = ("category", "builder", "sync", "event", "result", "error")
+    __slots__ = ("category", "builder", "sync", "event", "result", "error", "abandoned", "queued_at")
 
     def __init__(self, category, builder, sync, event):
         self.category = category
@@ -232,3 +192,5 @@ class _Request:
         self.event = event
         self.result = None
         self.error = None
+        self.abandoned = False
+        self.queued_at = time.time()

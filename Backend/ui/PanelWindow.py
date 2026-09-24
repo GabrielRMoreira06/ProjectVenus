@@ -287,6 +287,7 @@ class PanelWindow(QWidget):
 def start_panel_window(process_question, hotkey="ctrl+alt+h"):
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
+    app.setStyleSheet("QPushButton { outline: none; }")
 
     window = PanelWindow(process_question)
     keyboard.add_hotkey(hotkey, window.toggle_requested.emit)

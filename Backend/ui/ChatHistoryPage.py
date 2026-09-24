@@ -97,14 +97,22 @@ class ChatHistoryPage(QWidget):
     def _build_chat_area(self):
         self.chat_scroll = QScrollArea()
         self.chat_scroll.setWidgetResizable(True)
-        self.chat_scroll.setStyleSheet("""
-            QScrollArea {
+        self.chat_scroll.setStyleSheet(f"""
+            QScrollArea {{
                 background-color: #080108;
                 border: none;
-            }
-            QScrollArea > QWidget > QWidget {
+            }}
+            QScrollArea > QWidget > QWidget {{
                 background-color: #080108;
-            }
+            }}
+
+            /* Fundo da barra de rolagem */
+            QScrollBar:vertical {{
+                background-color: {Theme.BG_BUBBLE};
+                width: 6px;
+                margin: 0px;
+                border: none;
+            }}
         """)
 
         content = QWidget()
