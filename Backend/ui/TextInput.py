@@ -1,6 +1,3 @@
-import sys
-
-import keyboard
 import qtawesome as qta
 from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -12,7 +9,7 @@ from PyQt6.QtWidgets import (
 from ui.MessageComposer import MessageComposer
 from ui.PanelWindow import PanelWindow, DraggableFrame
 from ui.Constants import load_oxanium_family
-from ui.Theme import PINK, PINK_SOFT, BG_DARK
+import ui.Theme as Theme
 
 
 class InputWindow(DraggableFrame):
@@ -26,8 +23,9 @@ class InputWindow(DraggableFrame):
         self.on_close = on_close or (lambda: None)
 
         self._positioned = False
-        self.font_family = load_oxanium_family()
+        self._font_family = load_oxanium_family()
 
+        self.setObjectName("inputWindow")
         self.setWindowTitle("Talk to Venus")
         self.setWindowFlags(
             Qt.WindowType.WindowStaysOnTopHint
@@ -38,16 +36,6 @@ class InputWindow(DraggableFrame):
         self.setFixedSize(440, 260)
 
         self.toggle_requested.connect(self.toggle)
-
-        self.setStyleSheet(f"""
-            DraggableFrame {{
-                background-color: {BG_DARK};
-                border: 1px solid {PINK};
-                border-radius: 14px;
-                color: white;
-                font-family: "{self.font_family}";
-            }}
-        """)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 14)
@@ -63,49 +51,65 @@ class InputWindow(DraggableFrame):
         self.composer.send_started.connect(self.hide_window)
         layout.addWidget(self.composer, stretch=1)
 
-        # Escape key closes window
         QShortcut(QKeySequence(Qt.Key.Key_Escape), self, activated=self.hide_window)
+
+        # Applied here (not left for a later theme change) so the window
+        # is styled correctly the moment it's constructed — see the same
+        # fix in PanelWindow._on_theme_changed.
+        self._apply_style()
+        Theme.theme_signals.changed.connect(self._apply_style)
+
+    def _apply_style(self):
+        self.setStyleSheet(f"""
+            #inputWindow {{
+                background-color: {Theme.BG_PANEL};
+                border: 1px solid {Theme.PINK};
+                border-radius: 18px;
+                font-family: "{self._font_family}";
+            }}
+        """)
+        self._icon_label.setPixmap(qta.icon("fa5s.comment-dots", color=Theme.PINK).pixmap(QSize(16, 16)))
+        self._title_label.setStyleSheet(
+            "color: white; font-size: 15px; font-weight: bold; border: none; background: transparent;")
+        self._apply_close_button_style()
+
+    def _apply_close_button_style(self):
+        self._close_button.setIcon(qta.icon("fa5s.times", color=Theme.PINK_SOFT, color_active="white"))
+        self._close_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #16051a;
+                border: 1px solid {Theme.PINK};
+                border-radius: 10px;
+                color: {Theme.PINK_SOFT};
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {Theme.PINK};
+                color: white;
+            }}
+        """)
 
     def _build_header(self):
         header = QHBoxLayout()
         header.setSpacing(8)
 
-        icon_label = QLabel()
-        icon_label.setPixmap(qta.icon("fa5s.comment-dots", color=PINK).pixmap(QSize(16, 16)))
-        icon_label.setStyleSheet("border: none; background: transparent;")
+        self._icon_label = QLabel()
+        self._icon_label.setStyleSheet("border: none; background: transparent;")
 
-        title_label = QLabel("Talk to Venus")
-        title_label.setStyleSheet("color: white; font-size: 14px; font-weight: bold; border: none; background: transparent;")
+        self._title_label = QLabel("Talk to Venus")
 
-        header.addWidget(icon_label)
-        header.addWidget(title_label)
+        header.addWidget(self._icon_label)
+        header.addWidget(self._title_label)
         header.addStretch()
 
-        close_button = QPushButton()
-        close_button.setIcon(qta.icon("fa5s.times", color=PINK_SOFT, color_active="white"))
-        close_button.setIconSize(QSize(14, 14))
-        close_button.setFixedSize(28, 28)
-        close_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        close_button.clicked.connect(self.hide_window)
-        close_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #16051a;
-                border: 1px solid {PINK};
-                border-radius: 8px;
-                color: {PINK_SOFT};
-            }}
-            QPushButton:hover {{
-                background-color: {PINK};
-                color: white;
-            }}
-        """)
-        header.addWidget(close_button)
+        self._close_button = QPushButton()
+        self._close_button.setIconSize(QSize(14, 14))
+        self._close_button.setFixedSize(28, 28)
+        self._close_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._close_button.clicked.connect(self.hide_window)
+        header.addWidget(self._close_button)
 
         return header
-
-    # ------------------------------------------------------------------
-    # Show/hide
-    # ------------------------------------------------------------------
 
     def show_window(self):
         if not self._positioned:
@@ -129,22 +133,3 @@ class InputWindow(DraggableFrame):
             self.hide_window()
         else:
             self.show_window()
-
-
-def start_input_window(process_question, on_open=None, on_close=None, hotkey="ctrl+alt+t", open_automatically=False):
-    app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(False)
-
-    window = InputWindow(process_question, on_open=on_open, on_close=on_close)
-
-    keyboard.add_hotkey(hotkey, window.toggle_requested.emit)
-    print(f"[text_input_window] Hotkey '{hotkey}' registered globally.")
-
-    panel_window = PanelWindow(process_question)
-    keyboard.add_hotkey("ctrl+alt+h", panel_window.toggle_requested.emit)
-    print("[text_input_window] Hotkey 'ctrl+alt+h' registered globally (PanelWindow).")
-
-    if open_automatically:
-        QTimer.singleShot(500, window.show_window)
-
-    sys.exit(app.exec())

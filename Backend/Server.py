@@ -44,7 +44,7 @@ from one_time_run.DiskInspector import DiskInspect
 from one_time_run.HardwareInspector import HardwareInspect
 from one_time_run.MemoryCleanupManager import MemoryCleanupCheck
 from one_time_run.OneTimeManager import OneTimeManager
-from ui.TextInput import start_input_window
+from ui.AppBootsTrap import run as run_app
 import ui.Theme as Theme
 from ui.PanelWindow import avatar_signals
 
@@ -73,6 +73,7 @@ def health():
 # directly, so it's registered here under a one-time id and served
 # back over HTTP; the response that actually reaches Unity gets an
 # "image" URL instead of the raw path.
+
 
 _pending_images_lock = threading.Lock()
 _pending_images = {}  # image_id -> local file path
@@ -402,7 +403,7 @@ if __name__ == "__main__":
     # to open immediately — otherwise the user has no way of knowing
     # they're expected to answer. Any other time, it only opens via the
     # hotkey.
-    start_input_window(process_question, open_automatically=boot_manager.is_waiting_for_name())
+    run_app(process_question, open_automatically=boot_manager.is_waiting_for_name())
 
 
 

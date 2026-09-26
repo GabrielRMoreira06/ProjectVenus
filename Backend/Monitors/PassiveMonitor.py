@@ -16,14 +16,16 @@ Preferences.MONITOR_CATALOG) so _on_preference_changed can find the
 right running instance later when the Preferences tab flips a
 checkbox or drags a slider — no restart needed, see BaseMonitor.
 
+Anger is no longer a polling monitor here — MoodController now fires
+its DEADPIXEL interaction directly off a threshold check inside
+adjust() (see ai/MoodController.py).
+
 To add a new passive monitor: subclass BaseMonitor in Monitors/, add
 it to Preferences.MONITOR_CATALOG with a description and default
 interval, then add it to _default_monitors() below.
 """
 
-from Monitors.MoodMonitors.AngerMonitor import AngerMonitor
-from Monitors.MoodMonitors.BoredomMonitor import BoredomMonitor
-from Monitors.MoodMonitors.EnergyMonitor import EnergyMonitor
+
 from Monitors.GenericInteraction import GenericInteractionMonitor
 from Monitors.HadwereMonitor import HardwareMonitor
 from Monitors.ProcessMonitor import ProcessMonitor
@@ -44,12 +46,9 @@ class PassiveMonitor:
 
     def _default_monitors(self):
         return [
-            self._build("boredom", BoredomMonitor),
             self._build("hardware", HardwareMonitor),
             self._build("uptime", UptimeMonitor),
             self._build("process", ProcessMonitor),
-            self._build("anger", AngerMonitor),
-            self._build("energy", EnergyMonitor),
             self._build("screenpeek", ScreenPeekMonitor),
             self._build("generic_interaction", GenericInteractionMonitor),
             self._build("email", EmailMonitor),

@@ -20,23 +20,25 @@ Design notes:
     once per GenericInteractionMonitor firing. Regular user messages
     never carry the memory block.
   - The RESPONSE RULES / RESPONSE RULES EXPLANATION sent to Gemini are
-    no longer static strings — they're built fresh from
-    preferences.enabled_actions() on every prompt (see ai/Prompts.py),
-    so toggling an ACTION off in the Preferences tab takes effect on
-    the very next request, no restart needed.
+    built from the action ids permitted for THIS call — see
+    allowed_actions below. A normal call shows the full regular
+    catalog (Preferences only decides whether a *pick* gets denied
+    after the fact, see the ACTION check below); a restricted call
+    (e.g. a mood threshold offering only one escalation action) shows
+    just that narrower ACTION line instead.
 """
 
 from datetime import datetime
 import time
-
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-
 from config import GEMINI_KEY
 from Preferences import preferences
+from Orchestrator import Category
 from ai.Prompts import (
     SYSTEM_INSTRUCTIONS,
+    ACTIONS,
     build_response_rules,
     build_response_rules_explanation,
 )
@@ -85,11 +87,20 @@ class GeminiWorker:
 
         self._request_count = 0
 
-    def run(self, user_text=None, image=None, include_memory=False):
+    def run(self, user_text=None, image=None, include_memory=False, allowed_actions=None):
         """
         Sends one message to the ongoing chat session and returns a
         parsed dict (text/action/image_query/mood_variant/mood_shift/
         memory_type/memory_text/memory_expire/audio_path/image_path).
+
+        allowed_actions: which ACTIONs are offered/permitted for THIS
+        call. None (default) = a normal turn — prompt shows the full
+        regular catalog (ai/Prompts.ACTIONS), and a pick is denied
+        after the fact if the user disabled it in Preferences. Pass an
+        explicit set/list to restrict the prompt itself to just those
+        actions (plus the always-implicit NONE) — used for narrow,
+        call-scoped offers like a mood threshold that should only ever
+        offer one specific action.
 
         include_memory: whether to include the full VENUS MEMORY block
         in this prompt. Callers opt in explicitly — currently only the
@@ -111,7 +122,8 @@ class GeminiWorker:
             prompt = self._build_prompt(
                 user_text,
                 include_memory,
-                include_rules_explanation
+                include_rules_explanation,
+                allowed_actions,
             )
 
             content = [prompt] if image is None else [prompt, image]
@@ -146,13 +158,14 @@ class GeminiWorker:
 
             parsed = self.parser.parse(response.text)
 
-            # Defense in depth: even though a disabled action is no
-            # longer offered in the prompt (see _build_prompt), the
-            # chat history may still contain older turns that mention
-            # it — force it back to NONE rather than let it leak
-            # through to Unity.
-            if parsed["action"] != "NONE" and parsed["action"] not in preferences.enabled_actions():
+            permitted_actions = (
+                set(allowed_actions) if allowed_actions is not None else preferences.enabled_actions()
+            )
+
+            if parsed["action"] != "NONE" and parsed["action"] not in permitted_actions:
+                denied_action = parsed["action"]
                 parsed["action"] = "NONE"
+                self._deny_action(denied_action)
 
             # Silent responses (empty TEXT) have nothing to speak.
             parsed["audio_path"] = (
@@ -190,6 +203,24 @@ class GeminiWorker:
             print("ERROR IN GeminiWorker.run:", error)
             raise
 
+    def _deny_action(self, action):
+        """
+        Tells Gemini, as a follow-up SYSTEM message, that the action it
+        just picked was denied — instead of silently dropping it.
+        `orchestrator` is looked up lazily via sys.modules["__main__"],
+        same reason as Reminder.py/EXPManager.py: Server.py constructs
+        it after this module is imported.
+        """
+        print(f"[GeminiWorker] Action '{action}' denied for this request.")
+
+        import sys
+        orchestrator = sys.modules["__main__"].orchestrator
+
+        def builder():
+            return self.run(user_text=f"[SYSTEM MESSAGE: you tried to use {action} but it was denied.]")
+
+        orchestrator.add(Category.SYSTEM, builder)
+
     def _resolve_image(self, parsed):
         """
         When Gemini's own ACTION is SHOWIMAGE, it comes with an
@@ -216,20 +247,21 @@ class GeminiWorker:
         self,
         user_text,
         include_memory,
-        include_rules_explanation
+        include_rules_explanation,
+        allowed_actions=None,
     ):
-        enabled_actions = preferences.enabled_actions()
+        action_ids = list(ACTIONS.keys()) if allowed_actions is None else list(allowed_actions)
 
         sections = [
             f"TIME: {datetime.now().strftime('%H:%M')}",
             f"=== VENUS MOOD ===\n{self.mood.get_prompt()}",
-            f"=== RESPONSE RULES ===\n{build_response_rules(enabled_actions)}",
+            f"=== RESPONSE RULES ===\n{build_response_rules(action_ids)}",
         ]
 
         if include_rules_explanation:
             sections.append(
                 f"=== RESPONSE RULES EXPLANATION ===\n"
-                f"{build_response_rules_explanation(enabled_actions)}"
+                f"{build_response_rules_explanation(action_ids)}"
             )
 
             print(

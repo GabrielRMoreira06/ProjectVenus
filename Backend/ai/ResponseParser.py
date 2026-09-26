@@ -20,6 +20,8 @@ VALID_ACTIONS = {
     "ORGANIZEFILES",
     "JUDGE",
     "CLEANDISK",
+    "DEADPIXEL",
+    "LOWERBRIGHTNESS",
 }
 
 

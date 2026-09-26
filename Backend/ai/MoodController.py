@@ -9,10 +9,30 @@ Kept intentionally simple: one JSON file, no history, no decay over
 time. If idle-drift ("mood slowly resets if nothing happens") is ever
 wanted, that belongs in a monitor that calls into this controller, not
 in this class.
+
+MOOD ESCALATIONS: crossing a threshold fires a one-off Gemini call,
+restricted to a single action, right here in adjust() — replacing the
+old interval-polling AngerMonitor/EnergyMonitor. Each escalation's
+action description is passed inline in the SYSTEM MESSAGE itself
+rather than registered in ai/Prompts.py — these actions only ever
+appear in these restricted calls, never on a normal turn, so there's
+no shared catalog entry worth keeping. `worker` and `orchestrator` are
+looked up lazily, inside each _fire_*_interaction (not at module load
+time): ai.GeminiWorker imports THIS module, so a top-level import here
+would be circular, and `orchestrator` is constructed in Server.py
+after this module is first imported (same sys.modules["__main__"]
+pattern as Reminder.py/EXPManager.py). Each `_*_alert_firing` flag is
+the rearm guard — without it, every mood shift landing while an
+interaction is still queued/in-flight would trigger another one on
+top of it.
 """
 
 import json
 from pathlib import Path
+
+ANGER_ALERT_THRESHOLD = 85
+ENERGY_ALERT_THRESHOLD = 15
+BOREDOM_ALERT_THRESHOLD = 70
 
 
 class MoodVariant:
@@ -42,6 +62,12 @@ class MoodController:
         # One attribute per variant, lowercase (self.anger, self.energy, ...)
         for variant in MoodVariant.ALL:
             setattr(self, variant.lower(), state.get(variant.lower(), self.DEFAULT_VALUE))
+
+        self._anger_alert_firing = False
+        self._energy_alert_firing = False
+
+        self._total_volume_reduced = 0.0
+        self._total_brightness_reduced = 0
 
     # ------------------------------------------------------------------
     # Persistence
@@ -101,6 +127,13 @@ Do not mention the numbers.
         setattr(self, attribute, new_value)
         self._save()
 
+        if variant == MoodVariant.ANGER:
+            self._check_anger_threshold()
+        elif variant == MoodVariant.ENERGY:
+            self._check_energy_threshold()
+        elif variant == MoodVariant.BOREDOM:
+            self._check_boredom_threshold()
+
     def apply_shift(self, variant, shift, amount=8):
         """
         Applies a MOOD_SHIFT (INCREASE/DECREASE/NONE) to the attribute
@@ -119,6 +152,108 @@ Do not mention the numbers.
             self.adjust(variant, -amount)
         else:
             print(f"[MoodController] Unknown mood shift: '{shift}' — ignoring.")
+
+    # ------------------------------------------------------------------
+    # Anger escalation
+    # ------------------------------------------------------------------
+
+    def _check_anger_threshold(self):
+        if self.anger < ANGER_ALERT_THRESHOLD:
+            return
+
+        if self._anger_alert_firing:
+            return
+
+        self._anger_alert_firing = True
+        self._fire_anger_interaction()
+
+    def _fire_anger_interaction(self):
+        import sys
+        orchestrator = sys.modules["__main__"].orchestrator
+
+        from Orchestrator import Category
+        from ai.GeminiWorker import worker
+
+        print(f"[MoodController] Anger at {self.anger}, triggering DEADPIXEL interaction.")
+
+        def builder():
+            try:
+                result = worker.run(
+                    user_text="""
+                    [SYSTEM MESSAGE: your anger is too high. Pick your evil action.
+                    DEADPIXEL: silently draw a glitch on the user's screen]
+                    """,
+                    allowed_actions={"DEADPIXEL"},
+                )
+
+                if result["action"] == "DEADPIXEL":
+                    self.adjust(MoodVariant.ANGER, 50 - self.anger)
+
+                return result
+            finally:
+                self._anger_alert_firing = False
+
+        orchestrator.add(Category.MONITOR, builder)
+
+    # ------------------------------------------------------------------
+    # Energy escalation
+    # ------------------------------------------------------------------
+
+    def _check_energy_threshold(self):
+        if self.energy > ENERGY_ALERT_THRESHOLD:
+            return
+
+        if self._energy_alert_firing:
+            return
+
+        self._energy_alert_firing = True
+        self._fire_energy_interaction()
+
+    def _fire_energy_interaction(self):
+        import sys
+        orchestrator = sys.modules["__main__"].orchestrator
+
+        from Orchestrator import Category
+        from ai.GeminiWorker import worker
+        from on_call_actions.LowerBrightnessVolume import lower_brightness_volume
+
+        print(f"[MoodController] Energy at {self.energy}, triggering LOWERBRIGHTNESS interaction.")
+
+        def builder():
+            try:
+                result = worker.run(
+                    user_text="""
+                    [SYSTEM MESSAGE: your energy is too low. Pick your evil action.
+                    LOWERBRIGHTNESS: reduce the user's system volume and monitor brightness a little, reflecting your tiredness]
+                    """,
+                    allowed_actions={"LOWERBRIGHTNESS"},
+                )
+
+                if result["action"] == "LOWERBRIGHTNESS":
+                    lower_brightness_volume.run()
+                    self.adjust(MoodVariant.ENERGY, 50 - self.energy)
+
+                return result
+            finally:
+                self._energy_alert_firing = False
+
+        orchestrator.add(Category.MONITOR, builder)
+
+    # ------------------------------------------------------------------
+    # Boredom escalation
+    # ------------------------------------------------------------------
+
+    def _check_boredom_threshold(self):
+        if self.boredom < BOREDOM_ALERT_THRESHOLD:
+            return
+
+        if self._boredom_alert_firing:
+            return
+
+        self._boredom_alert_firing = True
+
+        from on_call_actions.BoredomInteraction import fire as fire_boredom_interaction
+        fire_boredom_interaction(self)
 
 
 # Shared instance used across the backend. Kept as a module-level

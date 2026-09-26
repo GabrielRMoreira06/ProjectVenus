@@ -126,6 +126,13 @@ public class AllowPetController : MonoBehaviour
     [Tooltip("ResponseListener que recebe as respostas do backend Python. Se vazio, tenta achar um na cena.")]
     public ResponseListener responseListener;
 
+    [Tooltip("AudioSource opcional que toca uma vez (PlayOneShot) assim que o script inicia. O clip deve estar atribuído no próprio AudioSource. Deixe vazio pra não tocar nada.")]
+    public AudioSource fonteSomInicio;
+
+    [Header("Eixo do impulso reativo principal (calibrar visualmente)")]
+    [Tooltip("Eixo LOCAL do osso da cabeça usado pro impulso reativo que segue o arrasto da mão. Se o comportamento visual não bater com a direção esperada (ex: cabeça balança pra frente/trás em vez de pros lados), troque esse eixo em vez de mexer no cálculo automático.")]
+    public Vector3 eixoImpulsoPrincipalLocal = Vector3.zero; // zero = usa o cálculo automático (Cross product)
+
     private PokeSpring springCabeca;
     private Camera cameraPrincipal;
     private bool arrastando = false;
@@ -262,6 +269,10 @@ public class AllowPetController : MonoBehaviour
     /// </summary>
     public void Iniciar()
     {
+        if (fonteSomInicio != null && fonteSomInicio.clip != null)
+        {
+            fonteSomInicio.PlayOneShot(fonteSomInicio.clip);
+        }
         Debug.Log("[AllowPetController][DEBUG] Iniciar() called. Click the log entry above to expand its call stack and see who called it.");
 
         if (pontoAncoragem == null || colisorCabeca == null)
@@ -582,7 +593,10 @@ public class AllowPetController : MonoBehaviour
         concluido = true;
 
         NotificarConcluido();
-
+        if (fonteSomInicio != null && fonteSomInicio.clip != null)
+        {
+            fonteSomInicio.PlayOneShot(fonteSomInicio.clip);
+        }
         Encerrar();
     }
 
@@ -631,20 +645,26 @@ public class AllowPetController : MonoBehaviour
         if (springCabeca == null || ossoCabeca == null) return;
         if (movimentoMundoNoFrame.sqrMagnitude < 0.0000001f) return;
 
-        Vector3 direcaoMundo = movimentoMundoNoFrame.normalized;
-        Vector3 eixoMundo = Vector3.Cross(direcaoMundo, Vector3.up);
-        Vector3 eixoLocal = ossoCabeca.InverseTransformDirection(eixoMundo);
+        Vector3 eixoLocal;
+        if (eixoImpulsoPrincipalLocal.sqrMagnitude > 0.0001f)
+        {
+            // Eixo calibrado manualmente no Inspector — sinal segue a direção do arrasto.
+            eixoLocal = eixoImpulsoPrincipalLocal.normalized * Mathf.Sign(deltaMouseXFrame);
+        }
+        else
+        {
+            // Fallback: cálculo automático original (Cross product), caso o campo não tenha sido configurado.
+            Vector3 direcaoMundo = movimentoMundoNoFrame.normalized;
+            Vector3 eixoMundo = Vector3.Cross(direcaoMundo, Vector3.up);
+            eixoLocal = ossoCabeca.InverseTransformDirection(eixoMundo);
+        }
 
         float forca = Mathf.Min(movimentoMundoNoFrame.magnitude * sensibilidadeImpulso, impulsoMaximo);
 
         springCabeca.ApplyImpulse(eixoLocal, forca);
 
-        // Além do impulso lateral vindo do movimento da mão, aplica um
-        // pequeno impulso constante de inclinação pra frente — só nos
-        // frames em que a mão está de fato se movendo (é por isso que
-        // esse bloco vive dentro do "early return" de movimento acima):
-        // segurar o botão parado no meio do arrasto não deve inclinar
-        // a cabeça, só o próprio movimento.
+        // Inclinação pra frente: independente do eixo principal acima, só
+        // nos frames em que a mão está de fato se movendo.
         if (forcaInclinacaoFrente > 0f)
         {
             Vector3 eixoFrenteLocal = eixoInclinacaoFrenteLocal.sqrMagnitude > 0.0001f
@@ -655,21 +675,28 @@ public class AllowPetController : MonoBehaviour
         }
 
         // Inclinação lateral pro lado OPOSTO ao movimento do mouse nesse
-        // frame: usa deltaMouseXFrame (entrada crua), não
-        // movimentoMundoNoFrame, pelo mesmo motivo documentado em
-        // AtualizarArrasto — a posição mundial da mão se mexe sozinha um
-        // pouco por causa do idle, o que geraria sinal instável. O sinal
-        // é invertido (-Sign) pra que a cabeça se afaste de leve do lado
-        // que a mão está empurrando, em vez de seguir a mão.
+        // frame. Projetada ortogonal a eixoLocal pra não ser engolida pelo
+        // impulso principal, com fallback pra Vector3.up se o eixo
+        // configurado for quase paralelo ao primário.
         if (forcaInclinacaoLateralCabeca > 0f && Mathf.Abs(deltaMouseXFrame) > 0.01f)
         {
-            Vector3 eixoLateralLocal = eixoInclinacaoLateralLocal.sqrMagnitude > 0.0001f
+            Vector3 eixoLateralConfigurado = eixoInclinacaoLateralLocal.sqrMagnitude > 0.0001f
                 ? eixoInclinacaoLateralLocal.normalized
                 : Vector3.forward;
 
+            Vector3 eixoLocalNormalizado = eixoLocal.sqrMagnitude > 0.0001f
+                ? eixoLocal.normalized
+                : Vector3.zero;
+
+            Vector3 eixoLateralOrtogonal = Vector3.ProjectOnPlane(eixoLateralConfigurado, eixoLocalNormalizado);
+
+            Vector3 eixoLateralFinal = eixoLateralOrtogonal.sqrMagnitude > 0.01f
+                ? eixoLateralOrtogonal.normalized
+                : Vector3.up;
+
             float sinalOposto = -Mathf.Sign(deltaMouseXFrame);
 
-            springCabeca.ApplyImpulse(eixoLateralLocal, sinalOposto * forcaInclinacaoLateralCabeca * Time.deltaTime);
+            springCabeca.ApplyImpulse(eixoLateralFinal, sinalOposto * forcaInclinacaoLateralCabeca * Time.deltaTime);
         }
     }
 

@@ -49,16 +49,6 @@ MONITOR_CATALOG = {
         "Flags a single process hogging CPU or RAM.",
         3600,
     ),
-    "anger": (
-        "Anger glitch",
-        "Draws a silent 'dead pixel' glitch on screen when her anger is high.",
-        3600,
-    ),
-    "energy": (
-        "Low-energy dimming",
-        "Nudges system volume and monitor brightness down a little when her energy is low.",
-        5000,
-    ),
     "screenpeek": (
         "Screen peeking",
         "Periodically takes a look at your screen and comments on it.",

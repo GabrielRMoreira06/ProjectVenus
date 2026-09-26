@@ -61,15 +61,15 @@ public class ResponseListener : MonoBehaviour
             StartCoroutine(PythonConnection.Instance.Get(responseEndpoint, HandleResponse));
         }
 
-        //fake JUDGE response for testing purposes
+        //fake ALLOWPET response for testing purposes
         if (Input.GetKeyDown(KeyCode.J))
         {
             VenusResponse fakeResponse = new VenusResponse
             {
-                text = "Fake JUDGE response",
-                action = "JUDGE"
+                text = "Fake ALLOWPET response",
+                action = "ALLOWPETi"
             };
-            Debug.Log("[ResponseListener] Simulating fake JUDGE response for testing.");
+            Debug.Log("[ResponseListener] Simulating fake ALLOWPET response for testing.");
             OnResponseReceived?.Invoke(fakeResponse);
         }
 

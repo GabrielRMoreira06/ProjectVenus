@@ -43,14 +43,7 @@ public class PingPongMover : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        //test spacebar to trigger the round trip movement
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            TriggerRoundTrip();
-        }
-    }
+
 
     private void Start()
     {
