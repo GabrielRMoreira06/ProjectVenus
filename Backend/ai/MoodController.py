@@ -103,10 +103,6 @@ Anger: {self.anger}/100
 Energy: {self.energy}/100
 Boredom: {self.boredom}/100
 Affection: {self.affection}/100
-
-These values represent your internal emotions.
-Let them influence your behavior naturally.
-Do not mention the numbers.
 """
 
     def adjust(self, variant, amount):

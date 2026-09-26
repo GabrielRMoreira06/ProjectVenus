@@ -42,7 +42,7 @@ class Category:
 
 class Orchestrator:
 
-    def __init__(self, on_result=None, min_delivery_spacing=3.0):
+    def __init__(self, on_result=None, min_delivery_spacing=5.0):
         self.on_result = on_result
         self.min_delivery_spacing = min_delivery_spacing
 

@@ -2,9 +2,9 @@
 generic_interaction.py
 
 A monitor with no metric to watch — it exists purely to vary the kind
-of thing Venus says when nothing else has happened in a while. Two
-behaviors: ask the user something, or comment on one of their open
-windows.
+of thing Venus says when nothing else has happened in a while. Three
+behaviors: ask the user something, comment on one of their open
+windows, or report on system health.
 
 This is the reference example of the full pipeline every monitor
 should follow:
@@ -28,10 +28,19 @@ should follow:
      Orchestrator's `on_result` callback, wired up once in server.py to
      queue the response for Unity to pick up. This monitor never talks
      to Unity, or even needs to know delivery exists.
+
+HEALTH REPORT: CPU%, RAM%, per-partition disk usage, and disk I/O
+activity since the last report — all via psutil, no extra
+dependencies. GPU and temperature are deliberately left out, same
+reasoning as HardwareMonitor.py: no vendor-neutral way to read them
+without pulling in something like LibreHardwareMonitor.
 """
 
 import ctypes
 import random
+import time
+
+import psutil
 
 from ai.GeminiWorker import worker
 from Orchestrator import Category
@@ -80,15 +89,24 @@ class GenericInteractionMonitor(BaseMonitor):
         super().__init__(orchestrator, interval)
 
         self.behavior_weights = {
-            "ask": 5,
-            "inspect": 5,
+            "ask": 3,
+            "inspect": 3,
+            "health_report": 3,
         }
+
+        # Disk I/O counters are cumulative since boot, so the first
+        # health report has nothing to compare against — these track
+        # the last reading so later reports can show a delta instead.
+        self._last_io_counters = None
+        self._last_io_time = None
 
     def check(self):
         behavior = self._choose_behavior()
 
         if behavior == "inspect":
             self._fire_inspect()
+        elif behavior == "health_report":
+            self._fire_health_report()
         else:
             self._fire_ask()
 
@@ -125,3 +143,64 @@ class GenericInteractionMonitor(BaseMonitor):
             return worker.run(user_text=prompt)
 
         self.orchestrator.add(Category.MONITOR, builder)
+
+    def _fire_health_report(self):
+        summary = self._collect_health_summary()
+
+        print(f"[GenericInteractionMonitor] Reporting on system health:\n{summary}")
+
+        prompt = f"""=== SYSTEM HEALTH ===
+{summary}
+
+[SYSTEM MESSAGE: Venus just checked her system's vitals. Comment on it.]"""
+
+        def builder():
+            return worker.run(user_text=prompt)
+
+        self.orchestrator.add(Category.MONITOR, builder)
+
+    def _collect_health_summary(self):
+        cpu = psutil.cpu_percent(interval=1)
+        ram = psutil.virtual_memory().percent
+
+        return (
+            f"CPU: {cpu:.0f}%\n"
+            f"RAM: {ram:.0f}%\n"
+            f"Disk usage: {self._disk_usage_summary()}\n"
+            f"Disk activity: {self._disk_activity_summary()}"
+        )
+
+    def _disk_usage_summary(self):
+        lines = []
+
+        for partition in psutil.disk_partitions(all=False):
+            if "cdrom" in partition.opts or partition.fstype == "":
+                continue
+
+            try:
+                usage = psutil.disk_usage(partition.mountpoint)
+                lines.append(f"{partition.mountpoint} at {usage.percent:.0f}%")
+            except (PermissionError, OSError):
+                continue
+
+        return ", ".join(lines) if lines else "unavailable"
+
+    def _disk_activity_summary(self):
+        counters = psutil.disk_io_counters()
+        if counters is None:
+            return "unavailable"
+
+        now = time.time()
+
+        if self._last_io_counters is None:
+            self._last_io_counters = counters
+            self._last_io_time = now
+            return "no prior reading to compare against yet"
+
+        read_mb = (counters.read_bytes - self._last_io_counters.read_bytes) / (1024 ** 2)
+        write_mb = (counters.write_bytes - self._last_io_counters.write_bytes) / (1024 ** 2)
+
+        self._last_io_counters = counters
+        self._last_io_time = now
+
+        return f"{read_mb:.1f}MB read / {write_mb:.1f}MB written since last check"

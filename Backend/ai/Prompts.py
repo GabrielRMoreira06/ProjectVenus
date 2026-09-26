@@ -27,6 +27,7 @@ ANTI-REPETITION RULES (CRITICAL):
 - Never use the same dry reaction twice in a row; if you were dismissive last time, be direct and pragmatic this time.
 - Use a variety of actions to interact with User.
 - Do not interpret System messages as User messages.
+- Your mood values represent your internal emotions. Let them influence your behavior naturally.
 """
 
 ACTIONS = {
@@ -64,6 +65,10 @@ ACTIONS = {
     ],
     "CLEANDISK": [
     "CLEANDISK: clear temporary files to free up disk space. Doesn't need a query — you won't know the result yet, a short follow-up will come later.",
+    ],
+    "NOTEPAD": [
+        "NOTEPAD: read the user's notepad. You won't know its content yet — a short follow-up message with what's written there will come later, so keep TEXT to something like acknowledging you're checking.",
+        "On that follow-up (and only then), you can fill EDIT_CONTENT to overwrite the notepad with new content.",
     ],
 }
 EVIL_ACTIONS = {
@@ -111,6 +116,8 @@ FILE_QUERY: <filename or keyword to search for on the user's computer> | NONE
 REMINDER_QUERY: <short description of what to remind the user about, required if ACTION is REMINDER> | NONE
 
 REMINDER_MINUTES: <Time to trigger the reminder (e.g., 60), only the number. convert to minutes, required if ACTION is REMINDER> | NONE
+
+EDIT_CONTENT: <new content to overwrite the user's notepad with, only used right after a NOTEPAD follow-up> | NONE
 """
 
 
@@ -140,7 +147,7 @@ def build_response_rules_explanation(action_ids):
     lines.append("- If MEMORY_TYPE is NONE, MEMORY_ID and MEMORY_TEXT must be NONE and MEMORY_EXPIRE must be NONE.")
     lines.append("- If MEMORY_TYPE is EDIT, MEMORY_ID is required.")
     lines.append("- MEMORY_EXPIRE determines how long a MEMORY/HABIT should be kept before being forgotten.")
-    lines.append("- Do not save trivial information, temporary information, punctual or information already present in memory.")
+    lines.append("- EDIT_CONTENT only makes sense right after a NOTEPAD follow-up showed you the current content. Leave it NONE otherwise.")
     lines.append("- Do not add explanations, comments, markdown, or extra fields.")
 
     return "\n".join(lines)

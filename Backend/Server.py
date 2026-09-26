@@ -47,7 +47,7 @@ from one_time_run.OneTimeManager import OneTimeManager
 from ui.AppBootsTrap import run as run_app
 import ui.Theme as Theme
 from ui.PanelWindow import avatar_signals
-
+from ui.Notepad import AUTOSAVE_PATH as NOTEPAD_AUTOSAVE_PATH, notepad_signals
 
 app = Flask(__name__)
 
@@ -213,6 +213,14 @@ def queue_response(result):
     update_profile_picture = result.pop("update_profile_picture", "NONE")
     if update_profile_picture != "NONE":
         avatar_signals.mood_changed.emit(update_profile_picture)
+
+    edit_content = result.pop("edit_content", "NONE")
+    if edit_content != "NONE":
+        try:
+            NOTEPAD_AUTOSAVE_PATH.write_text(edit_content, encoding="utf-8")
+        except OSError:
+            pass
+        notepad_signals.content_changed.emit(edit_content)
 
     action = result.get("action")
 

@@ -125,8 +125,9 @@ class GeminiWorker:
                 include_rules_explanation,
                 allowed_actions,
             )
-
+            print(prompt)
             content = [prompt] if image is None else [prompt, image]
+
 
             # Automatic retry for temporary 503 errors.
             response = None

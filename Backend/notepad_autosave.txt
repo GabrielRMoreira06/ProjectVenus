@@ -1,0 +1,10 @@
+VENUS FUTURE FEATURES
+
+- ACTIONS HUB
+- Action denial.
+- notepad feature.
+- update deadpixel.
+- throw a dice.
+- update gemini worker, dynamic prompts.
+- petcontroller final alarm.
+- remove her memory edit (she never uses it)

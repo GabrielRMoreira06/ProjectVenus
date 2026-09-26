@@ -6,13 +6,26 @@ QTextEdit. Same frameless DraggableFrame + Theme styling pattern as
 InputWindow/PanelWindow, and the same toggle_requested signal, so it
 plugs into TextInput.py's hotkey registration the same way PanelWindow
 does. No connection to Orchestrator/GeminiWorker — just a scratchpad.
+
+Content is autosaved to a fixed local file (AUTOSAVE_PATH), separate
+from New/Open/Save/Save As (which operate on whatever file the user
+picks). This is what makes the scratchpad survive an app restart —
+whatever's in the box gets written out (debounced) on every edit and
+reloaded at startup.
+
+notepad_signals bridges the NOTEPAD on-call action's EDIT_CONTENT
+writes (done from Orchestrator's worker thread, in Server.py) into
+this widget — same cross-thread pattern as Theme.theme_signals /
+PanelWindow.avatar_signals. Server.py writes AUTOSAVE_PATH directly
+(the file is the source of truth) and emits this signal only to keep
+an already-open window in sync.
 """
 
 import os
 from pathlib import Path
 
 import qtawesome as qta
-from PyQt6.QtCore import Qt, QSize, pyqtSignal
+from PyQt6.QtCore import Qt, QSize, pyqtSignal, QTimer, QObject
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication, QVBoxLayout, QHBoxLayout,
@@ -22,6 +35,16 @@ from PyQt6.QtWidgets import (
 from ui.PanelWindow import DraggableFrame
 from ui.Constants import load_oxanium_family
 import ui.Theme as Theme
+
+AUTOSAVE_PATH = Path("notepad_autosave.txt")
+AUTOSAVE_DEBOUNCE_MS = 1000
+
+
+class _NotepadSignals(QObject):
+    content_changed = pyqtSignal(str)
+
+
+notepad_signals = _NotepadSignals()
 
 
 class NotepadWindow(DraggableFrame):
@@ -56,6 +79,14 @@ class NotepadWindow(DraggableFrame):
         self.text_edit.setAcceptRichText(False)
         layout.addWidget(self.text_edit, stretch=1)
 
+        self._autosave_timer = QTimer(self)
+        self._autosave_timer.setSingleShot(True)
+        self._autosave_timer.timeout.connect(self._write_autosave)
+        self.text_edit.textChanged.connect(self._schedule_autosave)
+
+        self._load_autosave()
+        notepad_signals.content_changed.connect(self._on_external_content_changed)
+
         QShortcut(QKeySequence("Ctrl+S"), self, activated=self.save_file)
         QShortcut(QKeySequence("Ctrl+Shift+S"), self, activated=self.save_file_as)
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.open_file)
@@ -64,6 +95,33 @@ class NotepadWindow(DraggableFrame):
 
         self._apply_style()
         Theme.theme_signals.changed.connect(self._apply_style)
+
+    # ------------------------------------------------------------------
+    # Autosave (independent of New/Open/Save/Save As)
+    # ------------------------------------------------------------------
+
+    def _load_autosave(self):
+        if not AUTOSAVE_PATH.exists():
+            return
+
+        try:
+            content = AUTOSAVE_PATH.read_text(encoding="utf-8")
+        except OSError:
+            return
+
+        self.text_edit.setPlainText(content)
+
+    def _schedule_autosave(self):
+        self._autosave_timer.start(AUTOSAVE_DEBOUNCE_MS)
+
+    def _write_autosave(self):
+        try:
+            AUTOSAVE_PATH.write_text(self.text_edit.toPlainText(), encoding="utf-8")
+        except OSError:
+            pass
+
+    def _on_external_content_changed(self, content):
+        self.text_edit.setPlainText(content)
 
     # ------------------------------------------------------------------
     # Header
@@ -183,6 +241,10 @@ class NotepadWindow(DraggableFrame):
         self.text_edit.setFocus()
 
     def hide_window(self):
+        if self._autosave_timer.isActive():
+            self._autosave_timer.stop()
+            self._write_autosave()
+
         self.hide()
 
     def toggle(self):
