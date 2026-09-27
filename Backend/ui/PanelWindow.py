@@ -91,6 +91,8 @@ class PanelWindow(QWidget):
         self.toggle_requested.connect(self.toggle)
         avatar_signals.mood_changed.connect(self.set_avatar_mood)
 
+        panel_signals.toggle_requested.connect(self.toggle)
+
         root = QHBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(4)
@@ -294,3 +296,9 @@ def start_panel_window(process_question, hotkey="ctrl+alt+h"):
     print(f"[PanelWindow] Hotkey '{hotkey}' registered globally.")
 
     sys.exit(app.exec())
+
+class _PanelSignals(QObject):
+    toggle_requested = pyqtSignal()
+
+
+panel_signals = _PanelSignals()

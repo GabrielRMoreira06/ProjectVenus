@@ -8,3 +8,5 @@ VENUS FUTURE FEATURES
 - update gemini worker, dynamic prompts.
 - petcontroller final alarm.
 - remove her memory edit (she never uses it)
+- silent callback instead of giant thread.
+- mood show color

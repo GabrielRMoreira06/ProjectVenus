@@ -15,7 +15,7 @@ public class FakeLipSync : MonoBehaviour
 
     [Header("Lip Sync Settings")]
     [Tooltip("Controls how much the mouth opens based on volume")]
-    public float sensitivity = 200f;
+    public float sensitivity = 300f;
 
     [Tooltip("Interpolation speed to prevent jerky movements")]
     public float smoothing = 15f;

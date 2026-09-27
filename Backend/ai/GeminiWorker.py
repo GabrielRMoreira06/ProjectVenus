@@ -185,19 +185,12 @@ class GeminiWorker:
                 parsed["mood_shift"]
             )
 
-            if parsed["memory_type"] == "EDIT":
-                self.memory.edit(
-                    parsed["memory_id"],
-                    parsed["memory_text"],
-                    parsed["memory_expire"]
-                )
-            elif parsed["memory_type"] != "NONE":
+            if parsed["memory_type"] != "NONE":
                 self.memory.save(
                     parsed["memory_type"],
                     parsed["memory_text"],
                     parsed["memory_expire"]
                 )
-
             return parsed
 
         except Exception as error:

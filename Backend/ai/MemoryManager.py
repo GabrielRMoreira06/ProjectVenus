@@ -5,9 +5,6 @@ Persists long-term information about the user across sessions: facts
 and memories (dated events). Each entry gets an auto-generated id and
 can optionally expire after a fixed duration; entries with no
 expiration are kept forever.
-
-EDIT is not a stored type — it's an update to an existing entry,
-identified by id, wherever it lives (facts or memories).
 """
 
 import json
@@ -45,16 +42,15 @@ MEMORIES (with date/time/day of week, so you can notice routine patterns):
 
     def _format_item(self, item):
         created_at = self._parse_created_at(item.get("created_at"))
-        entry_id = item.get("id", "?")
 
         if created_at is None:
-            return f"- [{entry_id}] {item['text']}"
+            return f"- {item['text']}"
 
         date = created_at.strftime("%d/%m/%Y")
         time = created_at.strftime("%H:%M")
         weekday = created_at.strftime("%A")
 
-        return f"- [{entry_id}] {item['text']} ({date}, {time}, {weekday})"
+        return f"- {item['text']} ({date}, {time}, {weekday})"
 
     def _parse_created_at(self, value):
         if not value:
@@ -113,30 +109,6 @@ MEMORIES (with date/time/day of week, so you can notice routine patterns):
             self.memory["memories"].append(entry)
 
         self._save()
-
-    def edit(self, entry_id, text=None, expires_in="NONE"):
-        """
-        Updates an existing entry in place, matched by id, wherever it
-        lives (facts or memories — searched regardless of which list
-        it's actually in, since Gemini doesn't track that). text=NONE
-        means "leave text as-is"; expires_in is always applied since
-        NONE is itself a meaningful value there (never expires).
-        """
-        if not entry_id or entry_id == "NONE":
-            print("[MemoryManager] EDIT requested with no MEMORY_ID — ignoring.")
-            return False
-
-        for category in ("facts", "memories"):
-            for item in self.memory.get(category, []):
-                if item.get("id") == entry_id:
-                    if text and text != "NONE":
-                        item["text"] = text
-                    item["expires_in"] = expires_in
-                    self._save()
-                    return True
-
-        print(f"[MemoryManager] EDIT requested for unknown id '{entry_id}' — ignoring.")
-        return False
 
     def clear_expired(self):
         now = datetime.now()

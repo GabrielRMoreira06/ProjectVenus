@@ -95,7 +95,7 @@ MOOD_VARIANT: ANGER | ENERGY | BOREDOM | AFFECTION
 
 MOOD_SHIFT: INCREASE | DECREASE | NONE
 
-MEMORY_TYPE: NONE | MEMORY | FACT | EDIT
+MEMORY_TYPE: NONE | MEMORY | FACT
 
 UPDATE_PROFILE_PICTURE: NONE | BORED | ANGER | TIRED | POUTY | NORMAL
 
@@ -130,7 +130,6 @@ def build_response_rules_explanation(action_ids):
 
     lines.append("- MEMORY: a noteworthy event or interaction that may be relevant in future conversations.")
     lines.append("- FACT: stable information about the user or Venus, their preferences, projects, habits, or other useful long-term information.")
-    lines.append('- EDIT: updates an existing FACT or MEMORY identified by MEMORY_ID — every FACTS/MEMORIES line shown to you is prefixed with its id in brackets, e.g. "[a1b2c3d4] text". Use that id. MEMORY_TEXT replaces the old text (or leave it NONE to only change MEMORY_EXPIRE).')
 
     interactive = [a for a in INTERACTIVE_ACTIONS if a in action_ids]
     if interactive:
@@ -145,7 +144,6 @@ def build_response_rules_explanation(action_ids):
     lines.append("- MEMORY_TYPE determines whether something should be remembered.")
     lines.append("- Keep MEMORY_TEXT short and specific.")
     lines.append("- If MEMORY_TYPE is NONE, MEMORY_ID and MEMORY_TEXT must be NONE and MEMORY_EXPIRE must be NONE.")
-    lines.append("- If MEMORY_TYPE is EDIT, MEMORY_ID is required.")
     lines.append("- MEMORY_EXPIRE determines how long a MEMORY/HABIT should be kept before being forgotten.")
     lines.append("- EDIT_CONTENT only makes sense right after a NOTEPAD follow-up showed you the current content. Leave it NONE otherwise.")
     lines.append("- Do not add explanations, comments, markdown, or extra fields.")

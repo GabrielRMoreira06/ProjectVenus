@@ -46,7 +46,7 @@ from one_time_run.MemoryCleanupManager import MemoryCleanupCheck
 from one_time_run.OneTimeManager import OneTimeManager
 from ui.AppBootsTrap import run as run_app
 import ui.Theme as Theme
-from ui.PanelWindow import avatar_signals
+from ui.PanelWindow import avatar_signals, panel_signals
 from ui.Notepad import AUTOSAVE_PATH as NOTEPAD_AUTOSAVE_PATH, notepad_signals
 
 app = Flask(__name__)
@@ -162,6 +162,12 @@ def debug_tts():
 
 
     return jsonify({"status": "queued", "text": text, "action": action})
+
+
+@app.route("/toggle_panel", methods=["POST"])
+def toggle_panel():
+    panel_signals.toggle_requested.emit()
+    return jsonify({"status": "ok"})
 
 # ---------------------------------------------------------------------
 # Response queue (Orchestrator -> Unity)

@@ -766,6 +766,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AutoBlink
   vrm10Instance: {fileID: 174286446}
   blinkDuration: 0.1
+  blinkIntervalMin: 2
+  blinkIntervalMax: 6
+  expressionIntervalMin: 30
+  expressionIntervalMax: 150
+  expressionHoldMin: 10
+  expressionHoldMax: 20
+  expressionTransitionDuration: 0.3
 --- !u!114 &174286446 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: -4297446187249348513, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -1196,6 +1203,8 @@ GameObject:
   m_Component:
   - component: {fileID: 316162733}
   - component: {fileID: 316162734}
+  - component: {fileID: 316162735}
+  - component: {fileID: 316162736}
   m_Layer: 0
   m_Name: SF Window
   m_TagString: Untagged
@@ -1278,6 +1287,39 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!114 &316162735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 316162732}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e8d5395e848b4f40a89f3f0e59e42ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PanelToggleTrigger
+--- !u!65 &316162736
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 316162732}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 4.81, y: 2.35, z: 0.2}
+  m_Center: {x: -0.0000009536743, y: 0, z: 0}
 --- !u!114 &366964642 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1694221873086733340, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -2388,6 +2430,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5503655458161386499, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
+      propertyPath: m_Quality
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5503655458161386499, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
       propertyPath: m_DirtyAABB
       value: 0
       objectReference: {fileID: 0}
@@ -3135,7 +3181,7 @@ MonoBehaviour:
   pointA: {fileID: 2070031565}
   pointB: {fileID: 1025640419}
   moveDuration: 1.5
-  waitTime: 5
+  waitTime: 7
   startDelay: 15
   easing:
     serializedVersion: 2

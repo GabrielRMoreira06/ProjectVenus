@@ -34,7 +34,6 @@ class ResponseParser:
         mood_variant = None
         mood_shift = None
         memory_type = "NONE"
-        memory_id = "NONE"
         memory_text = "NONE"
         memory_expire = "NONE"
         image_query = "NONE"
@@ -64,9 +63,6 @@ class ResponseParser:
 
             elif line.startswith("MEMORY_TYPE:"):
                 memory_type = line.replace("MEMORY_TYPE:", "").strip()
-
-            elif line.startswith("MEMORY_ID:"):
-                memory_id = line.replace("MEMORY_ID:", "").strip()
 
             elif line.startswith("MEMORY_TEXT:"):
                 memory_text = line.replace("MEMORY_TEXT:", "").strip()
@@ -113,7 +109,6 @@ class ResponseParser:
             "mood_variant": mood_variant,
             "mood_shift": mood_shift,
             "memory_type": memory_type,
-            "memory_id": memory_id,
             "memory_text": memory_text,
             "memory_expire": memory_expire,
             "image_query": image_query,

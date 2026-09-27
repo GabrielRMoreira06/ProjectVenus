@@ -34,6 +34,7 @@ public class MoodChangeIndicator : MonoBehaviour
         }
     }
 
+   
     void OnEnable()
     {
         if (responseListener != null)
