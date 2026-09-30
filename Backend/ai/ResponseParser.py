@@ -23,6 +23,7 @@ VALID_ACTIONS = {
     "DEADPIXEL",
     "LOWERBRIGHTNESS",
     "NOTEPAD",
+    "DICE",
 }
 
 

@@ -79,6 +79,8 @@ ACTION_CATALOG = {
     "CLEANDISK": ("Clean disk", "Deletes temp files to free up disk space."),
     "ORGANIZEFILES": ("Organize downloads", "Sorts loose files in your Downloads folder into subfolders by type."),
     "NOTEPAD": ("Notepad", "Reads what's written in your notepad, and can rewrite its content."),
+    "DICE": ("Dice roll", "Rolls a physical die on screen and reports what it landed on."),
+
 }
 
 DEFAULT_VOICE_VOLUME = 100

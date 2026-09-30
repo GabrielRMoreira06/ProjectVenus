@@ -1,12 +1,18 @@
 VENUS FUTURE FEATURES
 
 - ACTIONS HUB
-- Action denial.
 - notepad feature.
 - update deadpixel.
 - throw a dice.
 - update gemini worker, dynamic prompts.
 - petcontroller final alarm.
-- remove her memory edit (she never uses it)
 - silent callback instead of giant thread.
-- mood show color
+- send memories safe.
+- callback no full intructions
+- Link expressions to mood change and add sound effect
+- daily memory system
+
+projects
+pegar issues da coluna ready, assinar e mover pro in progress
+
+

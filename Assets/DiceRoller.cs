@@ -6,6 +6,13 @@ using UnityEngine;
 /// Spins a die with a tumbling animation and settles so that the chosen
 /// face number points toward the camera.
 ///
+/// Disabled by default — only becomes active when a VenusResponse with
+/// action == "DICE" arrives (same activation pattern as
+/// AllowPetController/FlipController). Once the roll settles,
+/// VenusRequester.Ask() reports the result back to the Python backend as
+/// a new user-category message; Venus's reaction to it arrives later,
+/// normally, via ResponseListener — this script doesn't wait for it.
+///
 /// This does NOT guess the die's geometry. You must calibrate it once:
 /// rotate the die by hand in the Scene view (or use the context menu
 /// helpers below) until face 1 is pointing at the camera, then copy the
@@ -28,6 +35,13 @@ public class DiceRoller : MonoBehaviour
     [Tooltip("Shapes how quickly the roll locks onto the final face over rollDuration (0 = pure tumble, 1 = exact result). A single continuous curve across the whole duration avoids any visible seam or restart.")]
     [SerializeField] private AnimationCurve lockOnCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+    [Header("Venus Integration")]
+    [Tooltip("ResponseListener that receives responses from the Python backend. If empty, tries to find one in the scene.")]
+    public ResponseListener responseListener;
+
+    [Tooltip("Seconds to keep the die visible after it settles, before hiding again (gameObject.SetActive(false)).")]
+    public float visibleAfterRollDuration = 2.5f;
+
     private bool isRolling;
     private Coroutine rollRoutine;
 
@@ -35,6 +49,53 @@ public class DiceRoller : MonoBehaviour
     public event Action<int> OnRollComplete;
 
     public bool IsRolling => isRolling;
+
+    void Awake()
+    {
+        if (responseListener == null)
+        {
+            responseListener = FindFirstObjectByType<ResponseListener>();
+        }
+    }
+
+    void Start()
+    {
+        // Subscribed here, not OnEnable/OnDisable — same reasoning as
+        // AllowPetController/SpeechBubble: this script disables its own
+        // GameObject as part of the normal cycle (see Encerrar() below).
+        // Subscribing in OnEnable would unsubscribe on every hide, and
+        // since HandleResponseReceived is what reactivates the die, it
+        // would never receive the next DICE action.
+        if (responseListener != null)
+        {
+            responseListener.OnResponseReceived += HandleResponseReceived;
+        }
+        else
+        {
+            Debug.LogWarning("DiceRoller: no ResponseListener found — won't react to DICE.");
+        }
+
+        // Starts hidden — only after subscribing above, same ordering
+        // reason as AllowPetController.Start().
+        gameObject.SetActive(false);
+    }
+
+    void OnDestroy()
+    {
+        if (responseListener != null)
+        {
+            responseListener.OnResponseReceived -= HandleResponseReceived;
+        }
+    }
+
+    private void HandleResponseReceived(VenusResponse response)
+    {
+        if (response == null) return;
+        if (response.action != "DICE") return;
+
+        gameObject.SetActive(true);
+        Roll();
+    }
 
     /// <summary>Rolls a random face (1-6).</summary>
     public void Roll()
@@ -69,17 +130,11 @@ public class DiceRoller : MonoBehaviour
 
         Quaternion targetFaceRotation = Quaternion.Euler(faceEulerAngles[result - 1]);
 
-        // Independent random speed AND sign per world axis. Combining three
-        // simultaneous rotations (rather than one rotation around one random
-        // axis) is what actually reads as a tumbling die instead of a spin.
         Vector3 angularSpeed = new Vector3(
             RandomSignedSpeed(),
             RandomSignedSpeed(),
             RandomSignedSpeed());
 
-        // The "free" chaotic orientation, tracked separately from what's
-        // actually shown. It keeps accumulating every frame; it's never
-        // itself snapped to or paused, which is what removes the seam.
         Quaternion freeSpinRotation = transform.localRotation;
 
         float elapsed = 0f;
@@ -92,20 +147,32 @@ public class DiceRoller : MonoBehaviour
             Vector3 frameDelta = angularSpeed * decay * Time.deltaTime;
             freeSpinRotation = Quaternion.Euler(frameDelta) * freeSpinRotation;
 
-            // Continuously blend from the chaotic spin toward the exact
-            // result across the WHOLE duration (not a separate phase), so
-            // there's no velocity discontinuity to be felt as a stop.
             float blend = lockOnCurve.Evaluate(t);
             transform.localRotation = Quaternion.Slerp(freeSpinRotation, targetFaceRotation, blend);
 
             yield return null;
         }
 
-        // Snap exactly to the calibrated rotation so the face reads cleanly,
-        // with no leftover interpolation error.
         transform.localRotation = targetFaceRotation;
         isRolling = false;
         OnRollComplete?.Invoke(result);
+
+        NotifyResult(result);
+
+        yield return new WaitForSeconds(visibleAfterRollDuration);
+
+        gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// Reports the roll back to the Python backend via VenusRequester —
+    /// same entry point PokeController/AllowPetController use. The
+    /// message goes into the normal /ask -> Category.USER pipeline;
+    /// Venus's reaction arrives later, normally, via ResponseListener.
+    /// </summary>
+    private void NotifyResult(int result)
+    {
+        VenusRequester.Ask($"[SYSTEM MESSAGE: The dice you rolled landed on {result}.]");
     }
 
     private float RandomSignedSpeed()
@@ -115,12 +182,6 @@ public class DiceRoller : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    // --- Calibration helpers -------------------------------------------
-    // Use these while setting up faceEulerAngles: rotate the die by hand
-    // until a face reads correctly toward the camera, note the Transform's
-    // Rotation X/Y/Z in the Inspector, type them into the matching array
-    // slot, then use these menu items to verify the snap lands correctly.
-
     [ContextMenu("Calibration/Snap To Face 1")]
     private void SnapFace1() => SnapTo(0);
     [ContextMenu("Calibration/Snap To Face 2")]
@@ -143,14 +204,4 @@ public class DiceRoller : MonoBehaviour
     [ContextMenu("Test Roll (Random)")]
     private void TestRollRandom() => Roll();
 #endif
-
-    public void Update()
-    {
-        //test roll with space key
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            Roll();
-        }
-    }
-
 }

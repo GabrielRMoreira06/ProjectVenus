@@ -1617,6 +1617,82 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
+--- !u!1 &609704655 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -9202605092671148497, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+  m_PrefabInstance: {fileID: 1976134085}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &609704657
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 609704655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53ab4524de1f9f346b2049f3c2dad3d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DiceRoller
+  faceEulerAngles:
+  - {x: -90, y: 360, z: 180}
+  - {x: 0, y: 90, z: 0}
+  - {x: 0, y: 180, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 270, z: 0}
+  - {x: 90, y: 180, z: 0}
+  rollDuration: 1.2
+  tumbleSpeedRange: {x: 480, y: 900}
+  tumbleDecayCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  lockOnCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  responseListener: {fileID: 0}
+  visibleAfterRollDuration: 2.5
 --- !u!114 &614016027 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: -4421904982339730831, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -5496,6 +5572,86 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a942e03b39600e41a1b161e958048f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRM10::UniVRM10.VRM10SpringBoneJoint
+--- !u!1001 &1976134085
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -9202605092671148497, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_Name
+      value: DICE
+      objectReference: {fileID: 0}
+    - target: {fileID: -9202605092671148497, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.035
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.035
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.035
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.002568401
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.70181763
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.4165717
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 360
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467138112451190354, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: -9202605092671148497, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 609704657}
+  m_SourcePrefab: {fileID: 7446590082972375451, guid: ba33e92233194ab428ec975cb7c1c9dd, type: 3}
 --- !u!1 &1990866544 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -9202605092671148497, guid: 20c648e32482e88478e881b1413f8219, type: 3}
@@ -5744,3 +5900,4 @@ SceneRoots:
   - {fileID: 855955699}
   - {fileID: 2070031565}
   - {fileID: 1451538355}
+  - {fileID: 1976134085}

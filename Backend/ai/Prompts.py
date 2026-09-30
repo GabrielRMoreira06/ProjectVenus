@@ -70,6 +70,11 @@ ACTIONS = {
         "NOTEPAD: read the user's notepad. You won't know its content yet — a short follow-up message with what's written there will come later, so keep TEXT to something like acknowledging you're checking.",
         "On that follow-up (and only then), you can fill EDIT_CONTENT to overwrite the notepad with new content.",
     ],
+    "DICE": [
+        "DICE: roll a die to add randomness or decide something on the spot. "
+        "You won't know the result yet — a short follow-up message with what was "
+        "rolled will come later, so keep TEXT to something like announcing you're rolling.",
+    ],
 }
 EVIL_ACTIONS = {
     "DEADPIXEL": [
@@ -77,7 +82,7 @@ EVIL_ACTIONS = {
         "If ACTION is DEADPIXEL, leave TEXT empty — it's a silent reaction, no comment.",
     ],
 }
-INTERACTIVE_ACTIONS = ("SHOWIMAGE", "STEALMOUSE", "ALLOWPET", "KEYBOARDCONTROL")
+INTERACTIVE_ACTIONS = ("SHOWIMAGE", "STEALMOUSE", "ALLOWPET", "KEYBOARDCONTROL", "DICE")
 
 
 def build_response_rules(action_ids):
