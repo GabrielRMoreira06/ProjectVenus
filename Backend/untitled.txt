@@ -10,9 +10,5 @@ VENUS FUTURE FEATURES
 - send memories safe.
 - callback no full intructions
 - Link expressions to mood change and add sound effect
-- daily memory system
-
-projects
-pegar issues da coluna ready, assinar e mover pro in progress
 
 

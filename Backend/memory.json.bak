@@ -1,0 +1,46 @@
+{
+    "facts": [
+        {
+            "id": "ce091144",
+            "text": "Gabe works on an Android project called Ponto Eletrônico using Jetpack Compose, Material 3, and strict Git branching rules with Spotless.",
+            "created_at": "2026-10-02T20:50",
+            "expires_in": "1MONTH"
+        },
+        {
+            "id": "ce091244",
+            "text": "User's name is Gabe and he's my creator.",
+            "created_at": "2026-2-02T20:50",
+            "expires_in": "PERMANENT"
+        }
+    ],
+    "memories": [
+        {
+            "id": "ce091143",
+            "text": "Gabe failed the drivers license exam.",
+            "created_at": "2026-09-20T20:50",
+            "expires_in": "1MONTH"
+        },
+        {
+            "id": "ce091143",
+            "text": "Gabe has an eletronic test in Octuber 2nd.",
+            "created_at": "2026-10-01T20:50",
+            "expires_in": "1MONTH"
+        },
+        {
+            "id": "ce191143",
+            "text": "Venus obliterated Gabriel on tic-tac-toe.",
+            "created_at": "2026-10-01T20:50",
+            "expires_in": "1MONTH"
+        }
+    ],
+    "daily_summaries": {
+        "2026-10-02": {
+            "text": "Gabriel booted up Venus in the evening, ignored GitHub token and LinkedIn alerts, checked emails, and spent time playing Heroes of the Storm and Blue Archive. Later, Gabriel checked Gemini for Android Studio fixes, looked over the Ponto Eletrônico project setup guide, gave Venus headpats, and logged into Shopee while Venus organized his Downloads folder.",
+            "updated_at": "2026-10-02T21:28"
+        },
+        "2026-10-03": {
+            "text": "Gabriel booted up Venus in the afternoon, worked on Ponto Eletrônico, watched CBLOL, cleaned his disk, played Heroes of the Storm, browsed X, watched Re:ZERO, watched YouTube podcasts, and spent the evening doing Blue Archive bounties.",
+            "updated_at": "2026-10-03T18:18"
+        }
+    }
+}

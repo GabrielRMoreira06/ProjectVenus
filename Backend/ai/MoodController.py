@@ -240,7 +240,7 @@ Affection: {self.affection}/100
     # ------------------------------------------------------------------
 
     def _check_boredom_threshold(self):
-        if self.boredom < BOREDOM_ALERT_THRESHOLD:
+        if self.boredom > BOREDOM_ALERT_THRESHOLD:
             return
 
         if self._boredom_alert_firing:

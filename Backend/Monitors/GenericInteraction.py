@@ -119,7 +119,7 @@ class GenericInteractionMonitor(BaseMonitor):
         print("[GenericInteractionMonitor] Asking the user something.")
 
         def builder():
-            return worker.run(    user_text="[SYSTEM MESSAGE: Browse the internet for a information related to the topic and comment on it.]")
+            return worker.run(user_text="[SYSTEM MESSAGE: Check your memories, Ask something about them to user.]")
 
         self.orchestrator.add(Category.MONITOR, builder)
 

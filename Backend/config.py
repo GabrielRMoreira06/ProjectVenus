@@ -1,8 +1,11 @@
 import os
 
 from dotenv import load_dotenv
+from pathlib import Path
+
 
 load_dotenv()
+DATA_DIR = Path(__file__).resolve().parent
 
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 MODEL = "gemini-3.1-flash-lite"

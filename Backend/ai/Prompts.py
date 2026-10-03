@@ -100,7 +100,7 @@ MOOD_VARIANT: ANGER | ENERGY | BOREDOM | AFFECTION
 
 MOOD_SHIFT: INCREASE | DECREASE | NONE
 
-MEMORY_TYPE: NONE | MEMORY | FACT
+MEMORY_TYPE: NONE | MEMORY | FACT | DAILYSUMMARY
 
 UPDATE_PROFILE_PICTURE: NONE | BORED | ANGER | TIRED | POUTY | NORMAL
 
@@ -108,7 +108,7 @@ UPDATE_UI_THEME: NONE | CLASSIC | VIOLET | CRIMSON
 
 MEMORY_ID: <id of the memory/habit to update, required if MEMORY_TYPE is EDIT> | NONE
 
-MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time.> | NONE
+MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time. For DAILYSUMMARY: the full summary of today so far.> | NONE
 
 MEMORY_EXPIRE: 6HOURS | 1DAY | 1WEEK | 1MONTH | PERMANENT | NONE
 
@@ -135,6 +135,7 @@ def build_response_rules_explanation(action_ids):
 
     lines.append("- MEMORY: a noteworthy event or interaction that may be relevant in future conversations.")
     lines.append("- FACT: stable information about the user or Venus, their preferences, projects, habits, or other useful long-term information.")
+    lines.append("- DAILYSUMMARY: a short summary of the user's current day (what they worked on, how it went, notable moments). There is only ONE per day: sending it REPLACES today's existing summary, so MEMORY_TEXT must contain the complete updated summary (merge what the DAILY SUMMARIES section already says about today with what's new), not just the new part. MEMORY_EXPIRE must be NONE.")
 
     interactive = [a for a in INTERACTIVE_ACTIONS if a in action_ids]
     if interactive:
@@ -149,7 +150,7 @@ def build_response_rules_explanation(action_ids):
     lines.append("- MEMORY_TYPE determines whether something should be remembered.")
     lines.append("- Keep MEMORY_TEXT short and specific.")
     lines.append("- If MEMORY_TYPE is NONE, MEMORY_ID and MEMORY_TEXT must be NONE and MEMORY_EXPIRE must be NONE.")
-    lines.append("- MEMORY_EXPIRE determines how long a MEMORY/HABIT should be kept before being forgotten.")
+    lines.append("- MEMORY_EXPIRE determines how long a MEMORY/FACT should be kept before being forgotten.")
     lines.append("- EDIT_CONTENT only makes sense right after a NOTEPAD follow-up showed you the current content. Leave it NONE otherwise.")
     lines.append("- Do not add explanations, comments, markdown, or extra fields.")
 
