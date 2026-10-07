@@ -768,10 +768,10 @@ MonoBehaviour:
   blinkDuration: 0.1
   blinkIntervalMin: 2
   blinkIntervalMax: 6
-  expressionIntervalMin: 30
-  expressionIntervalMax: 150
-  expressionHoldMin: 10
-  expressionHoldMax: 20
+  expressionIntervalMin: 180
+  expressionIntervalMax: 300
+  expressionHoldMin: 7
+  expressionHoldMax: 12
   expressionTransitionDuration: 0.3
 --- !u!114 &174286446 stripped
 MonoBehaviour:
@@ -1691,8 +1691,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  responseListener: {fileID: 0}
-  visibleAfterRollDuration: 2.5
+  responseListener: {fileID: 1537105287}
+  visibleAfterRollDuration: 5
 --- !u!114 &614016027 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: -4421904982339730831, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}

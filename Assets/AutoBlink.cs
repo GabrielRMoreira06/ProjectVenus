@@ -74,7 +74,6 @@ public class AutoBlink : MonoBehaviour
         new EmotionDefinition(ExpressionKey.Relaxed, ExpressionKey.Ou),
     };
 
-
     void Start()
     {
         if (vrm10Instance == null)

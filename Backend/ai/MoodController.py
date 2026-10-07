@@ -30,7 +30,7 @@ top of it.
 import json
 from pathlib import Path
 
-ANGER_ALERT_THRESHOLD = 85
+ANGER_ALERT_THRESHOLD = 90
 ENERGY_ALERT_THRESHOLD = 15
 BOREDOM_ALERT_THRESHOLD = 70
 
@@ -65,6 +65,7 @@ class MoodController:
 
         self._anger_alert_firing = False
         self._energy_alert_firing = False
+        self._boredom_alert_firing = False
 
         self._total_volume_reduced = 0.0
         self._total_brightness_reduced = 0
@@ -240,7 +241,7 @@ Affection: {self.affection}/100
     # ------------------------------------------------------------------
 
     def _check_boredom_threshold(self):
-        if self.boredom > BOREDOM_ALERT_THRESHOLD:
+        if self.boredom < BOREDOM_ALERT_THRESHOLD:
             return
 
         if self._boredom_alert_firing:

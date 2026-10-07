@@ -10,5 +10,8 @@ VENUS FUTURE FEATURES
 - send memories safe.
 - callback no full intructions
 - Link expressions to mood change and add sound effect
+- move cooldown to orchestrator
 
 
+in progress cheio. 
+pull da main

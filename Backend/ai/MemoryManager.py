@@ -189,35 +189,49 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY overwrite
 
         self._save()
 
-    def clear_expired(self):
-        with self._lock:
-            now = datetime.now()
-            removed_count = 0
+DAILY_SUMMARY_RETENTION = timedelta(weeks=1)
 
-            for category in ("facts", "memories"):
-                remaining = []
+def clear_expired(self):
+    with self._lock:
+        now = datetime.now()
+        removed_count = 0
 
-                for item in self.memory.get(category, []):
-                    expires_in = item.get("expires_in", "NONE")
+        for category in ("facts", "memories"):
+            remaining = []
 
-                    if expires_in in ("NONE", "PERMANENT"):
-                        remaining.append(item)
-                        continue
+            for item in self.memory.get(category, []):
+                expires_in = item.get("expires_in", "NONE")
 
-                    duration = EXPIRATION_DURATIONS.get(expires_in)
-                    created_at = self._parse_created_at(item.get("created_at"))
+                if expires_in in ("NONE", "PERMANENT"):
+                    remaining.append(item)
+                    continue
 
-                    if duration is None or created_at is None:
-                        remaining.append(item)
-                        continue
+                duration = EXPIRATION_DURATIONS.get(expires_in)
+                created_at = self._parse_created_at(item.get("created_at"))
 
-                    if now - created_at >= duration:
-                        removed_count += 1
-                    else:
-                        remaining.append(item)
+                if duration is None or created_at is None:
+                    remaining.append(item)
+                    continue
 
-                self.memory[category] = remaining
+                if now - created_at >= duration:
+                    removed_count += 1
+                else:
+                    remaining.append(item)
 
-            if removed_count > 0:
-                print(f"[MemoryManager] Removed {removed_count} expired memory entrie(s).")
-                self._save()
+            self.memory[category] = remaining
+
+        # Daily summaries: expire by the date they belong to.
+        cutoff = (now - DAILY_SUMMARY_RETENTION).date()
+        for date_str in list(self.memory["daily_summaries"].keys()):
+            try:
+                summary_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                continue
+
+            if summary_date < cutoff:
+                del self.memory["daily_summaries"][date_str]
+                removed_count += 1
+
+        if removed_count > 0:
+            print(f"[MemoryManager] Removed {removed_count} expired memory entrie(s).")
+            self._save()

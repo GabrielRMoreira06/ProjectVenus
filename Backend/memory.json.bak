@@ -31,6 +31,12 @@
             "text": "Venus obliterated Gabriel on tic-tac-toe.",
             "created_at": "2026-10-01T20:50",
             "expires_in": "1MONTH"
+        },
+        {
+            "id": "816a5e9d",
+            "text": "Gabriel has a meeting at 8:30 PM today.",
+            "created_at": "2026-10-06T18:07",
+            "expires_in": "6HOURS"
         }
     ],
     "daily_summaries": {
@@ -39,8 +45,20 @@
             "updated_at": "2026-10-02T21:28"
         },
         "2026-10-03": {
-            "text": "Gabriel booted up Venus in the afternoon, worked on Ponto Eletrônico, watched CBLOL, cleaned his disk, played Heroes of the Storm, browsed X, watched Re:ZERO, watched YouTube podcasts, and spent the evening doing Blue Archive bounties.",
-            "updated_at": "2026-10-03T18:18"
+            "text": "Gabriel booted up Venus in the afternoon, worked on Ponto Eletrônico, watched CBLOL, cleaned his disk, played Heroes of the Storm, browsed X, watched Re:ZERO, listened to podcasts, played Blue Archive, updated backend code, received a Pix, looked up chibi art, and ended the night switching over to Brown Desert 2.",
+            "updated_at": "2026-10-03T20:58"
+        },
+        "2026-10-04": {
+            "text": "Gabriel booted up Venus, tested boredom mechanics, browsed YouTube for MrBeast and election streams, discussed his failed driver's license exam and LinkedIn police job, ate chicken pie, played Blue Archive, ignored the 7-hour uptime warning, played Heroes of the Storm, and went back to scrolling through X for political clips.",
+            "updated_at": "2026-10-04T20:40"
+        },
+        "2026-10-05": {
+            "text": "Gabriel booted up Venus, filled out his daily report, checked emails, played Blue Archive, watched streams, briefly touched Android Studio, played Heroes of the Storm, and received an email from Claude.",
+            "updated_at": "2026-10-05T20:13"
+        },
+        "2026-10-06": {
+            "text": "Gabriel booted up Venus at 6:00 PM, set a meeting reminder, browsed X, handled daily report emails, played Heroes of the Storm, and survived his meeting getting praised as 'formidable', resulting in an inflated ego.",
+            "updated_at": "2026-10-06T20:52"
         }
     }
 }

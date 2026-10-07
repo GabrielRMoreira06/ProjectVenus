@@ -1,3 +1,4 @@
+import ctypes
 import os
 import sys
 
@@ -15,8 +16,6 @@ import ui.Theme as Theme
 from ui.ChatHistoryPage import ChatHistoryPage
 from ui.PreferencesPage import PreferencesPage
 from ui.SettingsPage import SettingsPage
-from ui.ChatHistoryPage import ChatHistoryPage
-from ui.PreferencesPage import PreferencesPage
 from ui.NavButton import NavButton
 from ui.ProfileSection import ProfileSection
 from ui.PlaceholderPage import PlaceholderPage
@@ -80,11 +79,7 @@ class PanelWindow(QWidget):
         self.nav_buttons = []
 
         self.setWindowTitle("Venus Panel")
-        self.setWindowFlags(
-            Qt.WindowType.WindowStaysOnTopHint
-            | Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.Tool
-        )
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.resize(950, 560)
 
@@ -101,13 +96,6 @@ class PanelWindow(QWidget):
         root.addWidget(self._sidebar_frame)
         root.addWidget(self._build_main_area(), stretch=1)
 
-        # Apply every theme-dependent style owned directly by this window,
-        # once, now that sidebar and main area both exist. Sub-widgets
-        # (NavButton, ProfileSection, PlaceholderPage) style themselves in
-        # their own constructors — this only covers what PanelWindow itself
-        # styles (window, sidebar frame, divider, sidebar heart, close
-        # button). Previously the sidebar frame and divider were only ever
-        # styled on a later theme change, leaving them unstyled at startup.
         Theme.theme_signals.changed.connect(self._on_theme_changed)
         self._on_theme_changed()
 
@@ -204,9 +192,6 @@ class PanelWindow(QWidget):
         layout.addSpacing(4)
         layout.addWidget(self._divider)
 
-        # Created before addWidget(profile_section) below — _on_theme_changed
-        # needs this to exist, and its layout position (after the stretch)
-        # is set by addWidget() order, not by when the widget was created.
         self._sidebar_heart = QLabel()
         self._sidebar_heart.setStyleSheet("border: none; background: transparent;")
 
@@ -277,13 +262,38 @@ class PanelWindow(QWidget):
 
         return header
 
+    def _force_foreground(self):
+        user32 = ctypes.windll.user32
+        kernel32 = ctypes.windll.kernel32
+
+        hwnd = int(self.winId())
+        foreground_hwnd = user32.GetForegroundWindow()
+        foreground_thread = user32.GetWindowThreadProcessId(foreground_hwnd, None)
+        this_thread = kernel32.GetCurrentThreadId()
+
+        attached = False
+        if foreground_thread and foreground_thread != this_thread:
+            attached = bool(user32.AttachThreadInput(foreground_thread, this_thread, True))
+
+        try:
+            user32.BringWindowToTop(hwnd)
+            user32.SetForegroundWindow(hwnd)
+        finally:
+            if attached:
+                user32.AttachThreadInput(foreground_thread, this_thread, False)
+
     def toggle(self):
         if self.isVisible():
             self.hide()
-        else:
-            self.show()
-            self.raise_()
-            self.activateWindow()
+            return
+
+        self.setWindowState(
+            (self.windowState() & ~Qt.WindowState.WindowMinimized) | Qt.WindowState.WindowActive
+        )
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        self._force_foreground()
 
 
 def start_panel_window(process_question, hotkey="ctrl+alt+h"):
