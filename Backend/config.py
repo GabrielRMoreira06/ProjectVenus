@@ -14,3 +14,5 @@ PIPER_MODEL_PATH = r"C:\Users\User\Documents\ProjectVenus\Backend\piper\en_GB-co
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")
 EMAIL_IMAP_SERVER = os.getenv("EMAIL_IMAP_SERVER", "imap.gmail.com")
+
+WALLPAPER_VIDEOS = ["C:/Users/User/Downloads/mephisto.mp4"]

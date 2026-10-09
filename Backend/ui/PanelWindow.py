@@ -16,6 +16,7 @@ import ui.Theme as Theme
 from ui.ChatHistoryPage import ChatHistoryPage
 from ui.PreferencesPage import PreferencesPage
 from ui.SettingsPage import SettingsPage
+from ui.ToolsPage import ToolsPage
 from ui.NavButton import NavButton
 from ui.ProfileSection import ProfileSection
 from ui.PlaceholderPage import PlaceholderPage
@@ -26,6 +27,7 @@ from ui.Constants import (
     TAB_HISTORY,
     TAB_SETTINGS,
     TAB_PREFERENCES,
+    TAB_TOOLS,
     load_oxanium_family,
 )
 
@@ -81,7 +83,7 @@ class PanelWindow(QWidget):
         self.setWindowTitle("Venus Panel")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.resize(950, 560)
+        self.resize(1100, 620)
 
         self.toggle_requested.connect(self.toggle)
         avatar_signals.mood_changed.connect(self.set_avatar_mood)
@@ -176,16 +178,17 @@ class PanelWindow(QWidget):
         history_button = NavButton("fa5s.comment", "Chat", active=True)
         settings_button = NavButton("fa5s.cog", "Settings")
         preferences_button = NavButton("fa5s.sliders-h", "Preferences")
+        tools_button = NavButton("fa5s.wrench", "Tools")
 
         history_button.clicked.connect(lambda: self._switch_tab(TAB_HISTORY))
         settings_button.clicked.connect(lambda: self._switch_tab(TAB_SETTINGS))
         preferences_button.clicked.connect(lambda: self._switch_tab(TAB_PREFERENCES))
+        tools_button.clicked.connect(lambda: self._switch_tab(TAB_TOOLS))
 
-        self.nav_buttons = [history_button, settings_button, preferences_button]
+        self.nav_buttons = [history_button, settings_button, preferences_button, tools_button]
 
-        layout.addWidget(history_button)
-        layout.addWidget(settings_button)
-        layout.addWidget(preferences_button)
+        for button in self.nav_buttons:
+            layout.addWidget(button)
 
         self._divider = QFrame()
         self._divider.setFixedHeight(1)
@@ -236,7 +239,7 @@ class PanelWindow(QWidget):
             }
         """)
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(20, 16, 20, 20)
+        layout.setContentsMargins(8, 16, 20, 20)
         layout.setSpacing(14)
 
         layout.addLayout(self._build_header())
@@ -245,6 +248,7 @@ class PanelWindow(QWidget):
         self.content_stack.addWidget(ChatHistoryPage(self.process_question))
         self.content_stack.addWidget(SettingsPage())
         self.content_stack.addWidget(PreferencesPage())
+        self.content_stack.addWidget(ToolsPage())
         layout.addWidget(self.content_stack, stretch=1)
 
         return container

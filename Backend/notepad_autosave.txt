@@ -1,17 +1,13 @@
 VENUS FUTURE FEATURES
 
 - ACTIONS HUB
-- notepad feature.
-- update deadpixel.
-- throw a dice.
 - update gemini worker, dynamic prompts.
 - petcontroller final alarm.
 - silent callback instead of giant thread.
 - send memories safe.
-- callback no full intructions
 - Link expressions to mood change and add sound effect
 - move cooldown to orchestrator
-
-
-in progress cheio. 
-pull da main
+- dice in front of tablet
+- create tools tab
+- reduce window size
+-random wallpaper pick

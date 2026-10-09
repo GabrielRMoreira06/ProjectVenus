@@ -2,13 +2,11 @@
 AppBootstrap.py
 
 Owns the single QApplication for the whole app, every top-level PyQt6
-window (InputWindow, PanelWindow, NotepadWindow), and their global
-hotkeys. This has to live in one place: only one QApplication can
-exist per process, and app.exec() has to be the last call on the main
-thread — so whatever creates the QApplication ends up owning every
-window that shares it. Previously this logic was bolted onto
-TextInput.py's start_input_window(), which grew a window's worth of
-unrelated setup every time a new floating window was added.
+window (InputWindow, PanelWindow, NotepadWindow), their global
+hotkeys, and the video WallpaperManager. This has to live in one
+place: only one QApplication can exist per process, and app.exec() has
+to be the last call on the main thread — so whatever creates the
+QApplication ends up owning every window that shares it.
 
 Server.py calls run() as the last thing on the main thread.
 """
@@ -22,11 +20,19 @@ from PyQt6.QtWidgets import QApplication
 from ui.TextInput import InputWindow
 from ui.PanelWindow import PanelWindow
 from ui.Notepad import NotepadWindow
+from ai.WallpaperManager import wallpaper_manager
 
 
 def run(process_question, open_automatically=False):
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
+
+    try:
+        wallpaper_manager.start()
+    except Exception:
+        import traceback
+        traceback.print_exc()
+    app.aboutToQuit.connect(wallpaper_manager.stop)
 
     input_window = InputWindow(process_question)
     keyboard.add_hotkey("ctrl+alt+t", input_window.toggle_requested.emit)

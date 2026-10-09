@@ -9,7 +9,6 @@ id and can optionally expire; entries with no expiration are kept forever.
 
 import json
 import os
-import shutil
 import threading
 import uuid
 from datetime import datetime, timedelta
@@ -27,6 +26,7 @@ EXPIRATION_DURATIONS = {
 VALID_TYPES = ("FACT", "MEMORY", "DAILYSUMMARY")
 
 DAILY_SUMMARIES_IN_PROMPT = 7  # today + previous 6 days
+DAILY_SUMMARY_RETENTION = timedelta(weeks=1)
 
 
 class MemoryManager:
@@ -34,7 +34,6 @@ class MemoryManager:
     def __init__(self, file_path="memory.json"):
         path = Path(file_path)
         self.file_path = path if path.is_absolute() else DATA_DIR / path
-        self.backup_path = self.file_path.with_name(self.file_path.name + ".bak")
         self._lock = threading.RLock()
         self.memory = self._load()
         print(f"[MemoryManager] Using '{self.file_path}'.")
@@ -91,37 +90,23 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY overwrite
         except ValueError:
             return None
 
-    def _read_json(self, path):
-        if not path.exists():
-            return None
-
-        try:
-            content = path.read_text(encoding="utf-8").strip()
-            if not content:
-                return None
-            data = json.loads(content)
-            return data if isinstance(data, dict) else None
-        except (json.JSONDecodeError, OSError):
-            return None
-
     def _load(self):
-        data = self._read_json(self.file_path)
+        data = {}
 
-        if data is None and self.file_path.exists():
-            print(f"[MemoryManager] '{self.file_path}' is empty or corrupted.")
-
-            corrupt_path = self.file_path.with_name(self.file_path.name + ".corrupt")
+        if self.file_path.exists():
             try:
-                shutil.copy2(self.file_path, corrupt_path)
-            except OSError:
-                pass
-
-            data = self._read_json(self.backup_path)
-            if data is not None:
-                print(f"[MemoryManager] Recovered from '{self.backup_path}'.")
-
-        if data is None:
-            data = {}
+                content = self.file_path.read_text(encoding="utf-8").strip()
+                data = json.loads(content) if content else {}
+            except (json.JSONDecodeError, OSError):
+                backup = self.file_path.with_name(self.file_path.name + ".corrupt")
+                print(f"[MemoryManager] '{self.file_path}' is corrupted — moved to '{backup}', starting empty.")
+                try:
+                    os.replace(self.file_path, backup)
+                except OSError:
+                    pass
+                data = {}
+        else:
+            print(f"[MemoryManager] '{self.file_path}' not found — starting empty.")
 
         data.setdefault("facts", [])
         data.setdefault("memories", [])
@@ -138,21 +123,11 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY overwrite
             f.flush()
             os.fsync(f.fileno())
 
-        if self._read_json(self.file_path) is not None:
-            try:
-                shutil.copy2(self.file_path, self.backup_path)
-            except OSError:
-                pass
-
         os.replace(temp_path, self.file_path)
 
     def save(self, entry_type, text, expires_in="NONE"):
         if entry_type not in VALID_TYPES:
             print(f"[MemoryManager] Unknown MEMORY_TYPE: '{entry_type}' — ignoring.")
-            return
-
-        if not text or text.strip().upper() == "NONE":
-            print(f"[MemoryManager] Empty MEMORY_TEXT for {entry_type} — ignoring.")
             return
 
         with self._lock:
@@ -189,49 +164,46 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY overwrite
 
         self._save()
 
-DAILY_SUMMARY_RETENTION = timedelta(weeks=1)
+    def clear_expired(self):
+        with self._lock:
+            now = datetime.now()
+            removed_count = 0
 
-def clear_expired(self):
-    with self._lock:
-        now = datetime.now()
-        removed_count = 0
+            for category in ("facts", "memories"):
+                remaining = []
 
-        for category in ("facts", "memories"):
-            remaining = []
+                for item in self.memory.get(category, []):
+                    expires_in = item.get("expires_in", "NONE")
 
-            for item in self.memory.get(category, []):
-                expires_in = item.get("expires_in", "NONE")
+                    if expires_in in ("NONE", "PERMANENT"):
+                        remaining.append(item)
+                        continue
 
-                if expires_in in ("NONE", "PERMANENT"):
-                    remaining.append(item)
+                    duration = EXPIRATION_DURATIONS.get(expires_in)
+                    created_at = self._parse_created_at(item.get("created_at"))
+
+                    if duration is None or created_at is None:
+                        remaining.append(item)
+                        continue
+
+                    if now - created_at >= duration:
+                        removed_count += 1
+                    else:
+                        remaining.append(item)
+
+                self.memory[category] = remaining
+
+            cutoff = (now - DAILY_SUMMARY_RETENTION).date()
+            for date_str in list(self.memory["daily_summaries"].keys()):
+                try:
+                    summary_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                except ValueError:
                     continue
 
-                duration = EXPIRATION_DURATIONS.get(expires_in)
-                created_at = self._parse_created_at(item.get("created_at"))
-
-                if duration is None or created_at is None:
-                    remaining.append(item)
-                    continue
-
-                if now - created_at >= duration:
+                if summary_date < cutoff:
+                    del self.memory["daily_summaries"][date_str]
                     removed_count += 1
-                else:
-                    remaining.append(item)
 
-            self.memory[category] = remaining
-
-        # Daily summaries: expire by the date they belong to.
-        cutoff = (now - DAILY_SUMMARY_RETENTION).date()
-        for date_str in list(self.memory["daily_summaries"].keys()):
-            try:
-                summary_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            except ValueError:
-                continue
-
-            if summary_date < cutoff:
-                del self.memory["daily_summaries"][date_str]
-                removed_count += 1
-
-        if removed_count > 0:
-            print(f"[MemoryManager] Removed {removed_count} expired memory entrie(s).")
-            self._save()
+            if removed_count > 0:
+                print(f"[MemoryManager] Removed {removed_count} expired memory entrie(s).")
+                self._save()

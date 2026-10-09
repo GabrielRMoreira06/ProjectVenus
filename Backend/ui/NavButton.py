@@ -10,7 +10,7 @@ class NavButton(QPushButton):
         super().__init__(f"  {label}                                   >")
         self.icon_name = icon_name
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFixedHeight(64)
+        self.setFixedHeight(48)
         self._hovered = False
         self.set_active(active)
         Theme.theme_signals.changed.connect(self._on_theme_changed)
