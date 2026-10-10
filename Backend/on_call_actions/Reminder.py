@@ -42,7 +42,7 @@ from datetime import datetime
 from pathlib import Path
 
 from Orchestrator import Category
-from ai.GeminiWorker import worker
+from ai.core.GeminiWorker import worker
 
 VALID_DAYS = set(range(1, 8))  # ISO weekday: 1=Monday ... 7=Sunday
 

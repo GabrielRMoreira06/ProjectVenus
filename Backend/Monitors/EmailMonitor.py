@@ -22,7 +22,7 @@ import email
 import imaplib
 from email.header import decode_header
 
-from ai.GeminiWorker import worker
+from ai.core.GeminiWorker import worker
 from Orchestrator import Category
 from Monitors.BaseMonitor import BaseMonitor
 from config import EMAIL_ADDRESS, EMAIL_APP_PASSWORD, EMAIL_IMAP_SERVER

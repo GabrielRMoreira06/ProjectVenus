@@ -46,8 +46,8 @@ import json
 from pathlib import Path
 
 from Orchestrator import Category
-from ai.GeminiWorker import worker
-from ai.TTSWorker import tts_worker
+from ai.core.GeminiWorker import worker
+from ai.core.TTSWorker import tts_worker
 
 FIRST_BOOT_MESSAGE = (
     "Hello. Virtual assistant initialization complete. "

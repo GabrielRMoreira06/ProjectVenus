@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
 )
 
 from Preferences import preferences, MONITOR_CATALOG, ACTION_CATALOG
-import ui.Theme as Theme
+import ui.utils.Theme as Theme
 
 
 class ToggleSwitch(QWidget):

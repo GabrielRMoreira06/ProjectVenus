@@ -4,9 +4,9 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame, QStackedWidget
 )
 
-from ui.PlaceholderPage import PlaceholderPage
-from ui.WallpaperPage import WallpaperPage
-import ui.Theme as Theme
+from ui.pages.PlaceholderPage import PlaceholderPage
+from ui.pages.WallpaperPage import WallpaperPage
+import ui.utils.Theme as Theme
 
 TOOL_ALARM = 0
 TOOL_MEMORIES = 1

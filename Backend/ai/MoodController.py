@@ -169,7 +169,7 @@ Affection: {self.affection}/100
         orchestrator = sys.modules["__main__"].orchestrator
 
         from Orchestrator import Category
-        from ai.GeminiWorker import worker
+        from ai.core.GeminiWorker import worker
 
         print(f"[MoodController] Anger at {self.anger}, triggering DEADPIXEL interaction.")
 
@@ -211,7 +211,7 @@ Affection: {self.affection}/100
         orchestrator = sys.modules["__main__"].orchestrator
 
         from Orchestrator import Category
-        from ai.GeminiWorker import worker
+        from ai.core.GeminiWorker import worker
         from on_call_actions.LowerBrightnessVolume import lower_brightness_volume
 
         print(f"[MoodController] Energy at {self.energy}, triggering LOWERBRIGHTNESS interaction.")

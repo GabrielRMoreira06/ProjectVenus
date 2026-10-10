@@ -64,6 +64,7 @@ Backend/*.bat
 Backend/piper/*.onnx
 Backend/.env
 Backend/piper/
+Backend/wallpapers/
 __pycache__/
 *.onnx
 Backend/piper/

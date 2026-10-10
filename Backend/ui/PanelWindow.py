@@ -12,15 +12,14 @@ from PyQt6.QtWidgets import (
 
 from ai.EXPManager import exp_manager
 from ai.MoodController import mood
-import ui.Theme as Theme
-from ui.ChatHistoryPage import ChatHistoryPage
-from ui.PreferencesPage import PreferencesPage
-from ui.SettingsPage import SettingsPage
-from ui.ToolsPage import ToolsPage
-from ui.NavButton import NavButton
-from ui.ProfileSection import ProfileSection
-from ui.PlaceholderPage import PlaceholderPage
-from ui.Constants import (
+import ui.utils.Theme as Theme
+from ui.pages.ChatHistoryPage import ChatHistoryPage
+from ui.pages.PreferencesPage import PreferencesPage
+from ui.pages.SettingsPage import SettingsPage
+from ui.pages.ToolsPage import ToolsPage
+from ui.componenets.NavButton import NavButton
+from ui.componenets.ProfileSection import ProfileSection
+from ui.utils.Constants import (
     ASSETS_DIR,
     MOOD_IMAGE_MAP,
     MOOD_REFRESH_INTERVAL_MS,

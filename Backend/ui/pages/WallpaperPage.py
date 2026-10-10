@@ -9,13 +9,13 @@ from PyQt6.QtCore import Qt, QSize, QObject, QRectF, pyqtSignal
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QPainterPath
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel,
-    QPushButton, QFrame, QScrollArea, QFileDialog
+    QPushButton, QFrame, QScrollArea, QFileDialog, QMessageBox
 )
 
-from ui.PreferencesPage import ToggleSwitch
-from ai.WallpaperManager import wallpaper_manager
-from ai.WallpaperStore import wallpaper_store
-import ui.Theme as Theme
+from ui.pages.PreferencesPage import ToggleSwitch
+from ai.wallpaper.WallpaperManager import wallpaper_manager
+from ai.wallpaper.WallpaperStore import wallpaper_store
+import ui.utils.Theme as Theme
 
 GRID_COLUMNS = 4
 VIDEO_FILE_FILTER = "Videos (*.mp4 *.mkv *.webm *.avi *.mov)"
@@ -174,6 +174,12 @@ class _ThumbnailLoader(QObject):
         if image is not None:
             self.ready.emit(path, image)
 
+    def forget(self, path):
+        """Drop cached state so a later import reusing this filename gets a fresh thumbnail."""
+        with self._lock:
+            self._cache.pop(path, None)
+            self._failed.discard(path)
+
     def _load_or_create(self, path):
         thumb_path = wallpaper_store.thumbnail_path(path)
 
@@ -231,6 +237,7 @@ class _ThumbnailLabel(QLabel):
 class WallpaperCard(QFrame):
 
     clicked = pyqtSignal(str)
+    delete_requested = pyqtSignal(str)
 
     def __init__(self, path):
         super().__init__()
@@ -254,6 +261,7 @@ class WallpaperCard(QFrame):
         self.delete_button.setFixedSize(24, 24)
         self.delete_button.setIconSize(QSize(14, 14))
         self.delete_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.delete_button.clicked.connect(lambda: self.delete_requested.emit(self.path))
 
         bottom.addWidget(self.name_label, stretch=1)
         bottom.addWidget(self.delete_button)
@@ -375,13 +383,14 @@ class WallpaperPage(QWidget):
         text_column.setSpacing(4)
         self._management_title = QLabel("Wallpaper Management")
         self._management_description = QLabel(
-            "Automatically change your wallpaper at set intervals or based on events.")
+            "Play a random wallpaper from your library every time Venus starts.")
         self._management_description.setWordWrap(True)
         text_column.addWidget(self._management_title)
         text_column.addWidget(self._management_description)
         layout.addLayout(text_column, stretch=1)
 
-        self.management_toggle = ToggleSwitch(checked=False)
+        self.management_toggle = ToggleSwitch(checked=wallpaper_store.is_enabled())
+        self.management_toggle.toggled.connect(wallpaper_manager.set_enabled)
         layout.addWidget(self.management_toggle)
 
         return self._management_frame
@@ -412,7 +421,7 @@ class WallpaperPage(QWidget):
         return row
 
     # ------------------------------------------------------------------
-    # Import / apply
+    # Import / apply / delete
     # ------------------------------------------------------------------
 
     def _open_import_dialog(self):
@@ -451,6 +460,19 @@ class WallpaperPage(QWidget):
     def _apply_wallpaper(self, path):
         wallpaper_manager.play(path)
 
+    def _delete_wallpaper(self, path):
+        answer = QMessageBox.question(
+            self, "Delete wallpaper",
+            f"Delete '{os.path.basename(path)}' from your library?\nThis removes the imported copy.",
+        )
+
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        wallpaper_manager.release(path)
+        thumbnail_loader.forget(path)
+        wallpaper_store.remove(path)
+
     # ------------------------------------------------------------------
     # List rendering
     # ------------------------------------------------------------------
@@ -475,6 +497,7 @@ class WallpaperPage(QWidget):
         for index, path in enumerate(videos):
             card = WallpaperCard(path)
             card.clicked.connect(self._apply_wallpaper)
+            card.delete_requested.connect(self._delete_wallpaper)
             self.grid.addWidget(card, index // GRID_COLUMNS, index % GRID_COLUMNS)
 
     # ------------------------------------------------------------------

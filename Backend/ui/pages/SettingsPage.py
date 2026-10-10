@@ -11,9 +11,9 @@ from PyQt6.QtWidgets import (
 )
 
 from Preferences import preferences
-from ai import StartupManager
-from ui.PreferencesPage import ToggleSwitch
-import ui.Theme as Theme
+from ai.core import StartupManager
+from ui.pages.PreferencesPage import ToggleSwitch
+import ui.utils.Theme as Theme
 
 
 class SettingRow(QFrame):

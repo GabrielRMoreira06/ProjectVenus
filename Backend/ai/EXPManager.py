@@ -148,7 +148,7 @@ class ExpManager:
         orchestrator = sys.modules["__main__"].orchestrator
 
         from Orchestrator import Category
-        from ai.GeminiWorker import worker
+        from ai.core.GeminiWorker import worker
 
         def builder():
             return worker.run(user_text=f"[SYSTEM MESSAGE: Level up, you're now level {level}]")

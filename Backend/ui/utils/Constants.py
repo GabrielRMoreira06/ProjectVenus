@@ -9,7 +9,7 @@ TAB_SETTINGS = 1
 TAB_PREFERENCES = 2
 TAB_TOOLS = 3
 
-ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), "../assets")
 OXANIUM_FONT_PATH = os.path.join(ASSETS_DIR, "Oxanium-VariableFont_wght.ttf")
 
 MOOD_IMAGE_MAP = {

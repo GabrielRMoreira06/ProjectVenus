@@ -35,9 +35,9 @@ from flask import Flask, jsonify, request, send_file
 import uuid
 from Orchestrator import Orchestrator, Category
 from Monitors.PassiveMonitor import PassiveMonitor
-from ai.BootManager import BootManager
+from ai.core.BootManager import BootManager
 from ai.ChatHistory import chat_history
-from ai.GeminiWorker import worker
+from ai.core.GeminiWorker import worker
 from on_call_actions import ON_CALL_ACTIONS
 from on_call_actions.Reminder import persistent_reminder_manager
 from one_time_run.DiskInspector import DiskInspect
@@ -45,9 +45,9 @@ from one_time_run.HardwareInspector import HardwareInspect
 from one_time_run.MemoryCleanupManager import MemoryCleanupCheck
 from one_time_run.OneTimeManager import OneTimeManager
 from ui.AppBootsTrap import run as run_app
-import ui.Theme as Theme
+import ui.utils.Theme as Theme
 from ui.PanelWindow import avatar_signals, panel_signals
-from ui.Notepad import AUTOSAVE_PATH as NOTEPAD_AUTOSAVE_PATH, notepad_signals
+from ui.componenets.Notepad import AUTOSAVE_PATH as NOTEPAD_AUTOSAVE_PATH, notepad_signals
 
 app = Flask(__name__)
 

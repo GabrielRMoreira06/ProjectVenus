@@ -17,10 +17,10 @@ import keyboard
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
 
-from ui.TextInput import InputWindow
+from ui.componenets.TextInput import InputWindow
 from ui.PanelWindow import PanelWindow
-from ui.Notepad import NotepadWindow
-from ai.WallpaperManager import wallpaper_manager
+from ui.componenets.Notepad import NotepadWindow
+from ai.wallpaper.WallpaperManager import wallpaper_manager
 
 
 def run(process_question, open_automatically=False):

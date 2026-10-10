@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QPixmap, QPainter, QPainterPath, QColor, QPen
 from PyQt6.QtWidgets import QFrame, QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QWidget
 
-import ui.Theme as Theme
+import ui.utils.Theme as Theme
 
 
 class _AvatarCircle(QLabel):

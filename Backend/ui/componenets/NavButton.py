@@ -2,7 +2,7 @@ import qtawesome as qta
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import QPushButton
 
-import ui.Theme as Theme
+import ui.utils.Theme as Theme
 
 
 class NavButton(QPushButton):

@@ -42,11 +42,11 @@ from ai.Prompts import (
     build_response_rules,
     build_response_rules_explanation,
 )
-from ai.ResponseParser import ResponseParser
+from ai.core.ResponseParser import ResponseParser
 from ai.MoodController import mood
 from ai.MemoryManager import MemoryManager
-from ai.TTSWorker import tts_worker as shared_tts_worker
-from ai.ImageSearch import search_image as default_image_search
+from ai.core.TTSWorker import tts_worker as shared_tts_worker
+from ai.tools.ImageSearch import search_image as default_image_search
 
 
 load_dotenv()

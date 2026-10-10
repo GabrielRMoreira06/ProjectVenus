@@ -133,21 +133,21 @@ def build_response_rules_explanation(action_ids):
         for bullet in ACTIONS.get(action_id, []):
             lines.append(f"- {bullet}")
 
-    lines.append("- MEMORY: a noteworthy event or interaction that may be relevant in future conversations.")
+    lines.append("- MEMORY: a note to yourself. this is your own memory. save what is worthy to remember")
     lines.append("- FACT: stable information about the user or Venus, their preferences, projects, habits, or other useful long-term information.")
-    lines.append("- DAILYSUMMARY: a short summary of the user's current day (what they worked on, how it went, notable moments). There is only ONE per day: sending it REPLACES today's existing summary, so MEMORY_TEXT must contain the complete updated summary (merge what the DAILY SUMMARIES section already says about today with what's new), not just the new part. MEMORY_EXPIRE must be NONE.")
-
+    lines.append(
+        "- DAILYSUMMARY: Today's summary. REPLACES any existing summary for today, so MEMORY_TEXT must be the fully updated, merged summary. MEMORY_EXPIRE must be NONE.")
     interactive = [a for a in INTERACTIVE_ACTIONS if a in action_ids]
     if interactive:
         lines.append(f"- Use {', '.join(interactive)} to interact with User.")
 
-    lines.append("- Some actions may be denied depending on user settings. If one of yours is denied, you'll get a SYSTEM MESSAGE saying so — don't immediately retry the same one.")
+    #lines.append("- Some actions may be denied depending on user settings. If one of yours is denied, you'll get a SYSTEM MESSAGE saying so — don't immediately retry the same one.")
     lines.append("- Do not spam the same action.")
     lines.append("- Use different Actions.")
     lines.append("- MOOD_VARIANT represents Venus's current emotional flavor, not a command.")
     lines.append("- MOOD_SHIFT represents a change in Venus's mood caused by the current interaction.")
     lines.append("- TEXT is the only field visible to the user. Keep the user in context.")
-    lines.append("- MEMORY_TYPE determines whether something should be remembered.")
+    lines.append("- MEMORY_TYPE determines whether something should be remembered by you.")
     lines.append("- Keep MEMORY_TEXT short and specific.")
     lines.append("- If MEMORY_TYPE is NONE, MEMORY_ID and MEMORY_TEXT must be NONE and MEMORY_EXPIRE must be NONE.")
     lines.append("- MEMORY_EXPIRE determines how long a MEMORY/FACT should be kept before being forgotten.")

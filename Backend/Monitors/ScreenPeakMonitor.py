@@ -7,8 +7,8 @@ threshold — it fires purely on a timer, subject only to Orchestrator's
 global cooldown and priority.
 """
 
-from ai.ScreenCapture import capture_screen
-from ai.GeminiWorker import worker
+from ai.tools.ScreenCapture import capture_screen
+from ai.core.GeminiWorker import worker
 from Orchestrator import Category
 from Monitors.BaseMonitor import BaseMonitor
 

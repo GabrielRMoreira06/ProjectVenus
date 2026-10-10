@@ -54,7 +54,7 @@ def fire(mood):
     orchestrator = sys.modules["__main__"].orchestrator
 
     from Orchestrator import Category
-    from ai.GeminiWorker import worker
+    from ai.core.GeminiWorker import worker
     from ai.MoodController import MoodVariant
 
     image_path = _pick_random_image_from_disk()

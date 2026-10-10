@@ -3,9 +3,11 @@ WallpaperManager.py
 
 Plays a video from the persistent WallpaperStore behind the desktop
 icons, one mpv window per monitor, using Venus's existing
-QApplication. start() picks a random one; play() switches to a
-specific one at runtime. Pauses per monitor while a maximized/
-fullscreen window covers it.
+QApplication. start() picks a random one (only while the Wallpaper
+Management toggle is on); play() switches to a specific one at runtime;
+set_enabled() is what the toggle calls; release() frees a video's file
+before it's deleted. Pauses per monitor while a maximized/fullscreen
+window covers it.
 
 Needs libmpv-2.dll (or mpv-2.dll) in Backend/ — pip install python-mpv pywin32
 """
@@ -17,7 +19,7 @@ import random
 from ctypes import wintypes
 
 from config import DATA_DIR
-from ai.WallpaperStore import wallpaper_store
+from ai.wallpaper.WallpaperStore import wallpaper_store
 
 os.environ["PATH"] = str(DATA_DIR) + os.pathsep + os.environ["PATH"]
 
@@ -182,9 +184,14 @@ class WallpaperManager:
         self.store = store
         self.wallpapers = []
         self.own_hwnds = set()
+        self.current_path = None
         self._timer = None
 
     def start(self):
+        if not self.store.is_enabled():
+            print("[WallpaperManager] Wallpaper management is off — skipping.")
+            return
+
         candidates = [v for v in self.store.get_all() if os.path.isfile(v)]
 
         if not candidates:
@@ -193,7 +200,27 @@ class WallpaperManager:
 
         self._launch(random.choice(candidates))
 
+    def set_enabled(self, enabled):
+        self.store.set_enabled(enabled)
+
+        if not enabled:
+            self.stop()
+            return
+
+        if self.wallpapers:
+            return
+
+        try:
+            self.start()
+        except Exception:
+            import traceback
+            traceback.print_exc()
+
     def play(self, video_path):
+        if not self.store.is_enabled():
+            print("[WallpaperManager] Wallpaper management is off — ignoring request.")
+            return
+
         if not os.path.isfile(video_path):
             print(f"[WallpaperManager] File not found: '{video_path}'.")
             return
@@ -207,6 +234,31 @@ class WallpaperManager:
         for wallpaper in self.wallpapers:
             wallpaper.set_video(video_path)
 
+        self.current_path = video_path
+
+    def release(self, video_path):
+        """
+        Call before deleting a video's file. If it's the one playing,
+        switches to another library video, or stops if there's none,
+        so mpv lets go of the file.
+        """
+        if not self.wallpapers or not self._same_file(self.current_path, video_path):
+            return
+
+        others = [v for v in self.store.get_all()
+                  if not self._same_file(v, video_path) and os.path.isfile(v)]
+
+        if others and self.store.is_enabled():
+            self.play(random.choice(others))
+        else:
+            self.stop()
+
+    @staticmethod
+    def _same_file(a, b):
+        if not a or not b:
+            return False
+        return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
+
     def _launch(self, video_path):
         print(f"[WallpaperManager] Playing '{video_path}'.")
 
@@ -219,6 +271,7 @@ class WallpaperManager:
             for hmon, rect in _list_monitors()
         ]
         self.own_hwnds = {w.hwnd for w in self.wallpapers}
+        self.current_path = video_path
 
         if self._timer is None:
             self._timer = QTimer()
@@ -233,6 +286,7 @@ class WallpaperManager:
             wallpaper.close()
 
         self.wallpapers = []
+        self.current_path = None
 
     def _check_monitors(self):
         covered = _get_covered_monitors(self.own_hwnds)

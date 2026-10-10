@@ -42,7 +42,7 @@ import time
 
 import psutil
 
-from ai.GeminiWorker import worker
+from ai.core.GeminiWorker import worker
 from Orchestrator import Category
 from Monitors.BaseMonitor import BaseMonitor
 

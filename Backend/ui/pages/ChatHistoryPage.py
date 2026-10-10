@@ -1,11 +1,10 @@
-import qtawesome as qta
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollArea, QFrame
 
 from ai.ChatHistory import chat_history
-from ui.ImageUtils import pil_to_qpixmap
-from ui.MessageComposer import MessageComposer
-import ui.Theme as Theme
+from ui.utils.ImageUtils import pil_to_qpixmap
+from ui.componenets.MessageComposer import MessageComposer
+import ui.utils.Theme as Theme
 
 THUMBNAIL_MAX_SIZE = (200, 150)
 

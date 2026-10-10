@@ -33,8 +33,8 @@ from PyQt6.QtWidgets import (
 )
 
 from ui.PanelWindow import DraggableFrame
-from ui.Constants import load_oxanium_family
-import ui.Theme as Theme
+from ui.utils.Constants import load_oxanium_family
+import ui.utils.Theme as Theme
 
 AUTOSAVE_PATH = Path("notepad_autosave.txt")
 AUTOSAVE_DEBOUNCE_MS = 1000

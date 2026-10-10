@@ -6,10 +6,10 @@ from PyQt6.QtWidgets import (
     QLabel, QPushButton,
 )
 
-from ui.MessageComposer import MessageComposer
-from ui.PanelWindow import PanelWindow, DraggableFrame
-from ui.Constants import load_oxanium_family
-import ui.Theme as Theme
+from ui.componenets.MessageComposer import MessageComposer
+from ui.PanelWindow import DraggableFrame
+from ui.utils.Constants import load_oxanium_family
+import ui.utils.Theme as Theme
 
 
 class InputWindow(DraggableFrame):

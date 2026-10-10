@@ -4,13 +4,16 @@ WallpaperStore.py
 Persistent wallpaper library. Imported videos are COPIED into
 Backend/wallpapers/ and only the copy is ever referenced, so deleting
 the original file doesn't break anything. wallpapers.json stores just
-the copied filenames. Cached thumbnails live in wallpapers/thumbs/.
+the copied filenames plus the "enabled" flag for the Wallpaper
+Management toggle. Cached thumbnails live in wallpapers/thumbs/.
 Same load-once / rewrite-on-change pattern as Preferences/MoodController.
 """
 
 import json
 import os
 import shutil
+import threading
+import time
 from pathlib import Path
 
 from config import DATA_DIR
@@ -27,6 +30,7 @@ class WallpaperStore:
         THUMB_DIR.mkdir(parents=True, exist_ok=True)
 
         self._listeners = []
+        self.enabled = True
         self.videos = self._load()
 
     # ------------------------------------------------------------------
@@ -42,6 +46,7 @@ class WallpaperStore:
                 content = f.read().strip()
                 data = json.loads(content) if content else {}
                 entries = [v for v in data.get("videos", []) if isinstance(v, str)]
+                self.enabled = bool(data.get("enabled", True))
         except (json.JSONDecodeError, OSError, AttributeError):
             print(f"[WallpaperStore] '{self.file_path}' is empty or corrupted — starting with an empty list.")
             return []
@@ -83,7 +88,7 @@ class WallpaperStore:
 
     def _save(self):
         with open(self.file_path, "w", encoding="utf-8") as f:
-            json.dump({"videos": self.videos}, f, ensure_ascii=False, indent=4)
+            json.dump({"enabled": self.enabled, "videos": self.videos}, f, ensure_ascii=False, indent=4)
 
     # ------------------------------------------------------------------
     # Listeners
@@ -100,6 +105,18 @@ class WallpaperStore:
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    def is_enabled(self):
+        return self.enabled
+
+    def set_enabled(self, enabled):
+        enabled = bool(enabled)
+
+        if enabled == self.enabled:
+            return
+
+        self.enabled = enabled
+        self._save()
 
     def get_all(self):
         """Absolute paths to the library copies."""
@@ -149,14 +166,29 @@ class WallpaperStore:
 
         self.videos.remove(name)
         self._save()
-
-        for file in (WALLPAPER_DIR / name, self.thumbnail_path(path)):
-            try:
-                file.unlink()
-            except OSError:
-                pass  # e.g. still locked by mpv while it's the active wallpaper
-
         self._notify()
+
+        # mpv can hold the file for a moment after it stops using it,
+        # so delete off the main thread and retry instead of freezing the UI.
+        threading.Thread(
+            target=self._delete_files,
+            args=([WALLPAPER_DIR / name, self.thumbnail_path(path)],),
+            daemon=True,
+        ).start()
+
+    @staticmethod
+    def _delete_files(files):
+        for file in files:
+            for _ in range(15):
+                try:
+                    file.unlink()
+                    break
+                except FileNotFoundError:
+                    break
+                except OSError:
+                    time.sleep(0.2)
+            else:
+                print(f"[WallpaperStore] Couldn't delete '{file}' (still in use?).")
 
 
 # Shared instance, same pattern as `preferences`/`mood` elsewhere.

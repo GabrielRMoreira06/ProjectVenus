@@ -36,7 +36,7 @@ import threading
 from pathlib import Path
 
 from PIL import Image
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QImage
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
@@ -44,9 +44,9 @@ from PyQt6.QtWidgets import (
 )
 import qtawesome as qta
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
-from ui.ImageUtils import qimage_to_pil, pil_to_qpixmap
-import ui.Theme as Theme
-from ai.PdfSummarizer import pdf_summarizer
+from ui.utils.ImageUtils import qimage_to_pil, pil_to_qpixmap
+import ui.utils.Theme as Theme
+from ai.tools.PdfSummarizer import pdf_summarizer
 
 # Curated set rather than a full OS emoji panel — Qt has no built-in
 # emoji picker, and pulling in a native one is platform-specific for

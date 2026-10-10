@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
 
-import ui.Theme as Theme
+import ui.utils.Theme as Theme
 
 
 class PlaceholderPage(QWidget):
