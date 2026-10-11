@@ -46,6 +46,20 @@ import qtawesome as qta
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from ui.utils.ImageUtils import qimage_to_pil, pil_to_qpixmap
 import ui.utils.Theme as Theme
+from ui.utils.Typography import FONT_SIZE_XS, FONT_SIZE_MD, FONT_SIZE_XL, FONT_WEIGHT_BOLD
+from ui.utils.Shapes import (
+    RADIUS_SM,
+    RADIUS_MD,
+    RADIUS_LG,
+    BORDER_THIN,
+    ICON_SIZE_SM,
+    ICON_SIZE_LG,
+    BUTTON_HEIGHT_SM,
+    BUTTON_HEIGHT_MD,
+    IMAGE_PREVIEW_HEIGHT,
+    IMAGE_PREVIEW_HEIGHT_MAX,
+)
+from ui.utils.Spacing import SPACE_0, SPACE_XS, SPACE_SM, SPACE_MD, SPACE_LG
 from ai.tools.PdfSummarizer import pdf_summarizer
 
 # Curated set rather than a full OS emoji panel — Qt has no built-in
@@ -185,28 +199,28 @@ class EmojiPicker(QWidget):
         self.setStyleSheet(f"""
             QWidget {{
                 background-color: {Theme.BG_PANEL};
-                border: 1px solid {Theme.PINK};
-                border-radius: 8px;
+                border: {BORDER_THIN}px solid {Theme.PINK};
+                border-radius: {RADIUS_MD}px;
             }}
             QPushButton {{
                 background: transparent;
                 border: none;
-                font-size: 18px;
+                font-size: {FONT_SIZE_XL}px;
             }}
             QPushButton:hover {{
                 background-color: {Theme.BG_BUBBLE};
-                border-radius: 4px;
+                border-radius: {RADIUS_SM}px;
             }}
         """)
 
         layout = QGridLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(4)
+        layout.setContentsMargins(SPACE_SM, SPACE_SM, SPACE_SM, SPACE_SM)
+        layout.setSpacing(SPACE_XS)
 
         columns = 6
         for index, emoji in enumerate(EMOJI_CHOICES):
             button = QPushButton(emoji)
-            button.setFixedSize(32, 32)
+            button.setFixedSize(BUTTON_HEIGHT_MD, BUTTON_HEIGHT_MD)
             button.setCursor(Qt.CursorShape.PointingHandCursor)
             button.clicked.connect(lambda _checked=False, e=emoji: self._select(e))
             layout.addWidget(button, index // columns, index % columns)
@@ -252,17 +266,17 @@ class MessageComposer(QWidget):
         wrong.
         """
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(6)
+        outer.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
+        outer.setSpacing(SPACE_SM)
 
         preview_row = QHBoxLayout()
         self.preview_label = QLabel()
         self.preview_label.setVisible(False)
-        self.preview_label.setFixedHeight(60)
+        self.preview_label.setFixedHeight(IMAGE_PREVIEW_HEIGHT)
 
         self.remove_image_button = QPushButton("✕")
         self.remove_image_button.setVisible(False)
-        self.remove_image_button.setFixedSize(22, 22)
+        self.remove_image_button.setFixedSize(ICON_SIZE_LG, ICON_SIZE_LG)
         self.remove_image_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.remove_image_button.clicked.connect(self._remove_image)
 
@@ -272,13 +286,12 @@ class MessageComposer(QWidget):
         outer.addLayout(preview_row)
 
         bar = QHBoxLayout()
-        bar.setSpacing(10)
+        bar.setSpacing(SPACE_MD)
 
         self.emoji_button = QPushButton()
         self.emoji_button.clicked.connect(lambda: self._open_emoji_picker(self.emoji_button))
 
         self.attach_button = QPushButton()
-        self.attach_button.clicked.connect(self._open_attach_dialog)
         self.attach_button.clicked.connect(self._open_attach_dialog)
 
         # min_lines=1/max_lines=5: starts as a single-line bar and
@@ -295,7 +308,7 @@ class MessageComposer(QWidget):
         # Smaller than before (was 36) so the whole bar sits closer to
         # the height of one line of text instead of towering over it.
         for button in (self.emoji_button, self.attach_button, self.send_button):
-            button.setFixedSize(28, 28)
+            button.setFixedSize(BUTTON_HEIGHT_SM, BUTTON_HEIGHT_SM)
             button.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.send_button.clicked.connect(self.send)
@@ -316,8 +329,8 @@ class MessageComposer(QWidget):
     def _build_full(self, placeholder):
         """Taller box with a status row — used inside TextInput.InputWindow's popup."""
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(8)
+        outer.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
+        outer.setSpacing(SPACE_SM)
 
         # min_lines=3/max_lines=10: this popup already started taller
         # than the compact bar, so it gets a taller auto-grow range
@@ -330,7 +343,7 @@ class MessageComposer(QWidget):
 
         self.preview_label = QLabel()
         self.preview_label.setVisible(False)
-        self.preview_label.setMaximumHeight(80)
+        self.preview_label.setMaximumHeight(IMAGE_PREVIEW_HEIGHT_MAX)
         outer.addWidget(self.preview_label)
 
         button_row = QHBoxLayout()
@@ -364,38 +377,38 @@ class MessageComposer(QWidget):
         self.remove_image_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
-                border: 1px solid {Theme.PINK};
-                border-radius: 11px;
+                border: {BORDER_THIN}px solid {Theme.PINK};
+                border-radius: {RADIUS_MD}px;
                 color: {Theme.PINK_SOFT};
             }}
             QPushButton:hover {{ color: white; }}
         """)
 
         self.emoji_button.setIcon(qta.icon("fa5s.smile", color=Theme.PINK_SOFT, color_active="white"))
-        self.emoji_button.setIconSize(QSize(14, 14))
+        self.emoji_button.setIconSize(QSize(ICON_SIZE_SM, ICON_SIZE_SM))
 
         self.attach_button.setIcon(qta.icon("fa5s.paperclip", color=Theme.PINK_SOFT, color_active="white"))
-        self.attach_button.setIconSize(QSize(14, 14))
+        self.attach_button.setIconSize(QSize(ICON_SIZE_SM, ICON_SIZE_SM))
 
-        self.text_edit.setStyleSheet("""
-            QTextEdit {
+        self.text_edit.setStyleSheet(f"""
+            QTextEdit {{
                 background-color: transparent;
                 color: white;
                 border: none;
-                padding: 2px 2px;
-                font-size: 13px;
-            }
+                padding: {SPACE_XS}px;
+                font-size: {FONT_SIZE_MD}px;
+            }}
         """)
 
         self.send_button.setIcon(qta.icon("fa5s.paper-plane", color="white", color_disabled="#888888"))
-        self.send_button.setIconSize(QSize(13, 13))
+        self.send_button.setIconSize(QSize(ICON_SIZE_SM, ICON_SIZE_SM))
 
         for button in (self.emoji_button, self.attach_button):
             button.setStyleSheet(f"""
                 QPushButton {{
                     background-color: transparent;
-                    border: 1px solid {Theme.PINK};
-                    border-radius: 14px;
+                    border: {BORDER_THIN}px solid {Theme.PINK};
+                    border-radius: {RADIUS_LG}px;
                     color: {Theme.PINK_SOFT};
                 }}
                 QPushButton:hover {{ color: white; }}
@@ -406,9 +419,9 @@ class MessageComposer(QWidget):
             QPushButton {{
                 background-color: {Theme.PINK};
                 border: none;
-                border-radius: 14px;
+                border-radius: {RADIUS_LG}px;
                 color: white;
-                font-weight: bold;
+                font-weight: {FONT_WEIGHT_BOLD};
             }}
             QPushButton:hover {{ background-color: {Theme.PINK_SOFT}; }}
             QPushButton:disabled {{ background-color: #555; }}
@@ -419,23 +432,23 @@ class MessageComposer(QWidget):
             QTextEdit {{
                 background-color: {Theme.BG_BUBBLE};
                 color: white;
-                border: 1px solid {Theme.PINK};
-                border-radius: 8px;
-                padding: 8px;
-                font-size: 13px;
+                border: {BORDER_THIN}px solid {Theme.PINK};
+                border-radius: {RADIUS_MD}px;
+                padding: {SPACE_SM}px;
+                font-size: {FONT_SIZE_MD}px;
             }}
         """)
 
         if self.status_label is not None:
-            self.status_label.setStyleSheet(f"color: {Theme.PINK_SOFT}; font-size: 11px;")
+            self.status_label.setStyleSheet(f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px;")
 
         self.remove_image_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
-                border: 1px solid {Theme.PINK};
-                border-radius: 6px;
+                border: {BORDER_THIN}px solid {Theme.PINK};
+                border-radius: {RADIUS_SM}px;
                 color: {Theme.PINK_SOFT};
-                padding: 4px 10px;
+                padding: {SPACE_XS}px {SPACE_MD}px;
             }}
             QPushButton:hover {{ color: white; }}
         """)
@@ -444,10 +457,10 @@ class MessageComposer(QWidget):
             QPushButton {{
                 background-color: {Theme.PINK};
                 border: none;
-                border-radius: 8px;
+                border-radius: {RADIUS_MD}px;
                 color: white;
-                font-weight: bold;
-                padding: 6px 14px;
+                font-weight: {FONT_WEIGHT_BOLD};
+                padding: {SPACE_SM}px {SPACE_LG}px;
             }}
             QPushButton:hover {{ background-color: {Theme.PINK_SOFT}; }}
             QPushButton:disabled {{ background-color: #555; }}
@@ -465,9 +478,9 @@ class MessageComposer(QWidget):
         # Map the top-left corner of the button to global screen coordinates
         button_top_left = anchor_button.mapToGlobal(anchor_button.rect().topLeft())
 
-        # Place the bottom of the picker above the top of the button (with a 6px margin)
+        # Place the bottom of the picker above the top of the button (with a small margin)
         x = button_top_left.x()
-        y = button_top_left.y() - picker.height() - 6
+        y = button_top_left.y() - picker.height() - SPACE_SM
 
         picker.move(x, y)
         picker.show()
@@ -515,7 +528,8 @@ class MessageComposer(QWidget):
         self.pending_image = pil_image
 
         pixmap = pil_to_qpixmap(pil_image).scaledToHeight(
-            60 if self.compact else 76, Qt.TransformationMode.SmoothTransformation
+            IMAGE_PREVIEW_HEIGHT if self.compact else IMAGE_PREVIEW_HEIGHT_MAX,
+            Qt.TransformationMode.SmoothTransformation,
         )
         self.preview_label.setPixmap(pixmap)
         self.preview_label.setVisible(True)

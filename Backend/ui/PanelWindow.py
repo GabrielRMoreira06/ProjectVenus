@@ -29,6 +29,26 @@ from ui.utils.Constants import (
     TAB_TOOLS,
     load_oxanium_family,
 )
+from ui.utils.Typography import FONT_WEIGHT_BOLD
+from ui.utils.Shapes import (
+    RADIUS_MD,
+    RADIUS_XL,
+    BORDER_THIN,
+    ICON_SIZE_MD,
+    ICON_SIZE_LG,
+    BUTTON_HEIGHT_MD,
+    SCROLLBAR_WIDTH,
+    SCROLLBAR_HANDLE_RADIUS,
+    SCROLLBAR_HANDLE_MIN_HEIGHT,
+)
+from ui.utils.Spacing import (
+    SPACE_0,
+    SPACE_XS,
+    LAYOUT_SPACING_LOOSE,
+    SIDEBAR_WIDTH,
+    SIDEBAR_PADDING,
+    MAIN_AREA_PADDING,
+)
 
 
 class _AvatarSignals(QObject):
@@ -90,8 +110,8 @@ class PanelWindow(QWidget):
         panel_signals.toggle_requested.connect(self.toggle)
 
         root = QHBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(4)
+        root.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
+        root.setSpacing(SPACE_XS)
 
         self._sidebar_frame = self._build_sidebar()
         root.addWidget(self._sidebar_frame)
@@ -121,13 +141,13 @@ class PanelWindow(QWidget):
             }}
             QScrollBar:vertical {{
                 background: #16051a;
-                width: 12px;
-                margin: 4px;
+                width: {SCROLLBAR_WIDTH}px;
+                margin: {SPACE_XS}px;
             }}
             QScrollBar::handle:vertical {{
                 background: {Theme.PINK};
-                border-radius: 6px;
-                min-height: 28px;
+                border-radius: {SCROLLBAR_HANDLE_RADIUS}px;
+                min-height: {SCROLLBAR_HANDLE_MIN_HEIGHT}px;
             }}
             QScrollBar::add-line:vertical,
             QScrollBar::sub-line:vertical {{
@@ -140,7 +160,7 @@ class PanelWindow(QWidget):
             QFrame {{
                 background-color: {Theme.BG_PANEL};
                 border: none;
-                border-radius: 18px;
+                border-radius: {RADIUS_XL}px;
             }}
         """)
 
@@ -148,17 +168,17 @@ class PanelWindow(QWidget):
         self._divider.setStyleSheet(f"background-color: {Theme.PINK}; border: none;")
 
     def _apply_heart_icon(self):
-        self._sidebar_heart.setPixmap(qta.icon("fa5s.heart", color=Theme.PINK).pixmap(QSize(22, 22)))
+        self._sidebar_heart.setPixmap(qta.icon("fa5s.heart", color=Theme.PINK).pixmap(QSize(ICON_SIZE_LG, ICON_SIZE_LG)))
 
     def _apply_close_button_style(self):
         self._close_button.setIcon(qta.icon("fa5s.times", color=Theme.PINK_SOFT, color_active="white"))
         self._close_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: #16051a;
-                border: 1px solid {Theme.PINK};
-                border-radius: 10px;
+                border: {BORDER_THIN}px solid {Theme.PINK};
+                border-radius: {RADIUS_MD}px;
                 color: {Theme.PINK_SOFT};
-                font-weight: bold;
+                font-weight: {FONT_WEIGHT_BOLD};
             }}
             QPushButton:hover {{
                 background-color: {Theme.PINK};
@@ -168,11 +188,11 @@ class PanelWindow(QWidget):
 
     def _build_sidebar(self):
         sidebar = DraggableFrame()
-        sidebar.setFixedWidth(240)
+        sidebar.setFixedWidth(SIDEBAR_WIDTH)
 
         layout = QVBoxLayout(sidebar)
-        layout.setContentsMargins(16, 20, 16, 16)
-        layout.setSpacing(14)
+        layout.setContentsMargins(*SIDEBAR_PADDING)
+        layout.setSpacing(LAYOUT_SPACING_LOOSE)
 
         history_button = NavButton("fa5s.comment", "Chat", active=True)
         settings_button = NavButton("fa5s.cog", "Settings")
@@ -190,8 +210,8 @@ class PanelWindow(QWidget):
             layout.addWidget(button)
 
         self._divider = QFrame()
-        self._divider.setFixedHeight(1)
-        layout.addSpacing(4)
+        self._divider.setFixedHeight(BORDER_THIN)
+        layout.addSpacing(SPACE_XS)
         layout.addWidget(self._divider)
 
         self._sidebar_heart = QLabel()
@@ -238,8 +258,8 @@ class PanelWindow(QWidget):
             }
         """)
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(8, 16, 20, 20)
-        layout.setSpacing(14)
+        layout.setContentsMargins(*MAIN_AREA_PADDING)
+        layout.setSpacing(LAYOUT_SPACING_LOOSE)
 
         layout.addLayout(self._build_header())
 
@@ -257,8 +277,8 @@ class PanelWindow(QWidget):
         header.addStretch()
 
         self._close_button = QPushButton()
-        self._close_button.setIconSize(QSize(16, 16))
-        self._close_button.setFixedSize(32, 32)
+        self._close_button.setIconSize(QSize(ICON_SIZE_MD, ICON_SIZE_MD))
+        self._close_button.setFixedSize(BUTTON_HEIGHT_MD, BUTTON_HEIGHT_MD)
         self._close_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._close_button.clicked.connect(self.hide)
         header.addWidget(self._close_button)

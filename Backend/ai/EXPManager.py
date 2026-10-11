@@ -44,7 +44,7 @@ from pathlib import Path
 
 from google import genai
 
-from config import GEMINI_KEY
+from config import GEMINI_KEY, STATE_DIR
 
 IMAGE_MODEL_NAME = "gemini-3.1-flash-image"
 
@@ -58,7 +58,7 @@ XP_GROWTH = 1.25
 
 class ExpManager:
 
-    def __init__(self, file_path="exp_state.json", skip_image_generation=True):
+    def __init__(self, file_path=STATE_DIR / "exp_state.json", skip_image_generation=True):
         self.file_path = Path(file_path)
         state = self._load()
 

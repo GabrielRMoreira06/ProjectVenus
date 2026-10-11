@@ -3,6 +3,9 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import QPushButton
 
 import ui.utils.Theme as Theme
+from ui.utils.Typography import FONT_SIZE_XL
+from ui.utils.Shapes import RADIUS_LG, BORDER_THIN, ICON_SIZE_LG, BUTTON_HEIGHT_XL
+from ui.utils.Spacing import SPACE_LG
 
 
 class NavButton(QPushButton):
@@ -10,7 +13,7 @@ class NavButton(QPushButton):
         super().__init__(f"  {label}                                   >")
         self.icon_name = icon_name
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFixedHeight(48)
+        self.setFixedHeight(BUTTON_HEIGHT_XL)
         self._hovered = False
         self.set_active(active)
         Theme.theme_signals.changed.connect(self._on_theme_changed)
@@ -28,7 +31,7 @@ class NavButton(QPushButton):
         self._hovered = hovered
         icon_color = "white" if (self._active or hovered) else Theme.PINK_SOFT
         self.setIcon(qta.icon(self.icon_name, color=icon_color))
-        self.setIconSize(QSize(20, 20))
+        self.setIconSize(QSize(ICON_SIZE_LG, ICON_SIZE_LG))
 
     def enterEvent(self, event):
         if not self._active:
@@ -45,24 +48,24 @@ class NavButton(QPushButton):
             self.setStyleSheet(f"""
                 QPushButton {{
                     text-align: left;
-                    padding-left: 18px;
+                    padding-left: {SPACE_LG}px;
                     background-color: {Theme.BG_BUBBLE};
                     color: white;
-                    border: 1px solid {Theme.PINK};
-                    border-radius: 12px;
-                    font-size: 18px;
+                    border: {BORDER_THIN}px solid {Theme.PINK};
+                    border-radius: {RADIUS_LG}px;
+                    font-size: {FONT_SIZE_XL}px;
                 }}
             """)
         else:
             self.setStyleSheet(f"""
                 QPushButton {{
                     text-align: left;
-                    padding-left: 18px;
+                    padding-left: {SPACE_LG}px;
                     background-color: #16051a;
                     color: {Theme.PINK_SOFT};
                     border: none;
-                    border-radius: 12px;
-                    font-size: 18px;
+                    border-radius: {RADIUS_LG}px;
+                    font-size: {FONT_SIZE_XL}px;
                 }}
                 QPushButton:hover {{
                     color: white;

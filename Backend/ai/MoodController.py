@@ -28,12 +28,18 @@ top of it.
 """
 
 import json
+import random
 from pathlib import Path
+from config import STATE_DIR
 
-ANGER_ALERT_THRESHOLD = 90
-ENERGY_ALERT_THRESHOLD = 15
+ANGER_ALERT_THRESHOLD = 80
+ENERGY_ALERT_THRESHOLD = 20
 BOREDOM_ALERT_THRESHOLD = 70
 
+def _alert_chance(value, threshold, extreme):
+    progress = (value - threshold) / (extreme - threshold)
+    progress = max(0.0, min(1.0, progress))
+    return 0.5 + 0.5 * progress
 
 class MoodVariant:
     ANGER = "ANGER"
@@ -54,7 +60,7 @@ class MoodController:
 
     DEFAULT_VALUE = 50
 
-    def __init__(self, file_path="mood_state.json"):
+    def __init__(self, file_path=STATE_DIR / "mood_state.json"):
         self.file_path = Path(file_path)
 
         state = self._load()
@@ -161,6 +167,9 @@ Affection: {self.affection}/100
         if self._anger_alert_firing:
             return
 
+        if random.random() >= _alert_chance(self.anger, ANGER_ALERT_THRESHOLD, 100):
+            return
+
         self._anger_alert_firing = True
         self._fire_anger_interaction()
 
@@ -201,6 +210,9 @@ Affection: {self.affection}/100
             return
 
         if self._energy_alert_firing:
+            return
+
+        if random.random() >= _alert_chance(self.energy, ENERGY_ALERT_THRESHOLD, 0):
             return
 
         self._energy_alert_firing = True
@@ -245,6 +257,9 @@ Affection: {self.affection}/100
             return
 
         if self._boredom_alert_firing:
+            return
+
+        if random.random() >= _alert_chance(self.boredom, BOREDOM_ALERT_THRESHOLD, 100):
             return
 
         self._boredom_alert_firing = True

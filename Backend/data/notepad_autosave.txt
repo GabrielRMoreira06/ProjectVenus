@@ -10,6 +10,8 @@ VENUS FUTURE FEATURES
 - dice in front of tablet
 - create tools tab
 - reduce window size
--random wallpaper pick
--chance trigger mood interaction
-- remove textinput
+-check preferences
+-progressive unlock actions
+- 3 animations toggle
+- Browse news
+-boredom not triggering

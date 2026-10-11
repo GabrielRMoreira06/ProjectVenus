@@ -1,0 +1,7 @@
+{
+    "cpu": "Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz",
+    "gpu": "Radeon RX550/550 Series",
+    "ram_gb": 16,
+    "disk_gb": 238,
+    "operating_system": "Windows 10"
+}

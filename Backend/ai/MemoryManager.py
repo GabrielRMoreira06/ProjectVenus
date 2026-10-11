@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from config import DATA_DIR
+from config import DATA_DIR, STATE_DIR
 
 EXPIRATION_DURATIONS = {
     "6HOURS": timedelta(hours=6),
@@ -31,7 +31,7 @@ DAILY_SUMMARY_RETENTION = timedelta(weeks=1)
 
 class MemoryManager:
 
-    def __init__(self, file_path="memory.json"):
+    def __init__(self, file_path=STATE_DIR / "memory.json"):
         path = Path(file_path)
         self.file_path = path if path.is_absolute() else DATA_DIR / path
         self._lock = threading.RLock()

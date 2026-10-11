@@ -5,6 +5,22 @@ from ai.ChatHistory import chat_history
 from ui.utils.ImageUtils import pil_to_qpixmap
 from ui.componenets.MessageComposer import MessageComposer
 import ui.utils.Theme as Theme
+from ui.utils.Typography import FONT_SIZE_XS, FONT_SIZE_LG
+from ui.utils.Shapes import (
+    RADIUS_LG,
+    RADIUS_XL,
+    BORDER_NONE,
+    BORDER_MEDIUM,
+    SCROLLBAR_WIDTH_THIN,
+    INPUT_BAR_MIN_HEIGHT,
+)
+from ui.utils.Spacing import (
+    SPACE_0,
+    SPACE_SM,
+    SPACE_MD,
+    SPACE_LG,
+    LAYOUT_SPACING_LOOSE,
+)
 
 THUMBNAIL_MAX_SIZE = (200, 150)
 
@@ -14,7 +30,7 @@ class ChatBubble(QFrame):
         super().__init__()
 
         column = QVBoxLayout()
-        column.setSpacing(8)
+        column.setSpacing(SPACE_SM)
 
         if image is not None:
             thumbnail_label = QLabel()
@@ -43,7 +59,7 @@ class ChatBubble(QFrame):
         )
 
         row = QHBoxLayout(self)
-        row.setContentsMargins(0, 0, 0, 0)
+        row.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
 
         if side == "left":
             row.addLayout(column)
@@ -61,12 +77,12 @@ class ChatBubble(QFrame):
                 QLabel {{
                     background-color: {Theme.BG_BUBBLE};
                     color: white;
-                    padding: 14px 18px;
-                    border-radius: 12px;
-                    font-size: 16px;
+                    padding: {SPACE_MD}px {SPACE_LG}px;
+                    border-radius: {RADIUS_LG}px;
+                    font-size: {FONT_SIZE_LG}px;
                 }}
             """)
-        self._time_label.setStyleSheet(f"color: {Theme.PINK_SOFT}; font-size: 11px;")
+        self._time_label.setStyleSheet(f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px;")
 
 
 class ChatHistoryPage(QWidget):
@@ -77,8 +93,8 @@ class ChatHistoryPage(QWidget):
         self.process_question = process_question
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(14)
+        layout.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
+        layout.setSpacing(LAYOUT_SPACING_LOOSE)
 
         layout.addWidget(self._build_chat_area(), stretch=1)
         layout.addWidget(self._build_input_bar())
@@ -99,7 +115,7 @@ class ChatHistoryPage(QWidget):
         self.chat_scroll.setStyleSheet(f"""
             QScrollArea {{
                 background-color: #080108;
-                border: none;
+                border: {BORDER_NONE}px;
             }}
             QScrollArea > QWidget > QWidget {{
                 background-color: #080108;
@@ -108,7 +124,7 @@ class ChatHistoryPage(QWidget):
             /* Fundo da barra de rolagem */
             QScrollBar:vertical {{
                 background-color: {Theme.BG_BUBBLE};
-                width: 6px;
+                width: {SCROLLBAR_WIDTH_THIN}px;
                 margin: 0px;
                 border: none;
             }}
@@ -116,8 +132,8 @@ class ChatHistoryPage(QWidget):
 
         content = QWidget()
         self.messages_layout = QVBoxLayout(content)
-        self.messages_layout.setSpacing(14)
-        self.messages_layout.setContentsMargins(12, 12, 12, 12)
+        self.messages_layout.setSpacing(LAYOUT_SPACING_LOOSE)
+        self.messages_layout.setContentsMargins(SPACE_MD, SPACE_MD, SPACE_MD, SPACE_MD)
         self.messages_layout.addStretch()
 
         self.chat_scroll.setWidget(content)
@@ -133,10 +149,10 @@ class ChatHistoryPage(QWidget):
 
     def _build_input_bar(self):
         self._input_bar = QFrame()
-        self._input_bar.setMinimumHeight(64)
+        self._input_bar.setMinimumHeight(INPUT_BAR_MIN_HEIGHT)
 
         layout = QHBoxLayout(self._input_bar)
-        layout.setContentsMargins(14, 10, 14, 10)
+        layout.setContentsMargins(SPACE_LG, SPACE_MD, SPACE_LG, SPACE_MD)
 
         self.composer = MessageComposer(
             self.process_question, compact=True, placeholder="Type a message..."
@@ -151,8 +167,8 @@ class ChatHistoryPage(QWidget):
         self._input_bar.setStyleSheet(f"""
             QFrame {{
                 background-color: #16051a;
-                border: 2px solid {Theme.PINK};
-                border-radius: 16px;
+                border: {BORDER_MEDIUM}px solid {Theme.PINK};
+                border-radius: {RADIUS_XL}px;
             }}
         """)
 

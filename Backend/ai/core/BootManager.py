@@ -44,7 +44,7 @@ control it at runtime.
 
 import json
 from pathlib import Path
-
+from config import STATE_DIR
 from Orchestrator import Category
 from ai.core.GeminiWorker import worker
 from ai.core.TTSWorker import tts_worker
@@ -59,7 +59,7 @@ FIRST_BOOT_MESSAGE = (
 
 class BootManager:
 
-    def __init__(self, state_file="boot_state.json", skip_boot_message=False):
+    def __init__(self, state_file=STATE_DIR / "boot_state.json", skip_boot_message=False):
         self.state_file = Path(state_file)
         self.state = self._load_state()
         # Controls only the NORMAL boot greeting (see _run_normal_boot).

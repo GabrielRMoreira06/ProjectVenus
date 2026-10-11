@@ -27,7 +27,7 @@ PanelWindow's Preferences tab renders rows from.
 
 import json
 from pathlib import Path
-
+from config import STATE_DIR
 MONITOR_CATALOG = {
     "boredom": (
         "Boredom comments",
@@ -90,7 +90,7 @@ DEFAULT_START_WITH_WINDOWS = False
 
 class Preferences:
 
-    def __init__(self, file_path="preferences.json"):
+    def __init__(self, file_path=STATE_DIR / "preferences.json"):
         self.file_path = Path(file_path)
         state = self._load()
 

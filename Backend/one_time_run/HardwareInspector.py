@@ -11,11 +11,11 @@ import platform
 from pathlib import Path
 import psutil
 import wmi
-
+from config import STATE_DIR
 
 class HardwareInspect:
 
-    def __init__(self, state_file="hardware_state.json"):
+    def __init__(self, state_file=STATE_DIR / "hardware_state.json"):
         # The WMI connection is NOT created here — __init__ runs on the
         # main thread (import time), but check() is called later, from
         # inside OneTimeManager's own thread. COM/WMI objects aren't

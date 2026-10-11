@@ -1,0 +1,54 @@
+{
+    "facts": [
+        {
+            "id": "dd278ec9",
+            "text": "User is Gabe, who claims to be my creator.",
+            "created_at": "2026-10-10T13:05",
+            "expires_in": "PERMANENT"
+        },
+        {
+            "id": "b75308d3",
+            "text": "User PC specs: Intel Xeon E5-2630 v3, Radeon RX 550, 16GB RAM, Windows 10.",
+            "created_at": "2026-10-10T13:14",
+            "expires_in": "PERMANENT"
+        },
+        {
+            "id": "7f63a302",
+            "text": "User takes Topiramato 25mg.",
+            "created_at": "2026-10-10T13:58",
+            "expires_in": "PERMANENT"
+        },
+        {
+            "id": "b777b884",
+            "text": "User watches the anime 'Even the Student Council Has Its Holes!'.",
+            "created_at": "2026-10-10T16:15",
+            "expires_in": "PERMANENT"
+        },
+        {
+            "id": "60405b8e",
+            "text": "User plays Heroes of the Storm.",
+            "created_at": "2026-10-10T16:32",
+            "expires_in": "PERMANENT"
+        },
+        {
+            "id": "ca5a98af",
+            "text": "User plays Blue Archive.",
+            "created_at": "2026-10-10T16:52",
+            "expires_in": "PERMANENT"
+        }
+    ],
+    "memories": [
+        {
+            "id": "0aa24dde",
+            "text": "User is waiting for a package to install a new HDD.",
+            "created_at": "2026-10-10T17:02",
+            "expires_in": "1WEEK"
+        }
+    ],
+    "daily_summaries": {
+        "2026-10-10": {
+            "text": "Gabe spent the evening reviewing EmailMonitor.py, testing my scream action, dealing with a fake Nigerian prince email, playing Heroes of the Storm, and grinding Blue Archive Hard 9-1.",
+            "updated_at": "2026-10-10T21:30"
+        }
+    }
+}

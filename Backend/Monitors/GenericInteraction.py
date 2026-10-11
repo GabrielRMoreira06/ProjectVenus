@@ -116,10 +116,10 @@ class GenericInteractionMonitor(BaseMonitor):
         return random.choices(behaviors, weights=weights, k=1)[0]
 
     def _fire_ask(self):
-        print("[GenericInteractionMonitor] Asking the user something.")
+        print("[GenericInteractionMonitor] browsing news.")
 
         def builder():
-            return worker.run(user_text="[SYSTEM MESSAGE: Check your memories, Ask something about them to user.]")
+            return worker.run(user_text="[SYSTEM MESSAGE: nothing to report.]")
 
         self.orchestrator.add(Category.MONITOR, builder)
 

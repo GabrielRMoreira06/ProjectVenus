@@ -14,8 +14,7 @@ content.
 """
 
 from pathlib import Path
-
-AUTOSAVE_PATH = Path("notepad_autosave.txt")
+from config import NOTEPAD_PATH as AUTOSAVE_PATH
 
 
 def read_notepad(result):

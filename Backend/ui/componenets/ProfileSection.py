@@ -6,6 +6,21 @@ from PyQt6.QtGui import QPixmap, QPainter, QPainterPath, QColor, QPen
 from PyQt6.QtWidgets import QFrame, QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QWidget
 
 import ui.utils.Theme as Theme
+from ui.utils.Typography import FONT_SIZE_XS, FONT_SIZE_LG, FONT_SIZE_XXL, FONT_SIZE_XXS, FONT_WEIGHT_BOLD
+from ui.utils.Shapes import (
+    RADIUS_SM,
+    RADIUS_MD,
+    RADIUS_LG,
+    BORDER_THIN,
+    BORDER_MEDIUM,
+    ICON_SIZE_SM,
+    ICON_SIZE_MD,
+    AVATAR_SIZE_MD,
+    PROGRESS_BAR_HEIGHT,
+    PROGRESS_BAR_WIDTH,
+    PROGRESS_BAR_LENGTH,
+)
+from ui.utils.Spacing import SPACE_XS, SPACE_SM, SPACE_MD
 
 
 class _AvatarCircle(QLabel):
@@ -13,7 +28,7 @@ class _AvatarCircle(QLabel):
 
     def __init__(self, image_path=None, initials="V"):
         super().__init__()
-        self.setFixedSize(78, 78)
+        self.setFixedSize(AVATAR_SIZE_MD, AVATAR_SIZE_MD)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.initials = initials
         self._current_image_path = None
@@ -30,7 +45,7 @@ class _AvatarCircle(QLabel):
         if image_path and os.path.exists(image_path):
             pixmap = QPixmap(image_path)
             if not pixmap.isNull():
-                self.setPixmap(self._make_circular_pixmap(pixmap, 78, border_width=2))
+                self.setPixmap(self._make_circular_pixmap(pixmap, AVATAR_SIZE_MD, border_width=BORDER_MEDIUM))
                 self.setStyleSheet("background: transparent; border: none;")
                 return
 
@@ -38,14 +53,14 @@ class _AvatarCircle(QLabel):
         self.setText(self.initials)
         self.setStyleSheet(f"""
             background-color: {Theme.BG_BUBBLE};
-            border: 2px solid {Theme.PINK};
-            border-radius: 39px;
+            border: {BORDER_MEDIUM}px solid {Theme.PINK};
+            border-radius: {AVATAR_SIZE_MD // 2}px;
             color: {Theme.PINK};
-            font-size: 24px;
-            font-weight: bold;
+            font-size: {FONT_SIZE_XXL}px;
+            font-weight: {FONT_WEIGHT_BOLD};
         """)
 
-    def _make_circular_pixmap(self, src_pixmap, size, border_width=2):
+    def _make_circular_pixmap(self, src_pixmap, size, border_width=BORDER_MEDIUM):
         scaled = src_pixmap.scaled(
             size, size,
             Qt.AspectRatioMode.KeepAspectRatioByExpanding,
@@ -94,8 +109,8 @@ class _MoodStatBar(QWidget):
         self.label_text = label
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 8, 6, 8)
-        layout.setSpacing(4)
+        layout.setContentsMargins(SPACE_SM, SPACE_SM, SPACE_SM, SPACE_SM)
+        layout.setSpacing(SPACE_XS)
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         self.icon_label = QLabel()
@@ -109,7 +124,7 @@ class _MoodStatBar(QWidget):
         self.bar.setOrientation(Qt.Orientation.Vertical)
         self.bar.setRange(0, 100)
         self.bar.setTextVisible(False)
-        self.bar.setFixedSize(18, 92)
+        self.bar.setFixedSize(PROGRESS_BAR_WIDTH, PROGRESS_BAR_LENGTH)
 
         self.percent_label = QLabel("0%")
         self.percent_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -123,28 +138,28 @@ class _MoodStatBar(QWidget):
         Theme.theme_signals.changed.connect(self._apply_style)
 
     def _apply_style(self):
-        self.setStyleSheet("""
-            QWidget {
+        self.setStyleSheet(f"""
+            QWidget {{
                 background-color: #18051b;
-                border-radius: 10px;
-            }
+                border-radius: {RADIUS_MD}px;
+            }}
         """)
-        self.icon_label.setPixmap(qta.icon(self.icon_name, color=Theme.PINK).pixmap(QSize(18, 18)))
+        self.icon_label.setPixmap(qta.icon(self.icon_name, color=Theme.PINK).pixmap(QSize(ICON_SIZE_MD, ICON_SIZE_MD)))
         self.name_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 8px; border: none; background: transparent;")
+            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XXS}px; border: none; background: transparent;")
         self.bar.setStyleSheet(f"""
             QProgressBar {{
                 background-color: {Theme.BG_BUBBLE};
-                border: 1px solid {Theme.PINK};
-                border-radius: 7px;
+                border: {BORDER_THIN}px solid {Theme.PINK};
+                border-radius: {RADIUS_SM}px;
             }}
             QProgressBar::chunk {{
                 background-color: {Theme.PINK};
-                border-radius: 5px;
+                border-radius: {RADIUS_SM}px;
             }}
         """)
         self.percent_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 11px; border: none; background: transparent;")
+            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
 
     def set_value(self, value):
         value = max(0, min(100, int(value)))
@@ -164,24 +179,24 @@ class ProfileSection(QFrame):
         super().__init__()
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 14, 12, 12)
-        layout.setSpacing(10)
+        layout.setContentsMargins(SPACE_MD, SPACE_MD, SPACE_MD, SPACE_MD)
+        layout.setSpacing(SPACE_MD)
 
         profile_image_path = os.path.join(assets_dir, "venus_profile.png")
 
         header = QHBoxLayout()
-        header.setSpacing(10)
+        header.setSpacing(SPACE_MD)
         self.avatar = _AvatarCircle(image_path=profile_image_path, initials=initials)
         header.addWidget(self.avatar)
 
         name_column = QVBoxLayout()
-        name_column.setSpacing(2)
+        name_column.setSpacing(SPACE_XS)
 
         name_row = QHBoxLayout()
-        name_row.setSpacing(6)
+        name_row.setSpacing(SPACE_SM)
         name_label = QLabel(name)
         name_label.setStyleSheet(
-            "color: white; font-size: 16px; font-weight: bold; border: none; background: transparent;")
+            f"color: white; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
         self._name_heart = QLabel()
         self._name_heart.setStyleSheet("border: none; background: transparent;")
         name_row.addWidget(name_label)
@@ -209,11 +224,11 @@ class ProfileSection(QFrame):
         self.xp_bar.setRange(0, 100)
         self.xp_bar.setValue(0)
         self.xp_bar.setTextVisible(False)
-        self.xp_bar.setFixedHeight(10)
+        self.xp_bar.setFixedHeight(PROGRESS_BAR_HEIGHT)
         layout.addWidget(self.xp_bar)
 
         stats_row = QHBoxLayout()
-        stats_row.setSpacing(6)
+        stats_row.setSpacing(SPACE_SM)
 
         self.anger_bar = _MoodStatBar("fa5s.angry", "Anger")
         self.energy_bar = _MoodStatBar("fa5s.bolt", "Energy")
@@ -233,27 +248,27 @@ class ProfileSection(QFrame):
             QFrame {{
                 background-color: {Theme.BG_BUBBLE};
                 border: none;
-                border-radius: 14px;
+                border-radius: {RADIUS_LG}px;
             }}
         """)
-        self._name_heart.setPixmap(qta.icon("fa5s.heart", color=Theme.PINK).pixmap(QSize(13, 13)))
+        self._name_heart.setPixmap(qta.icon("fa5s.heart", color=Theme.PINK).pixmap(QSize(ICON_SIZE_SM, ICON_SIZE_SM)))
         self.xp_bar.setStyleSheet(f"""
             QProgressBar {{
                 background-color: #16051a;
                 border: none;
-                border-radius: 5px;
+                border-radius: {RADIUS_SM}px;
             }}
             QProgressBar::chunk {{
                 background-color: {Theme.PINK};
-                border-radius: 5px;
+                border-radius: {RADIUS_SM}px;
             }}
         """)
         self._xp_caption.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 11px; border: none; background: transparent;")
+            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
         self.xp_value_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 11px; border: none; background: transparent;")
+            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
         self.level_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 11px; border: none; background: transparent;")
+            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
 
     def set_avatar_image(self, image_path):
         self.avatar.set_image(image_path)

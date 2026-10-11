@@ -16,7 +16,7 @@ import threading
 import time
 from pathlib import Path
 
-from config import DATA_DIR
+from config import DATA_DIR, STATE_DIR
 
 WALLPAPER_DIR = DATA_DIR / "wallpapers"
 THUMB_DIR = WALLPAPER_DIR / "thumbs"
@@ -24,7 +24,7 @@ THUMB_DIR = WALLPAPER_DIR / "thumbs"
 
 class WallpaperStore:
 
-    def __init__(self, file_path="wallpapers.json"):
+    def __init__(self, file_path=STATE_DIR / "wallpapers.json"):
         path = Path(file_path)
         self.file_path = path if path.is_absolute() else DATA_DIR / path
         THUMB_DIR.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,27 @@
+"""
+typography.py
+
+Typography design rules for the PyQt6 UI: font sizes, weights and line
+heights. Font family itself is loaded at runtime (see
+Constants.load_oxanium_family).
+"""
+FONT_SIZE_XXS = 8
+FONT_SIZE_XS = 10
+FONT_SIZE_SM = 12
+FONT_SIZE_MD = 14
+FONT_SIZE_LG = 16
+FONT_SIZE_XL = 20
+FONT_SIZE_XXL = 26
+FONT_SIZE_DISPLAY = 34
+
+FONT_WEIGHT_REGULAR = 400
+FONT_WEIGHT_MEDIUM = 500
+FONT_WEIGHT_SEMIBOLD = 600
+FONT_WEIGHT_BOLD = 700
+
+LINE_HEIGHT_TIGHT = 1.1
+LINE_HEIGHT_NORMAL = 1.35
+LINE_HEIGHT_RELAXED = 1.6
+
+LETTER_SPACING_NORMAL = 0
+LETTER_SPACING_WIDE = 1

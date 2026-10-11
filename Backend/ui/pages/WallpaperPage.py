@@ -16,6 +16,36 @@ from ui.pages.PreferencesPage import ToggleSwitch
 from ai.wallpaper.WallpaperManager import wallpaper_manager
 from ai.wallpaper.WallpaperStore import wallpaper_store
 import ui.utils.Theme as Theme
+from ui.utils.Typography import (
+    FONT_SIZE_SM,
+    FONT_SIZE_MD,
+    FONT_SIZE_LG,
+    FONT_SIZE_XXL,
+    FONT_WEIGHT_BOLD,
+)
+from ui.utils.Shapes import (
+    RADIUS_MD,
+    RADIUS_LG,
+    BORDER_THIN,
+    BORDER_MEDIUM,
+    ICON_SIZE_SM,
+    ICON_SIZE_MD,
+    ICON_SIZE_LG,
+    ICON_SIZE_XL,
+    BUTTON_HEIGHT_SM,
+    BUTTON_HEIGHT_MD,
+    BUTTON_HEIGHT_XL,
+    CARD_THUMBNAIL_HEIGHT,
+)
+from ui.utils.Spacing import (
+    SPACE_0,
+    SPACE_XS,
+    SPACE_SM,
+    SPACE_MD,
+    SPACE_LG,
+    SPACE_XL,
+    LAYOUT_SPACING_LOOSE,
+)
 
 GRID_COLUMNS = 4
 VIDEO_FILE_FILTER = "Videos (*.mp4 *.mkv *.webm *.avi *.mov)"
@@ -220,7 +250,7 @@ class _ThumbnailLabel(QLabel):
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
         clip = QPainterPath()
-        clip.addRoundedRect(QRectF(self.rect()), 8, 8)
+        clip.addRoundedRect(QRectF(self.rect()), RADIUS_MD, RADIUS_MD)
         painter.setClipPath(clip)
 
         scaled = self._cover.scaled(
@@ -247,19 +277,19 @@ class WallpaperCard(QFrame):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(8)
+        layout.setContentsMargins(SPACE_MD, SPACE_MD, SPACE_MD, SPACE_MD)
+        layout.setSpacing(SPACE_SM)
 
         self.thumbnail = _ThumbnailLabel()
-        self.thumbnail.setFixedHeight(110)
+        self.thumbnail.setFixedHeight(CARD_THUMBNAIL_HEIGHT)
         self.thumbnail.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.thumbnail)
 
         bottom = QHBoxLayout()
         self.name_label = QLabel(os.path.basename(path))
         self.delete_button = QPushButton()
-        self.delete_button.setFixedSize(24, 24)
-        self.delete_button.setIconSize(QSize(14, 14))
+        self.delete_button.setFixedSize(BUTTON_HEIGHT_SM, BUTTON_HEIGHT_SM)
+        self.delete_button.setIconSize(QSize(ICON_SIZE_SM, ICON_SIZE_SM))
         self.delete_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.delete_button.clicked.connect(lambda: self.delete_requested.emit(self.path))
 
@@ -288,17 +318,17 @@ class WallpaperCard(QFrame):
         super().mousePressEvent(event)
 
     def _apply_style(self):
-        self.setStyleSheet("""
-            #wallpaperCard {
+        self.setStyleSheet(f"""
+            #wallpaperCard {{
                 background-color: #18051b;
-                border-radius: 12px;
-            }
+                border-radius: {RADIUS_LG}px;
+            }}
         """)
-        self.thumbnail.setPixmap(qta.icon("fa5s.image", color=Theme.PINK_SOFT).pixmap(QSize(32, 32)))
+        self.thumbnail.setPixmap(qta.icon("fa5s.image", color=Theme.PINK_SOFT).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
         self.thumbnail.setStyleSheet(
-            f"background-color: {Theme.BG_BUBBLE}; border: none; border-radius: 8px;")
+            f"background-color: {Theme.BG_BUBBLE}; border: none; border-radius: {RADIUS_MD}px;")
         self.name_label.setStyleSheet(
-            "color: white; font-size: 13px; border: none; background: transparent;")
+            f"color: white; font-size: {FONT_SIZE_MD}px; border: none; background: transparent;")
         self.delete_button.setIcon(qta.icon("fa5s.trash-alt", color=Theme.PINK_SOFT, color_active="white"))
         self.delete_button.setStyleSheet("""
             QPushButton { background: transparent; border: none; }
@@ -315,8 +345,8 @@ class WallpaperPage(QWidget):
         super().__init__()
 
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(14)
+        outer.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
+        outer.setSpacing(LAYOUT_SPACING_LOOSE)
 
         outer.addLayout(self._build_header())
 
@@ -326,15 +356,15 @@ class WallpaperPage(QWidget):
 
         content = QWidget()
         content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(14)
+        content_layout.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
+        content_layout.setSpacing(LAYOUT_SPACING_LOOSE)
 
         content_layout.addWidget(self._build_management_row())
         content_layout.addWidget(self._build_import_button())
         content_layout.addLayout(self._build_list_header())
 
         self.grid = QGridLayout()
-        self.grid.setSpacing(12)
+        self.grid.setSpacing(SPACE_MD)
         for column in range(GRID_COLUMNS):
             self.grid.setColumnStretch(column, 1)
         content_layout.addLayout(self.grid)
@@ -358,7 +388,7 @@ class WallpaperPage(QWidget):
 
     def _build_header(self):
         header = QHBoxLayout()
-        header.setSpacing(10)
+        header.setSpacing(SPACE_MD)
 
         self._header_icon = QLabel()
         self._header_title = QLabel("Wallpaper")
@@ -373,14 +403,14 @@ class WallpaperPage(QWidget):
         self._management_frame.setObjectName("managementRow")
 
         layout = QHBoxLayout(self._management_frame)
-        layout.setContentsMargins(20, 16, 20, 16)
-        layout.setSpacing(16)
+        layout.setContentsMargins(SPACE_XL, SPACE_LG, SPACE_XL, SPACE_LG)
+        layout.setSpacing(SPACE_LG)
 
         self._management_icon = QLabel()
         layout.addWidget(self._management_icon)
 
         text_column = QVBoxLayout()
-        text_column.setSpacing(4)
+        text_column.setSpacing(SPACE_XS)
         self._management_title = QLabel("Wallpaper Management")
         self._management_description = QLabel(
             "Play a random wallpaper from your library every time Venus starts.")
@@ -397,8 +427,8 @@ class WallpaperPage(QWidget):
 
     def _build_import_button(self):
         self.import_button = QPushButton("  Import Image")
-        self.import_button.setFixedHeight(56)
-        self.import_button.setIconSize(QSize(20, 20))
+        self.import_button.setFixedHeight(BUTTON_HEIGHT_XL)
+        self.import_button.setIconSize(QSize(ICON_SIZE_LG, ICON_SIZE_LG))
         self.import_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.import_button.clicked.connect(self._open_import_dialog)
         return self.import_button
@@ -413,8 +443,8 @@ class WallpaperPage(QWidget):
         self.grid_button = QPushButton()
         self.list_button = QPushButton()
         for button in (self.grid_button, self.list_button):
-            button.setFixedSize(36, 36)
-            button.setIconSize(QSize(16, 16))
+            button.setFixedSize(BUTTON_HEIGHT_MD, BUTTON_HEIGHT_MD)
+            button.setIconSize(QSize(ICON_SIZE_MD, ICON_SIZE_MD))
             button.setCursor(Qt.CursorShape.PointingHandCursor)
             row.addWidget(button)
 
@@ -490,7 +520,7 @@ class WallpaperPage(QWidget):
             self._empty_label = QLabel("No wallpapers imported yet")
             self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self._empty_label.setStyleSheet(
-                f"color: {Theme.PINK_SOFT}; font-size: 13px; border: none; background: transparent;")
+                f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_MD}px; border: none; background: transparent;")
             self.grid.addWidget(self._empty_label, 0, 0, 1, GRID_COLUMNS)
             return
 
@@ -505,40 +535,40 @@ class WallpaperPage(QWidget):
     # ------------------------------------------------------------------
 
     def _apply_style(self):
-        self._header_icon.setPixmap(qta.icon("fa5s.image", color=Theme.PINK).pixmap(QSize(30, 30)))
+        self._header_icon.setPixmap(qta.icon("fa5s.image", color=Theme.PINK).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
         self._header_icon.setStyleSheet("border: none; background: transparent;")
         self._header_title.setStyleSheet(
-            f"color: {Theme.PINK}; font-size: 24px; font-weight: bold; border: none; background: transparent;")
+            f"color: {Theme.PINK}; font-size: {FONT_SIZE_XXL}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
 
-        self._management_frame.setStyleSheet("""
-            #managementRow {
+        self._management_frame.setStyleSheet(f"""
+            #managementRow {{
                 background-color: #18051b;
-                border-radius: 12px;
-            }
+                border-radius: {RADIUS_LG}px;
+            }}
         """)
-        self._management_icon.setPixmap(qta.icon("fa5s.image", color=Theme.PINK).pixmap(QSize(36, 36)))
+        self._management_icon.setPixmap(qta.icon("fa5s.image", color=Theme.PINK).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
         self._management_icon.setStyleSheet("border: none; background: transparent;")
         self._management_title.setStyleSheet(
-            "color: white; font-size: 16px; font-weight: bold; border: none; background: transparent;")
+            f"color: white; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
         self._management_description.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 12px; border: none; background: transparent;")
+            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_SM}px; border: none; background: transparent;")
 
         self.import_button.setIcon(qta.icon("fa5s.upload", color=Theme.PINK))
         self.import_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
-                border: 2px solid {Theme.PINK};
-                border-radius: 12px;
+                border: {BORDER_MEDIUM}px solid {Theme.PINK};
+                border-radius: {RADIUS_LG}px;
                 color: {Theme.PINK};
-                font-size: 16px;
-                font-weight: bold;
+                font-size: {FONT_SIZE_LG}px;
+                font-weight: {FONT_WEIGHT_BOLD};
             }}
             QPushButton:hover {{ background-color: {Theme.BG_BUBBLE}; }}
             QPushButton:disabled {{ color: #666; border-color: #555; }}
         """)
 
         self._list_title.setStyleSheet(
-            f"color: {Theme.PINK}; font-size: 16px; font-weight: bold; border: none; background: transparent;")
+            f"color: {Theme.PINK}; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
 
         self.grid_button.setIcon(qta.icon("fa5s.th-large", color=Theme.PINK))
         self.list_button.setIcon(qta.icon("fa5s.list", color=Theme.PINK_SOFT))
@@ -546,8 +576,8 @@ class WallpaperPage(QWidget):
         self.grid_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {Theme.BG_BUBBLE};
-                border: 1px solid {Theme.PINK};
-                border-radius: 8px;
+                border: {BORDER_THIN}px solid {Theme.PINK};
+                border-radius: {RADIUS_MD}px;
             }}
         """)
         self.list_button.setStyleSheet("""

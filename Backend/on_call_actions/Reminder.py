@@ -40,7 +40,7 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-
+from config import STATE_DIR
 from Orchestrator import Category
 from ai.core.GeminiWorker import worker
 
@@ -134,7 +134,7 @@ class PersistentReminderManager:
     matches, since poll_interval is much shorter than 60s.
     """
 
-    def __init__(self, state_file="persistent_reminders.json", poll_interval=30):
+    def __init__(self, state_file=STATE_DIR / "persistent_reminders.json", poll_interval=30):
         self.state_file = Path(state_file)
         self.poll_interval = poll_interval
         self._lock = threading.Lock()

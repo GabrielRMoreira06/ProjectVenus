@@ -14,6 +14,15 @@ from Preferences import preferences
 from ai.core import StartupManager
 from ui.pages.PreferencesPage import ToggleSwitch
 import ui.utils.Theme as Theme
+from ui.utils.Typography import FONT_SIZE_SM, FONT_SIZE_LG, FONT_WEIGHT_BOLD
+from ui.utils.Shapes import (
+    RADIUS_LG,
+    PROGRESS_BAR_HEIGHT,
+    SLIDER_WIDTH,
+    SLIDER_HANDLE_SIZE,
+    SLIDER_VALUE_WIDTH,
+)
+from ui.utils.Spacing import SPACE_0, SPACE_SM, SPACE_MD, SPACE_LG
 
 
 class SettingRow(QFrame):
@@ -21,8 +30,8 @@ class SettingRow(QFrame):
         super().__init__()
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 12, 16, 12)
-        layout.setSpacing(6)
+        layout.setContentsMargins(SPACE_LG, SPACE_MD, SPACE_LG, SPACE_MD)
+        layout.setSpacing(SPACE_SM)
 
         header = QHBoxLayout()
         self.title_label = QLabel(title)
@@ -39,16 +48,16 @@ class SettingRow(QFrame):
         Theme.theme_signals.changed.connect(self._apply_style)
 
     def _apply_style(self):
-        self.setStyleSheet("""
-            QFrame {
+        self.setStyleSheet(f"""
+            QFrame {{
                 background-color: #18051b;
-                border-radius: 12px;
-            }
+                border-radius: {RADIUS_LG}px;
+            }}
         """)
         self.title_label.setStyleSheet(
-            "color: white; font-size: 15px; font-weight: bold; border: none; background: transparent;")
+            f"color: white; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
         self.description_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 12px; border: none; background: transparent;")
+            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_SM}px; border: none; background: transparent;")
 
 
 class VolumeSlider(QWidget):
@@ -56,11 +65,11 @@ class VolumeSlider(QWidget):
 
     def __init__(self, initial_percent):
         super().__init__()
-        self.setFixedWidth(180)
+        self.setFixedWidth(SLIDER_WIDTH)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+        layout.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
+        layout.setSpacing(SPACE_MD)
 
         self.slider = QSlider(Qt.Orientation.Horizontal)
         self.slider.setRange(0, 100)
@@ -68,7 +77,7 @@ class VolumeSlider(QWidget):
         self.slider.valueChanged.connect(self._on_changed)
 
         self.value_label = QLabel(f"{self.slider.value()}%")
-        self.value_label.setFixedWidth(40)
+        self.value_label.setFixedWidth(SLIDER_VALUE_WIDTH)
 
         layout.addWidget(self.slider, stretch=1)
         layout.addWidget(self.value_label)
@@ -77,25 +86,29 @@ class VolumeSlider(QWidget):
         Theme.theme_signals.changed.connect(self._apply_style)
 
     def _apply_style(self):
+        groove_radius = PROGRESS_BAR_HEIGHT // 2
+        handle_radius = SLIDER_HANDLE_SIZE // 2
+        handle_margin = (SLIDER_HANDLE_SIZE - PROGRESS_BAR_HEIGHT) // 2
+
         self.slider.setStyleSheet(f"""
             QSlider::groove:horizontal {{
                 background: {Theme.BG_BUBBLE};
-                height: 6px;
-                border-radius: 3px;
+                height: {PROGRESS_BAR_HEIGHT}px;
+                border-radius: {groove_radius}px;
             }}
             QSlider::handle:horizontal {{
                 background: {Theme.PINK};
-                width: 16px;
-                margin: -6px 0;
-                border-radius: 8px;
+                width: {SLIDER_HANDLE_SIZE}px;
+                margin: -{handle_margin}px 0;
+                border-radius: {handle_radius}px;
             }}
             QSlider::sub-page:horizontal {{
                 background: {Theme.PINK};
-                border-radius: 3px;
+                border-radius: {groove_radius}px;
             }}
         """)
         self.value_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 12px; border: none; background: transparent;")
+            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_SM}px; border: none; background: transparent;")
 
     def _on_changed(self, value):
         self.value_label.setText(f"{value}%")
@@ -107,7 +120,7 @@ class SettingsPage(QWidget):
         super().__init__()
 
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -115,7 +128,7 @@ class SettingsPage(QWidget):
 
         content = QWidget()
         content_layout = QVBoxLayout(content)
-        content_layout.setSpacing(12)
+        content_layout.setSpacing(SPACE_MD)
 
         self.voice_header = QLabel("Voice")
         content_layout.addWidget(self.voice_header)
@@ -155,6 +168,9 @@ class SettingsPage(QWidget):
         Theme.theme_signals.changed.connect(self._apply_style)
 
     def _apply_style(self):
-        header_style = f"color: {Theme.PINK}; font-size: 16px; font-weight: bold; border: none; background: transparent;"
+        header_style = (
+            f"color: {Theme.PINK}; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; "
+            f"border: none; background: transparent;"
+        )
         self.voice_header.setStyleSheet(header_style)
         self.startup_header.setStyleSheet(header_style)
