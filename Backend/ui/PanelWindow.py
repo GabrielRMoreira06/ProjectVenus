@@ -102,7 +102,7 @@ class PanelWindow(QWidget):
         self.setWindowTitle("Venus Panel")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.resize(1100, 620)
+        self.resize(950, 620)
 
         self.toggle_requested.connect(self.toggle)
         avatar_signals.mood_changed.connect(self.set_avatar_mood)

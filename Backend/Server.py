@@ -365,7 +365,7 @@ def process_question(text, image=None):
         return
 
     def builder():
-        return worker.run(user_text=text, image=image)
+        return worker.run(user_text=f"[USER TEXT: {text}]", image=image)
 
     result = orchestrator.add(Category.USER, builder, sync=True)
     queue_response(result)

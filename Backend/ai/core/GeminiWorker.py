@@ -275,7 +275,7 @@ class GeminiWorker:
 
         if user_text:
             sections.append(
-                f"=== USER INPUT ===\n{user_text}"
+                f"=== INPUT ===\n{user_text}"
             )
 
         return "\n\n".join(sections)

@@ -116,7 +116,7 @@ public class PokeController : MonoBehaviour
         isWaitingResponse = true;
 
         string message =
-            $"user is poking you on your {region}.";
+            $"[SYSTEM MESSAGE: user is poking you on your {region}.]";
 
         VenusRequester.Ask(message);
 

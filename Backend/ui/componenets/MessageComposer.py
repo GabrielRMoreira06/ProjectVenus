@@ -395,7 +395,7 @@ class MessageComposer(QWidget):
                 background-color: transparent;
                 color: white;
                 border: none;
-                padding: {SPACE_XS}px;
+                padding: 0px;
                 font-size: {FONT_SIZE_MD}px;
             }}
         """)

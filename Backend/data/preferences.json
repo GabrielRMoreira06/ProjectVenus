@@ -22,7 +22,7 @@
         },
         "generic_interaction": {
             "enabled": true,
-            "interval": 1980
+            "interval": 1860
         },
         "email": {
             "enabled": true,

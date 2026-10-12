@@ -96,6 +96,8 @@ TEXT: <your message content goes here>
 
 ACTION: {action_line}
 
+ANIMATION: NONE | IDLE | WORKING | RELAXING
+
 MOOD_VARIANT: ANGER | ENERGY | BOREDOM | AFFECTION
 
 MOOD_SHIFT: INCREASE | DECREASE | NONE
@@ -144,6 +146,9 @@ def build_response_rules_explanation(action_ids):
     #lines.append("- Some actions may be denied depending on user settings. If one of yours is denied, you'll get a SYSTEM MESSAGE saying so — don't immediately retry the same one.")
     lines.append("- Do not spam the same action.")
     lines.append("- Use different Actions.")
+    lines.append("- ANIMATION changes your body pose and persists until you change it again. NONE keeps the current pose.")
+    lines.append("- IDLE: looking down, waiting, nothing going on. WORKING: standing and busy with your tablet. RELAXING: sitting down, calm or low energy.")
+    lines.append("- Only change ANIMATION when it fits the moment or your mood. Do not change it every turn.")
     lines.append("- MOOD_VARIANT represents Venus's current emotional flavor, not a command.")
     lines.append("- MOOD_SHIFT represents a change in Venus's mood caused by the current interaction.")
     lines.append("- TEXT is the only field visible to the user. Keep the user in context.")

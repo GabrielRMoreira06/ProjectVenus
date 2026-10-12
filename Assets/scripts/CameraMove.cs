@@ -13,6 +13,9 @@ public class PingPongMover : MonoBehaviour
     [Tooltip("ResponseListener that receives responses from the Python backend. If empty, tries to find one in the scene.")]
     [SerializeField] private ResponseListener responseListener;
 
+    [Tooltip("Used to force the WORKING animation before the camera moves. If empty, tries to find one in the scene.")]
+    [SerializeField] private AnimationSwitcher animationSwitcher;
+
     private Coroutine moveRoutine;
 
     private void Awake()
@@ -20,6 +23,11 @@ public class PingPongMover : MonoBehaviour
         if (responseListener == null)
         {
             responseListener = FindFirstObjectByType<ResponseListener>();
+        }
+
+        if (animationSwitcher == null)
+        {
+            animationSwitcher = FindFirstObjectByType<AnimationSwitcher>();
         }
     }
 
@@ -43,8 +51,6 @@ public class PingPongMover : MonoBehaviour
         }
     }
 
-
-
     private void Start()
     {
         transform.position = pointA.position;
@@ -62,6 +68,16 @@ public class PingPongMover : MonoBehaviour
     public void TriggerRoundTrip()
     {
         if (moveRoutine != null) return; // ignore calls while already running (including during the start delay)
+
+        // Force the WORKING animation before the camera starts moving
+        if (animationSwitcher != null)
+        {
+            animationSwitcher.ChangeAnimation("WORKING");
+        }
+        else
+        {
+            Debug.LogWarning("PingPongMover: no AnimationSwitcher found — animation won't be forced.");
+        }
 
         moveRoutine = StartCoroutine(RoundTrip());
     }
@@ -98,4 +114,4 @@ public class PingPongMover : MonoBehaviour
         transform.position = targetPoint.position;
         transform.rotation = targetPoint.rotation;
     }
-}
+}   

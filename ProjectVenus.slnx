@@ -4,6 +4,7 @@
   <Project Path="VRM10.csproj" />
   <Project Path="VRM10.MToon10.csproj" />
   <Project Path="UniGLTF.Editor.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="UniGLTF.Tests.csproj" />
   <Project Path="UniGLTF.Utils.csproj" />
   <Project Path="VRM10.MToon10.Tests.csproj" />
@@ -15,7 +16,6 @@
   <Project Path="SpringBoneJobs.csproj" />
   <Project Path="FastSpringBone10.csproj" />
   <Project Path="VrmLib.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Kirurobo.UniWindowController.csproj" />
   <Project Path="UniHumanoid.Editor.csproj" />
   <Project Path="UniHumanoid.Editor.Tests.csproj" />

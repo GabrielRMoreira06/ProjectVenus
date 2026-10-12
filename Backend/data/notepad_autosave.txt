@@ -4,14 +4,13 @@ VENUS FUTURE FEATURES
 - update gemini worker, dynamic prompts.
 - petcontroller final alarm.
 - silent callback instead of giant thread.
-- send memories safe.
+- send memories safe asnking questions to find out more about User.
 - Link expressions to mood change and add sound effect
 - move cooldown to orchestrator
 - dice in front of tablet
 - create tools tab
-- reduce window size
 -check preferences
 -progressive unlock actions
 - 3 animations toggle
 - Browse news
--boredom not triggering
+- remove animation transitions

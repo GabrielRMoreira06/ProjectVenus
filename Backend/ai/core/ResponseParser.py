@@ -26,12 +26,15 @@ VALID_ACTIONS = {
     "DICE",
 }
 
+VALID_ANIMATIONS = {"NONE", "IDLE", "WORKING", "RELAXING"}
+
 
 class ResponseParser:
 
     def parse(self, response_text):
         text = ""
         action = "NONE"
+        animation = "NONE"
         mood_variant = None
         mood_shift = None
         memory_type = "NONE"
@@ -55,6 +58,9 @@ class ResponseParser:
 
             elif line.startswith("ACTION:"):
                 action = line[7:].strip()
+
+            elif line.startswith("ANIMATION:"):
+                animation = line.replace("ANIMATION:", "").strip().upper()
 
             elif line.startswith("MOOD_VARIANT:"):
                 mood_variant = line.replace("MOOD_VARIANT:", "").strip()
@@ -104,9 +110,14 @@ class ResponseParser:
             print(f"[ResponseParser] Unknown ACTION received from Gemini: '{action}' — using NONE instead.")
             action = "NONE"
 
+        if animation not in VALID_ANIMATIONS:
+            print(f"[ResponseParser] Unknown ANIMATION received from Gemini: '{animation}' — using NONE instead.")
+            animation = "NONE"
+
         return {
             "text": text,
             "action": action,
+            "animation": animation,
             "mood_variant": mood_variant,
             "mood_shift": mood_shift,
             "memory_type": memory_type,

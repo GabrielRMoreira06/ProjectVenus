@@ -12,6 +12,7 @@ public class VenusResponse
 {
     public string text;
     public string action;
+    public string animation;
     public string mood_variant;
     public string mood_shift;
     public string memory_type;
@@ -61,17 +62,7 @@ public class ResponseListener : MonoBehaviour
             StartCoroutine(PythonConnection.Instance.Get(responseEndpoint, HandleResponse));
         }
 
-        //fake DICE response for testing purposes
-        if (Input.GetKeyDown(KeyCode.J))
-        {
-            VenusResponse fakeResponse = new VenusResponse
-            {
-                text = "Fake DICE response",
-                action = "DICE"
-            };
-            Debug.Log("[ResponseListener] Simulating fake DICE response for testing.");
-            OnResponseReceived?.Invoke(fakeResponse);
-        }
+        
 
 
     }
@@ -83,7 +74,7 @@ public class ResponseListener : MonoBehaviour
         VenusResponse venusResponse = JsonUtility.FromJson<VenusResponse>(responseBody);
         if (venusResponse == null) return;
 
-        Debug.Log($"[ResponseListener] Response received from Python: '{venusResponse.text}' | action: {venusResponse.action}");
+        Debug.Log($"[ResponseListener] Response received from Python: '{venusResponse.text}' | action: {venusResponse.action} | animation: {venusResponse.animation}");
         OnResponseReceived?.Invoke(venusResponse);
     }
 }

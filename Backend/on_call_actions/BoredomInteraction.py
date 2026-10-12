@@ -2,11 +2,12 @@
 BoredomInteraction.py
 
 Fires the boredom escalation: comments on a random image from the
-user's Downloads folder via a Gemini call restricted to SHOWIMAGE,
-then forces action/image_path afterward — SHOWIMAGE's normal path
-resolves an IMAGE_QUERY through internet search, but the whole point
-here is reacting to something already sitting on the user's disk, so
-that resolution is bypassed and the local file is injected directly.
+user's Downloads folder (including subfolders) via a Gemini call
+restricted to SHOWIMAGE, then forces action/image_path afterward —
+SHOWIMAGE's normal path resolves an IMAGE_QUERY through internet
+search, but the whole point here is reacting to something already
+sitting on the user's disk, so that resolution is bypassed and the
+local file is injected directly.
 
 Same reasoning as on_call_actions/LowerBrightnessVolume.py for living
 outside MoodController: keeps the controller focused on tracking/
@@ -33,7 +34,7 @@ def _pick_random_image_from_disk():
         return None
 
     candidates = [
-        path for path in DOWNLOADS_FOLDER.iterdir()
+        path for path in DOWNLOADS_FOLDER.rglob("*")
         if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
     ]
 
@@ -60,7 +61,7 @@ def fire(mood):
     image_path = _pick_random_image_from_disk()
 
     if not image_path:
-        print("[BoredomInteraction] No image found in the Downloads folder — skipping.")
+        print("[BoredomInteraction] No image found in the Downloads folder or its subfolders — skipping.")
         mood._boredom_alert_firing = False
         return
 

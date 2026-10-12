@@ -3,8 +3,8 @@ generic_interaction.py
 
 A monitor with no metric to watch — it exists purely to vary the kind
 of thing Venus says when nothing else has happened in a while. Three
-behaviors: ask the user something, comment on one of their open
-windows, or report on system health.
+behaviors: browse the news, comment on one of their open windows, or
+report on system health.
 
 This is the reference example of the full pipeline every monitor
 should follow:
@@ -29,6 +29,11 @@ should follow:
      queue the response for Unity to pick up. This monitor never talks
      to Unity, or even needs to know delivery exists.
 
+NEWS BROWSING: pulls the Google News RSS feed for technology and hands
+three headlines to Gemini. The feed is fetched inside builder() (not in
+check()) so the headlines are as fresh as possible at delivery time and
+a slow network never blocks the monitor loop.
+
 HEALTH REPORT: CPU%, RAM%, per-partition disk usage, and disk I/O
 activity since the last report — all via psutil, no extra
 dependencies. GPU and temperature are deliberately left out, same
@@ -39,7 +44,9 @@ without pulling in something like LibreHardwareMonitor.
 import ctypes
 import random
 import time
+import urllib.request
 
+import feedparser
 import psutil
 
 from ai.core.GeminiWorker import worker
@@ -47,6 +54,12 @@ from Orchestrator import Category
 from Monitors.BaseMonitor import BaseMonitor
 
 EXCLUDED_TITLES = {"Program Manager", "Windows Input Experience"}
+
+NEWS_URL = "https://news.google.com/rss/search?q=technology&hl=en-US&gl=US&ceid=US:en"
+NEWS_TIMEOUT = 10        # seconds
+NEWS_POOL_SIZE = 15      # how many top entries to pick from
+NEWS_TITLES_TO_SEND = 3
+NEWS_MEMORY = 30         # how many already-shown titles to remember
 
 
 def get_open_windows():
@@ -83,13 +96,49 @@ def get_open_windows():
     return [w for w in windows if not (w in seen or seen.add(w))]
 
 
+def fetch_news_titles(exclude=None, count=NEWS_TITLES_TO_SEND):
+    """
+    Browses the Google News technology feed and returns `count`
+    headlines picked at random from the top results, skipping any in
+    `exclude` (titles already shown recently). Returns an empty list on
+    any network/parse failure.
+
+    The feed is downloaded with urllib so a timeout can be enforced
+    (feedparser.parse(url) has none), then the raw bytes are handed to
+    feedparser for parsing.
+    """
+    exclude = exclude or set()
+
+    try:
+        request = urllib.request.Request(NEWS_URL, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(request, timeout=NEWS_TIMEOUT) as response:
+            raw = response.read()
+
+        feed = feedparser.parse(raw)
+    except Exception as e:
+        print(f"[GenericInteractionMonitor] News fetch failed: {e}")
+        return []
+
+    titles = [entry.title.strip() for entry in feed.entries[:NEWS_POOL_SIZE] if getattr(entry, "title", "")]
+    fresh = [t for t in titles if t not in exclude]
+
+    # If everything in the pool was already shown, reuse the pool
+    # rather than returning nothing.
+    pool = fresh if len(fresh) >= count else titles
+
+    if not pool:
+        return []
+
+    return random.sample(pool, min(count, len(pool)))
+
+
 class GenericInteractionMonitor(BaseMonitor):
 
     def __init__(self, orchestrator, interval=2000):
         super().__init__(orchestrator, interval)
 
         self.behavior_weights = {
-            "ask": 3,
+            "browse": 3,
             "inspect": 3,
             "health_report": 3,
         }
@@ -99,6 +148,10 @@ class GenericInteractionMonitor(BaseMonitor):
         # the last reading so later reports can show a delta instead.
         self._last_io_counters = None
         self._last_io_time = None
+
+        # Headlines already sent to Gemini, so consecutive browses
+        # don't repeat the same news.
+        self._shown_titles = []
 
     def check(self):
         behavior = self._choose_behavior()
@@ -119,7 +172,24 @@ class GenericInteractionMonitor(BaseMonitor):
         print("[GenericInteractionMonitor] browsing news.")
 
         def builder():
-            return worker.run(user_text="[SYSTEM MESSAGE: nothing to report.]")
+            titles = fetch_news_titles(exclude=set(self._shown_titles))
+
+            if not titles:
+                print("[GenericInteractionMonitor] No news available, nothing to report.")
+                return worker.run(user_text="[SYSTEM MESSAGE: nothing to report.]")
+
+            self._shown_titles.extend(titles)
+            self._shown_titles = self._shown_titles[-NEWS_MEMORY:]
+
+            headline_list = "\n".join(f"- {title}" for title in titles)
+            prompt = f""" [SYSTEM MESSAGE: You were browsing the internet and saw these headlines:
+{headline_list}]
+"""
+
+
+            print(f"[GenericInteractionMonitor] Headlines:\n{headline_list}")
+
+            return worker.run(user_text=prompt)
 
         self.orchestrator.add(Category.MONITOR, builder)
 
