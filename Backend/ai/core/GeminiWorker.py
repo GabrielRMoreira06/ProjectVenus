@@ -21,11 +21,12 @@ Design notes:
     never carry the memory block.
   - The RESPONSE RULES / RESPONSE RULES EXPLANATION sent to Gemini are
     built from the action ids permitted for THIS call — see
-    allowed_actions below. A normal call shows the full regular
-    catalog (Preferences only decides whether a *pick* gets denied
-    after the fact, see the ACTION check below); a restricted call
-    (e.g. a mood threshold offering only one escalation action) shows
-    just that narrower ACTION line instead.
+    allowed_actions below. A normal call shows the regular catalog
+    minus any action still locked by XP progression (see
+    ai/EXPManager.UNLOCKS); Preferences only decides whether a *pick*
+    gets denied after the fact, see the ACTION check below. A
+    restricted call (e.g. a mood threshold offering only one
+    escalation action) shows just that narrower ACTION line instead.
 """
 
 from datetime import datetime
@@ -45,6 +46,7 @@ from ai.Prompts import (
 from ai.core.ResponseParser import ResponseParser
 from ai.MoodController import mood
 from ai.MemoryManager import MemoryManager
+from ai.EXPManager import exp_manager
 from ai.core.TTSWorker import tts_worker as shared_tts_worker
 from ai.tools.ImageSearch import search_image as default_image_search
 
@@ -94,13 +96,14 @@ class GeminiWorker:
         memory_type/memory_text/memory_expire/audio_path/image_path).
 
         allowed_actions: which ACTIONs are offered/permitted for THIS
-        call. None (default) = a normal turn — prompt shows the full
-        regular catalog (ai/Prompts.ACTIONS), and a pick is denied
-        after the fact if the user disabled it in Preferences. Pass an
-        explicit set/list to restrict the prompt itself to just those
-        actions (plus the always-implicit NONE) — used for narrow,
-        call-scoped offers like a mood threshold that should only ever
-        offer one specific action.
+        call. None (default) = a normal turn — prompt shows the regular
+        catalog (ai/Prompts.ACTIONS) minus actions still locked by XP,
+        and a pick is denied after the fact if the user disabled it in
+        Preferences or it's still locked. Pass an explicit set/list to
+        restrict the prompt itself to just those actions (plus the
+        always-implicit NONE) — used for narrow, call-scoped offers
+        like a mood threshold that should only ever offer one specific
+        action.
 
         include_memory: whether to include the full VENUS MEMORY block
         in this prompt. Callers opt in explicitly — currently only the
@@ -159,9 +162,13 @@ class GeminiWorker:
 
             parsed = self.parser.parse(response.text)
 
-            permitted_actions = (
-                set(allowed_actions) if allowed_actions is not None else preferences.enabled_actions()
-            )
+            if allowed_actions is not None:
+                permitted_actions = set(allowed_actions)
+            else:
+                permitted_actions = {
+                    action_id for action_id in preferences.enabled_actions()
+                    if exp_manager.is_unlocked("action", action_id)
+                }
 
             if parsed["action"] != "NONE" and parsed["action"] not in permitted_actions:
                 denied_action = parsed["action"]
@@ -244,7 +251,10 @@ class GeminiWorker:
         include_rules_explanation,
         allowed_actions=None,
     ):
-        action_ids = list(ACTIONS.keys()) if allowed_actions is None else list(allowed_actions)
+        if allowed_actions is None:
+            action_ids = [a for a in ACTIONS if exp_manager.is_unlocked("action", a)]
+        else:
+            action_ids = list(allowed_actions)
 
         sections = [
             f"TIME: {datetime.now().strftime('%H:%M')}",

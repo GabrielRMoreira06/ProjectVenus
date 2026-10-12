@@ -29,6 +29,8 @@
 *.pdb
 *.opendb
 *.VC.db
+*.fbx
+*.fbx.meta
 .tsconfig
 
 # ==========================================
@@ -65,6 +67,7 @@ Backend/piper/*.onnx
 Backend/.env
 Backend/piper/
 Backend/wallpapers/
+Backend/data
 __pycache__/
 *.onnx
 Backend/piper/

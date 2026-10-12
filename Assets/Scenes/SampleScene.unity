@@ -283,9 +283,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 21668483}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.022, y: 0.428, z: -0.252}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: 0.043619405, y: 0, z: 0, w: 0.9990483}
+  m_LocalPosition: {x: 0.022, y: 0.471, z: -0.244}
+  m_LocalScale: {x: 1, y: 0.4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1079385020}
@@ -295,7 +295,7 @@ Transform:
   - {fileID: 572156603}
   - {fileID: 1820034950}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 5, y: 0, z: 0}
 --- !u!1 &28482345 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 453042056088759742, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -809,7 +809,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 6858abb4516aae344881bf286b3aac33, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 13b4fe7831e27854eb7f3d48bff25b86, type: 3}
   m_Color: {r: 0.9294118, g: 0.5803922, b: 0.70980394, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1858,7 +1858,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 6858abb4516aae344881bf286b3aac33, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 13b4fe7831e27854eb7f3d48bff25b86, type: 3}
   m_Color: {r: 0.9294118, g: 0.5803922, b: 0.70980394, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -3665,7 +3665,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 6858abb4516aae344881bf286b3aac33, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 13b4fe7831e27854eb7f3d48bff25b86, type: 3}
   m_Color: {r: 0.9294118, g: 0.5803922, b: 0.70980394, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -3781,7 +3781,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 9ddb3a0ce490c4145bfc2012d2e8ea6d, type: 3}
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3804,7 +3804,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 6858abb4516aae344881bf286b3aac33, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 13b4fe7831e27854eb7f3d48bff25b86, type: 3}
   m_Color: {r: 0.9294118, g: 0.5803922, b: 0.70980394, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -3823,13 +3823,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1079385016}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
+  m_LocalRotation: {x: 0.7070096, y: 0.011723728, z: 0.011723728, w: 0.7070096}
   m_LocalPosition: {x: 0, y: 0.055000007, z: 0}
   m_LocalScale: {x: 0.18, y: 0.35999995, z: 0.28799996}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 21668484}
-  m_LocalEulerAnglesHint: {x: 90, y: 90, z: 90}
+  m_LocalEulerAnglesHint: {x: 88.1, y: 90, z: 90}
 --- !u!4 &1081268543 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1167450774845303786, guid: 96b5b6677a7039c48bf130c60d038b46, type: 3}
@@ -4829,7 +4829,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 6858abb4516aae344881bf286b3aac33, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 13b4fe7831e27854eb7f3d48bff25b86, type: 3}
   m_Color: {r: 0.9294118, g: 0.5803922, b: 0.70980394, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -5802,7 +5802,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 6858abb4516aae344881bf286b3aac33, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 13b4fe7831e27854eb7f3d48bff25b86, type: 3}
   m_Color: {r: 0.9294118, g: 0.5803922, b: 0.70980394, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -6180,11 +6180,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AnimationSwitcher
   animator: {fileID: 174286459}
-  responseListener: {fileID: 0}
+  responseListener: {fileID: 1537105287}
   standingState: Standing Using Touchscreen Tablet
   relaxingState: Sitting
-  lookingDownState: Looking Down
+  Idle: Bashful
   crossFadeDuration: 0.25
+  characterRoot: {fileID: 0}
+  sittingRotationX: 15
+  rotateSmoothTime: 0.6
   tablet: {fileID: 316162733}
   floatAnchor: {fileID: 779165455}
   tabletTransitionTime: 0.6

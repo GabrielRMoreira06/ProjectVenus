@@ -16,10 +16,12 @@ Subclasses implement `check()`, which should decide whether its
 condition is met and, if so, build a zero-argument builder function
 and call `self.orchestrator.add(category, builder)`.
 
-`interval` and `enabled` are both read fresh on every loop iteration,
-not just once at construction — this is what lets PassiveMonitor apply
-a Preferences change (checkbox/slider in the panel) live, just by
-setting these two attributes, with no thread restart needed.
+`interval`, `enabled` and `locked` are all read fresh on every loop
+iteration, not just once at construction — this is what lets
+PassiveMonitor apply a Preferences change or an XP unlock live, just
+by setting these attributes, with no thread restart needed. `locked`
+is the XP-progression gate (see ai/EXPManager.py): a locked monitor
+never runs, regardless of `enabled`.
 """
 
 import threading
@@ -31,11 +33,8 @@ class BaseMonitor:
     def __init__(self, orchestrator, interval):
         self.orchestrator = orchestrator
         self.interval = interval
-        # Controlled by Preferences via PassiveMonitor — defaults to
-        # True so a monitor built without going through
-        # PassiveMonitor._build() (e.g. in a quick test script) still
-        # runs normally.
         self.enabled = True
+        self.locked = False
         self._running = False
 
     def start(self):
@@ -48,7 +47,7 @@ class BaseMonitor:
     def _loop(self):
         while self._running:
             time.sleep(self.interval)
-            if self.enabled:
+            if self.enabled and not self.locked:
                 self.check()
 
     def check(self):

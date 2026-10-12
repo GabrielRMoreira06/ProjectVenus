@@ -108,8 +108,6 @@ UPDATE_PROFILE_PICTURE: NONE | BORED | ANGER | TIRED | POUTY | NORMAL
 
 UPDATE_UI_THEME: NONE | CLASSIC | VIOLET | CRIMSON
 
-MEMORY_ID: <id of the memory/habit to update, required if MEMORY_TYPE is EDIT> | NONE
-
 MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time. For DAILYSUMMARY: the full summary of today so far (max 80 words).> | NONE
 
 MEMORY_EXPIRE: 6HOURS | 1DAY | 1WEEK | 1MONTH | PERMANENT | NONE
@@ -138,7 +136,7 @@ def build_response_rules_explanation(action_ids):
     lines.append("- MEMORY: a note to yourself. this is your own memory. save what is worthy to remember")
     lines.append("- FACT: stable information about the user or Venus, their preferences, projects, habits, or other useful long-term information.")
     lines.append(
-        "- DAILYSUMMARY: Today's summary. REPLACES any existing summary for today, so MEMORY_TEXT must be the fully updated, merged summary. MEMORY_EXPIRE must be NONE.")
+        "- DAILYSUMMARY: Today's summary. REPLACES any existing summary for today, so MEMORY_TEXT must be always the entire day summary. MEMORY_EXPIRE must be NONE.")
     interactive = [a for a in INTERACTIVE_ACTIONS if a in action_ids]
     if interactive:
         lines.append(f"- Use {', '.join(interactive)} to interact with User.")

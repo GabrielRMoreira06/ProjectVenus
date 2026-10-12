@@ -16,6 +16,11 @@ Preferences.MONITOR_CATALOG) so _on_preference_changed can find the
 right running instance later when the Preferences tab flips a
 checkbox or drags a slider — no restart needed, see BaseMonitor.
 
+Monitors gated by XP progression (see ai/EXPManager.UNLOCKS) start
+with `locked=True`. unlock_monitor() is what EXPManager calls on
+level-up: it clears the lock and fires the monitor's check() once,
+immediately, on its own thread.
+
 Anger is no longer a polling monitor here — MoodController now fires
 its DEADPIXEL interaction directly off a threshold check inside
 adjust() (see ai/MoodController.py).
@@ -25,7 +30,9 @@ it to Preferences.MONITOR_CATALOG with a description and default
 interval, then add it to _default_monitors() below.
 """
 
+import threading
 
+from ai.EXPManager import exp_manager
 from Monitors.GenericInteraction import GenericInteractionMonitor
 from Monitors.HadwereMonitor import HardwareMonitor
 from Monitors.ProcessMonitor import ProcessMonitor
@@ -60,6 +67,7 @@ class PassiveMonitor:
             interval=preferences.get_monitor_interval(monitor_id),
         )
         monitor.enabled = preferences.is_monitor_enabled(monitor_id)
+        monitor.locked = not exp_manager.is_unlocked("monitor", monitor_id)
 
         self._monitors_by_id[monitor_id] = monitor
         return monitor
@@ -74,6 +82,17 @@ class PassiveMonitor:
 
         monitor.enabled = preferences.is_monitor_enabled(item_id)
         monitor.interval = preferences.get_monitor_interval(item_id)
+
+    def unlock_monitor(self, monitor_id):
+        monitor = self._monitors_by_id.get(monitor_id)
+        if monitor is None:
+            return
+
+        monitor.locked = False
+        print(f"[PassiveMonitor] '{monitor_id}' unlocked.")
+
+        if monitor.enabled:
+            threading.Thread(target=monitor.check, daemon=True).start()
 
     def start(self):
         for monitor in self.monitors:

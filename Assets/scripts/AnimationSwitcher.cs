@@ -11,10 +11,18 @@ public class AnimationSwitcher : MonoBehaviour
     [Header("Animator state names (must match the Animator window exactly)")]
     [SerializeField] private string standingState = "Standing Using Touchscreen Tablet";
     [SerializeField] private string relaxingState = "Sitting";
-    [SerializeField] private string lookingDownState = "Looking Down";
+    [SerializeField] private string Idle = "Bashful";
 
     [Header("Animation settings")]
     [SerializeField] private float crossFadeDuration = 0.25f;
+
+    [Header("Character rotation")]
+    [Tooltip("Object that gets rotated. If empty, uses the Animator's transform.")]
+    [SerializeField] private Transform characterRoot;
+    [Tooltip("X rotation (in degrees) the character has while sitting.")]
+    [SerializeField] private float sittingRotationX = 10f;
+    [Tooltip("Approximate time the rotation takes.")]
+    [SerializeField] private float rotateSmoothTime = 0.6f;
 
     [Header("Tablet")]
     [SerializeField] private Transform tablet;
@@ -33,6 +41,10 @@ public class AnimationSwitcher : MonoBehaviour
     private bool tabletFloating;
     private float tabletBlend; // 0 = in hand, 1 = floating
 
+    private float originalRotationX;
+    private float targetRotationX;
+    private float rotationVelocity;
+
     private void Awake()
     {
         if (animator == null)
@@ -40,6 +52,16 @@ public class AnimationSwitcher : MonoBehaviour
 
         if (responseListener == null)
             responseListener = FindFirstObjectByType<ResponseListener>();
+
+        if (characterRoot == null && animator != null)
+            characterRoot = animator.transform;
+
+        if (characterRoot != null)
+        {
+            // Remember the starting X rotation so we can return to it
+            originalRotationX = characterRoot.eulerAngles.x;
+            targetRotationX = originalRotationX;
+        }
 
         if (tablet != null)
         {
@@ -95,16 +117,19 @@ public class AnimationSwitcher : MonoBehaviour
             case "SITTING":
                 Play(relaxingState);
                 tabletFloating = true;
+                targetRotationX = sittingRotationX;
                 SetPlatformActive(true);
                 break;
             case "IDLE":
-                Play(lookingDownState);
+                Play(Idle);
                 tabletFloating = true;
+                targetRotationX = originalRotationX;
                 SetPlatformActive(false);
                 break;
             case "WORKING":
                 Play(standingState);
                 tabletFloating = false;
+                targetRotationX = originalRotationX;
                 SetPlatformActive(false);
                 break;
             default:
@@ -124,21 +149,13 @@ public class AnimationSwitcher : MonoBehaviour
             floatingPlatform.SetActive(active);
     }
 
-    public void Update()
+    private void RotateCharacter()
     {
-        //test animation switching with keyboard input
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            ChangeAnimation("RELAXING");
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            ChangeAnimation("IDLE");
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha3))
-        {
-            ChangeAnimation("WORKING");
-        }
+        if (characterRoot == null) return;
+
+        Vector3 euler = characterRoot.eulerAngles;
+        euler.x = Mathf.SmoothDampAngle(euler.x, targetRotationX, ref rotationVelocity, rotateSmoothTime);
+        characterRoot.eulerAngles = euler;
     }
 
     // LateUpdate so we run after the Animator has posed the hand
