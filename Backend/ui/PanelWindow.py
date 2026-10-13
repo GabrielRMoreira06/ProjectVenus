@@ -39,7 +39,7 @@ from ui.utils.Shapes import (
     BUTTON_HEIGHT_MD,
     SCROLLBAR_WIDTH,
     SCROLLBAR_HANDLE_RADIUS,
-    SCROLLBAR_HANDLE_MIN_HEIGHT,
+    SCROLLBAR_HANDLE_MIN_HEIGHT, BUTTON_HEIGHT_SM, RADIUS_SM,
 )
 from ui.utils.Spacing import (
     SPACE_0,
@@ -176,7 +176,7 @@ class PanelWindow(QWidget):
             QPushButton {{
                 background-color: #16051a;
                 border: {BORDER_THIN}px solid {Theme.PINK};
-                border-radius: {RADIUS_MD}px;
+                border-radius: {RADIUS_SM}px;
                 color: {Theme.PINK_SOFT};
                 font-weight: {FONT_WEIGHT_BOLD};
             }}
@@ -278,7 +278,7 @@ class PanelWindow(QWidget):
 
         self._close_button = QPushButton()
         self._close_button.setIconSize(QSize(ICON_SIZE_MD, ICON_SIZE_MD))
-        self._close_button.setFixedSize(BUTTON_HEIGHT_MD, BUTTON_HEIGHT_MD)
+        self._close_button.setFixedSize(BUTTON_HEIGHT_SM, BUTTON_HEIGHT_SM)
         self._close_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._close_button.clicked.connect(self.hide)
         header.addWidget(self._close_button)

@@ -108,7 +108,7 @@ UPDATE_PROFILE_PICTURE: NONE | BORED | ANGER | TIRED | POUTY | NORMAL
 
 UPDATE_UI_THEME: NONE | CLASSIC | VIOLET | CRIMSON
 
-MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time. For DAILYSUMMARY: the full summary of today so far (max 80 words).> | NONE
+MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time. For DAILYSUMMARY: only the NEW things from today not yet in the summary (max 40 words), it is appended automatically.> | NONE
 
 MEMORY_EXPIRE: 6HOURS | 1DAY | 1WEEK | 1MONTH | PERMANENT | NONE
 
@@ -136,7 +136,7 @@ def build_response_rules_explanation(action_ids):
     lines.append("- MEMORY: a note to yourself. this is your own memory. save what is worthy to remember")
     lines.append("- FACT: stable information about the user or Venus, their preferences, projects, habits, or other useful long-term information.")
     lines.append(
-        "- DAILYSUMMARY: Today's summary. REPLACES any existing summary for today, so MEMORY_TEXT must be always the entire day summary. MEMORY_EXPIRE must be NONE.")
+        "- DAILYSUMMARY: Today's summary. MEMORY_TEXT is only the NEW information to ADD to today's summary, never a rewrite of it. MEMORY_EXPIRE must be NONE.")
     interactive = [a for a in INTERACTIVE_ACTIONS if a in action_ids]
     if interactive:
         lines.append(f"- Use {', '.join(interactive)} to interact with User.")
@@ -145,8 +145,7 @@ def build_response_rules_explanation(action_ids):
     lines.append("- Do not spam the same action.")
     lines.append("- Use different Actions.")
     lines.append("- ANIMATION changes your body pose and persists until you change it again. NONE keeps the current pose.")
-    lines.append("- IDLE: looking down, waiting, nothing going on. WORKING: standing and busy with your tablet. RELAXING: sitting down, calm or low energy.")
-    lines.append("- Only change ANIMATION when it fits the moment or your mood. Do not change it every turn.")
+    lines.append("- IDLE: Still, waiting, nothing going on. WORKING: standing and busy with your tablet. RELAXING: sitting down, swinging your legs.")
     lines.append("- MOOD_VARIANT represents Venus's current emotional flavor, not a command.")
     lines.append("- MOOD_SHIFT represents a change in Venus's mood caused by the current interaction.")
     lines.append("- TEXT is the only field visible to the user. Keep the user in context.")

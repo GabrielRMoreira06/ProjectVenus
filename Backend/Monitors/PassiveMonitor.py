@@ -32,6 +32,7 @@ interval, then add it to _default_monitors() below.
 
 import threading
 
+from Monitors.MeetUser import MeetUserMonitor
 from ai.EXPManager import exp_manager
 from Monitors.GenericInteraction import GenericInteractionMonitor
 from Monitors.HadwereMonitor import HardwareMonitor
@@ -59,6 +60,7 @@ class PassiveMonitor:
             self._build("screenpeek", ScreenPeekMonitor),
             self._build("generic_interaction", GenericInteractionMonitor),
             self._build("email", EmailMonitor),
+            self._build("meetuser", MeetUserMonitor),
         ]
 
     def _build(self, monitor_id, monitor_class):

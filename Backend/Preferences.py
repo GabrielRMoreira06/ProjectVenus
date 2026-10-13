@@ -64,6 +64,10 @@ MONITOR_CATALOG = {
         "Checks your inbox for new emails and comments on them.",
         120,
     ),
+    "meetuser": ("Getting to know you",
+                 "Occasionally asks you a question to learn more about you.",
+                 7200
+    ),
 }
 
 ACTION_CATALOG = {

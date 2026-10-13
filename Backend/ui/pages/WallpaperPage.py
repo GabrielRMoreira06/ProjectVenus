@@ -269,10 +269,11 @@ class WallpaperCard(QFrame):
     clicked = pyqtSignal(str)
     delete_requested = pyqtSignal(str)
 
-    def __init__(self, path):
+    def __init__(self, path, active=False):
         super().__init__()
         self.setObjectName("wallpaperCard")
         self.path = path
+        self._active = active
         self.setToolTip(path)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
@@ -303,6 +304,38 @@ class WallpaperCard(QFrame):
         thumbnail_loader.ready.connect(self._on_thumbnail_ready)
         thumbnail_loader.request(path)
 
+    def set_active(self, active):
+        if self._active == active:
+            return
+        self._active = active
+        self._apply_active_style()
+
+    def _apply_active_style(self):
+        border_color = Theme.PINK if self._active else "transparent"
+        self.setStyleSheet(f"""
+            #wallpaperCard {{
+                background-color: #18051b;
+                border: {BORDER_MEDIUM}px solid {border_color};
+                border-radius: {RADIUS_LG}px;
+            }}
+        """)
+        name_color = Theme.PINK if self._active else "white"
+        weight = FONT_WEIGHT_BOLD if self._active else "normal"
+        self.name_label.setStyleSheet(
+            f"color: {name_color}; font-size: {FONT_SIZE_MD}px; font-weight: {weight}; "
+            "border: none; background: transparent;")
+
+    def _apply_style(self):
+        self._apply_active_style()
+        self.thumbnail.setPixmap(
+            qta.icon("fa5s.image", color=Theme.PINK_SOFT).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
+        self.thumbnail.setStyleSheet(
+            f"background-color: {Theme.BG_BUBBLE}; border: none; border-radius: {RADIUS_MD}px;")
+        self.delete_button.setIcon(qta.icon("fa5s.trash-alt", color=Theme.PINK_SOFT, color_active="white"))
+        self.delete_button.setStyleSheet("""
+            QPushButton { background: transparent; border: none; }
+        """)
+
     def _on_thumbnail_ready(self, path, image):
         if path != self.path:
             return
@@ -317,22 +350,6 @@ class WallpaperCard(QFrame):
 
         super().mousePressEvent(event)
 
-    def _apply_style(self):
-        self.setStyleSheet(f"""
-            #wallpaperCard {{
-                background-color: #18051b;
-                border-radius: {RADIUS_LG}px;
-            }}
-        """)
-        self.thumbnail.setPixmap(qta.icon("fa5s.image", color=Theme.PINK_SOFT).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
-        self.thumbnail.setStyleSheet(
-            f"background-color: {Theme.BG_BUBBLE}; border: none; border-radius: {RADIUS_MD}px;")
-        self.name_label.setStyleSheet(
-            f"color: white; font-size: {FONT_SIZE_MD}px; border: none; background: transparent;")
-        self.delete_button.setIcon(qta.icon("fa5s.trash-alt", color=Theme.PINK_SOFT, color_active="white"))
-        self.delete_button.setStyleSheet("""
-            QPushButton { background: transparent; border: none; }
-        """)
 
 
 class WallpaperPage(QWidget):
@@ -343,7 +360,7 @@ class WallpaperPage(QWidget):
 
     def __init__(self):
         super().__init__()
-
+        self._active_path = getattr(wallpaper_manager, "current_path", None)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
         outer.setSpacing(LAYOUT_SPACING_LOOSE)
@@ -489,6 +506,14 @@ class WallpaperPage(QWidget):
 
     def _apply_wallpaper(self, path):
         wallpaper_manager.play(path)
+        self._set_active_path(path)
+
+    def _set_active_path(self, path):
+        self._active_path = path
+        for index in range(self.grid.count()):
+            widget = self.grid.itemAt(index).widget()
+            if isinstance(widget, WallpaperCard):
+                widget.set_active(widget.path == path)
 
     def _delete_wallpaper(self, path):
         answer = QMessageBox.question(
@@ -498,6 +523,9 @@ class WallpaperPage(QWidget):
 
         if answer != QMessageBox.StandardButton.Yes:
             return
+
+        if path == self._active_path:
+            self._active_path = None
 
         wallpaper_manager.release(path)
         thumbnail_loader.forget(path)
@@ -525,7 +553,7 @@ class WallpaperPage(QWidget):
             return
 
         for index, path in enumerate(videos):
-            card = WallpaperCard(path)
+            card = WallpaperCard(path, active=(path == self._active_path))
             card.clicked.connect(self._apply_wallpaper)
             card.delete_requested.connect(self._delete_wallpaper)
             self.grid.addWidget(card, index // GRID_COLUMNS, index % GRID_COLUMNS)

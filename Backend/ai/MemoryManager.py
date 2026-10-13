@@ -3,7 +3,7 @@ memory_manager.py
 
 Persists long-term information about the user across sessions: facts,
 memories (dated events), and daily summaries (one per calendar day,
-overwritten on every update). FACT/MEMORY entries get an auto-generated
+appended to on every update). FACT/MEMORY entries get an auto-generated
 id and can optionally expire; entries with no expiration are kept forever.
 """
 
@@ -27,6 +27,7 @@ VALID_TYPES = ("FACT", "MEMORY", "DAILYSUMMARY")
 
 DAILY_SUMMARIES_IN_PROMPT = 7  # today + previous 6 days
 DAILY_SUMMARY_RETENTION = timedelta(weeks=1)
+DAILY_SUMMARY_MAX_CHARS = 1200
 
 
 class MemoryManager:
@@ -51,7 +52,7 @@ FACTS:
 MEMORIES (with date/time/day of week, so you can notice routine patterns):
 {memories}
 
-DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY overwrites today's entry, so include everything worth keeping from it):
+DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY appends to today's entry):
 {daily_summaries}
 """
 
@@ -154,11 +155,28 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY overwrite
             self._save()
 
     def _save_daily_summary(self, text):
+        text = (text or "").strip()
+        if not text or text == "NONE":
+            return
+
         now = datetime.now()
         today = now.strftime("%Y-%m-%d")
 
+        existing = self.memory["daily_summaries"].get(today, {}).get("text", "").strip()
+
+        if text in existing:
+            return
+
+        combined = f"{existing} {text}".strip()
+
+        if len(combined) > DAILY_SUMMARY_MAX_CHARS:
+            combined = combined[-DAILY_SUMMARY_MAX_CHARS:]
+            cut = combined.find(". ")
+            if 0 <= cut < len(combined) - 1:
+                combined = combined[cut + 2:]
+
         self.memory["daily_summaries"][today] = {
-            "text": text,
+            "text": combined,
             "updated_at": now.isoformat(timespec="minutes"),
         }
 

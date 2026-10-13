@@ -151,7 +151,7 @@ class BootManager:
                 return
             return worker.run(
                 user_text="[SYSTEM MESSAGE: User just booted you. Greet them.]",
-                include_memory=True
+                full_context=True
             )
 
         orchestrator.add(Category.SYSTEM, builder)
@@ -168,7 +168,7 @@ class BootManager:
         def builder():
             return worker.run(
                 user_text=f"[SYSTEM MESSAGE: User just installed you, their name is {name}.]",
-                include_memory=True
+                full_context=True
             )
 
         result = orchestrator.add(Category.SYSTEM, builder, sync=True)

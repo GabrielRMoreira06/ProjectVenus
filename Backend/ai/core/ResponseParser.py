@@ -8,129 +8,68 @@ like this.
 """
 
 VALID_ACTIONS = {
-    "NONE",
-    "STEALMOUSE",
-    "SHOWIMAGE",
-    "ALLOWPET",
-    "FINDFILE",
-    "KEYBOARDCONTROL",
-    "SCREAM",
-    "REMINDER",
-    "FLIP",
-    "ORGANIZEFILES",
-    "JUDGE",
-    "CLEANDISK",
-    "DEADPIXEL",
-    "LOWERBRIGHTNESS",
-    "NOTEPAD",
-    "DICE",
+    "NONE", "STEALMOUSE", "SHOWIMAGE", "ALLOWPET", "FINDFILE",
+    "KEYBOARDCONTROL", "SCREAM", "REMINDER", "FLIP", "ORGANIZEFILES",
+    "JUDGE", "CLEANDISK", "DEADPIXEL", "LOWERBRIGHTNESS", "NOTEPAD", "DICE",
 }
 
 VALID_ANIMATIONS = {"NONE", "IDLE", "WORKING", "RELAXING"}
+
+# prefix in Gemini's response -> (key in result dict, default value)
+FIELDS = {
+    "TEXT": ("text", ""),
+    "ACTION": ("action", "NONE"),
+    "ANIMATION": ("animation", "NONE"),
+    "MOOD_VARIANT": ("mood_variant", None),
+    "MOOD_SHIFT": ("mood_shift", None),
+    "MEMORY_TYPE": ("memory_type", "NONE"),
+    "MEMORY_TEXT": ("memory_text", "NONE"),
+    "MEMORY_EXPIRE": ("memory_expire", "NONE"),
+    "IMAGE_QUERY": ("image_query", "NONE"),
+    "FILE_QUERY": ("file_query", "NONE"),
+    "KEYBOARDCONTROL_QUERY": ("keyboardcontrol_query", "NONE"),
+    "REMINDER_QUERY": ("reminder_query", "NONE"),
+    "REMINDER_MINUTES": ("reminder_minutes", "NONE"),
+    "SELECT_DAYS": ("select_days", "NONE"),
+    "REMINDER_TIME": ("reminder_time", "NONE"),
+    "UPDATE_PROFILE_PICTURE": ("update_profile_picture", "NONE"),
+    "UPDATE_UI_THEME": ("update_ui_theme", "NONE"),
+    "EDIT_CONTENT": ("edit_content", "NONE"),
+}
+
+# fields that are allowed to span several lines
+MULTILINE_FIELDS = {"text", "edit_content"}
 
 
 class ResponseParser:
 
     def parse(self, response_text):
-        text = ""
-        action = "NONE"
-        animation = "NONE"
-        mood_variant = None
-        mood_shift = None
-        memory_type = "NONE"
-        memory_text = "NONE"
-        memory_expire = "NONE"
-        image_query = "NONE"
-        file_query = "NONE"
-        keyboardcontrol_query = "NONE"
-        reminder_query = "NONE"
-        reminder_minutes = "NONE"
-        select_days = "NONE"
-        reminder_time = "NONE"
-        update_profile_picture = "NONE"
-        update_ui_theme = "NONE"
-        edit_content = "NONE"
+        result = {key: default for key, default in FIELDS.values()}
+        current = None  # the field we're currently filling
 
         for line in response_text.splitlines():
+            prefix, sep, value = line.partition(":")
 
-            if line.startswith("TEXT:"):
-                text = line[5:].strip()
+            if sep and prefix in FIELDS:
+                # a new field starts here
+                current = FIELDS[prefix][0]
+                result[current] = value.strip()
+            elif current in MULTILINE_FIELDS:
+                # continuation line of a multi-line field
+                result[current] += "\n" + line
 
-            elif line.startswith("ACTION:"):
-                action = line[7:].strip()
+        # trim leading/trailing blank lines from multi-line fields
+        for key in MULTILINE_FIELDS:
+            result[key] = result[key].strip()
 
-            elif line.startswith("ANIMATION:"):
-                animation = line.replace("ANIMATION:", "").strip().upper()
+        result["animation"] = result["animation"].upper()
 
-            elif line.startswith("MOOD_VARIANT:"):
-                mood_variant = line.replace("MOOD_VARIANT:", "").strip()
+        if result["action"] not in VALID_ACTIONS:
+            print(f"[ResponseParser] Unknown ACTION received from Gemini: '{result['action']}' — using NONE instead.")
+            result["action"] = "NONE"
 
-            elif line.startswith("MOOD_SHIFT:"):
-                mood_shift = line.replace("MOOD_SHIFT:", "").strip()
+        if result["animation"] not in VALID_ANIMATIONS:
+            print(f"[ResponseParser] Unknown ANIMATION received from Gemini: '{result['animation']}' — using NONE instead.")
+            result["animation"] = "NONE"
 
-            elif line.startswith("MEMORY_TYPE:"):
-                memory_type = line.replace("MEMORY_TYPE:", "").strip()
-
-            elif line.startswith("MEMORY_TEXT:"):
-                memory_text = line.replace("MEMORY_TEXT:", "").strip()
-
-            elif line.startswith("MEMORY_EXPIRE:"):
-                memory_expire = line.replace("MEMORY_EXPIRE:", "").strip()
-
-            elif line.startswith("IMAGE_QUERY:"):
-                image_query = line.replace("IMAGE_QUERY:", "").strip()
-
-            elif line.startswith("FILE_QUERY:"):
-                file_query = line.replace("FILE_QUERY:", "").strip()
-
-            elif line.startswith("KEYBOARDCONTROL_QUERY:"):
-                keyboardcontrol_query = line.replace("KEYBOARDCONTROL_QUERY:", "").strip()
-
-            elif line.startswith("REMINDER_QUERY:"):
-                reminder_query = line.replace("REMINDER_QUERY:", "").strip()
-
-            elif line.startswith("REMINDER_MINUTES:"):
-                reminder_minutes = line.replace("REMINDER_MINUTES:", "").strip()
-            elif line.startswith("SELECT_DAYS:"):
-                select_days = line.replace("SELECT_DAYS:", "").strip()
-
-            elif line.startswith("REMINDER_TIME:"):
-                reminder_time = line.replace("REMINDER_TIME:", "").strip()
-
-            elif line.startswith("UPDATE_PROFILE_PICTURE:"):
-                update_profile_picture = line.replace("UPDATE_PROFILE_PICTURE:", "").strip()
-
-            elif line.startswith("UPDATE_UI_THEME:"):
-                update_ui_theme = line.replace("UPDATE_UI_THEME:", "").strip()
-
-            elif line.startswith("EDIT_CONTENT:"):
-                edit_content = line.replace("EDIT_CONTENT:", "").strip()
-
-        if action not in VALID_ACTIONS:
-            print(f"[ResponseParser] Unknown ACTION received from Gemini: '{action}' — using NONE instead.")
-            action = "NONE"
-
-        if animation not in VALID_ANIMATIONS:
-            print(f"[ResponseParser] Unknown ANIMATION received from Gemini: '{animation}' — using NONE instead.")
-            animation = "NONE"
-
-        return {
-            "text": text,
-            "action": action,
-            "animation": animation,
-            "mood_variant": mood_variant,
-            "mood_shift": mood_shift,
-            "memory_type": memory_type,
-            "memory_text": memory_text,
-            "memory_expire": memory_expire,
-            "image_query": image_query,
-            "file_query": file_query,
-            "keyboardcontrol_query": keyboardcontrol_query,
-            "reminder_query": reminder_query,
-            "reminder_minutes": reminder_minutes,
-            "select_days": select_days,
-            "reminder_time": reminder_time,
-            "update_profile_picture": update_profile_picture,
-            "update_ui_theme": update_ui_theme,
-            "edit_content": edit_content,
-        }
+        return result
