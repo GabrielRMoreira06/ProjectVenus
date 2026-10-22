@@ -311,7 +311,7 @@ class WallpaperCard(QFrame):
         self._apply_active_style()
 
     def _apply_active_style(self):
-        border_color = Theme.PINK if self._active else "transparent"
+        border_color = Theme.ACCENT if self._active else "transparent"
         self.setStyleSheet(f"""
             #wallpaperCard {{
                 background-color: #18051b;
@@ -319,7 +319,7 @@ class WallpaperCard(QFrame):
                 border-radius: {RADIUS_LG}px;
             }}
         """)
-        name_color = Theme.PINK if self._active else "white"
+        name_color = Theme.ACCENT if self._active else "white"
         weight = FONT_WEIGHT_BOLD if self._active else "normal"
         self.name_label.setStyleSheet(
             f"color: {name_color}; font-size: {FONT_SIZE_MD}px; font-weight: {weight}; "
@@ -328,10 +328,10 @@ class WallpaperCard(QFrame):
     def _apply_style(self):
         self._apply_active_style()
         self.thumbnail.setPixmap(
-            qta.icon("fa5s.image", color=Theme.PINK_SOFT).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
+            qta.icon("fa5s.image", color=Theme.ACCENT_SOFT).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
         self.thumbnail.setStyleSheet(
-            f"background-color: {Theme.BG_BUBBLE}; border: none; border-radius: {RADIUS_MD}px;")
-        self.delete_button.setIcon(qta.icon("fa5s.trash-alt", color=Theme.PINK_SOFT, color_active="white"))
+            f"background-color: {Theme.BG_ELEVATED}; border: none; border-radius: {RADIUS_MD}px;")
+        self.delete_button.setIcon(qta.icon("fa5s.trash-alt", color=Theme.ACCENT_SOFT, color_active="white"))
         self.delete_button.setStyleSheet("""
             QPushButton { background: transparent; border: none; }
         """)
@@ -548,7 +548,7 @@ class WallpaperPage(QWidget):
             self._empty_label = QLabel("No wallpapers imported yet")
             self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self._empty_label.setStyleSheet(
-                f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_MD}px; border: none; background: transparent;")
+                f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_MD}px; border: none; background: transparent;")
             self.grid.addWidget(self._empty_label, 0, 0, 1, GRID_COLUMNS)
             return
 
@@ -563,10 +563,10 @@ class WallpaperPage(QWidget):
     # ------------------------------------------------------------------
 
     def _apply_style(self):
-        self._header_icon.setPixmap(qta.icon("fa5s.image", color=Theme.PINK).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
+        self._header_icon.setPixmap(qta.icon("fa5s.image", color=Theme.ACCENT).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
         self._header_icon.setStyleSheet("border: none; background: transparent;")
         self._header_title.setStyleSheet(
-            f"color: {Theme.PINK}; font-size: {FONT_SIZE_XXL}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
+            f"color: {Theme.ACCENT}; font-size: {FONT_SIZE_XXL}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
 
         self._management_frame.setStyleSheet(f"""
             #managementRow {{
@@ -574,37 +574,37 @@ class WallpaperPage(QWidget):
                 border-radius: {RADIUS_LG}px;
             }}
         """)
-        self._management_icon.setPixmap(qta.icon("fa5s.image", color=Theme.PINK).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
+        self._management_icon.setPixmap(qta.icon("fa5s.image", color=Theme.ACCENT).pixmap(QSize(ICON_SIZE_XL, ICON_SIZE_XL)))
         self._management_icon.setStyleSheet("border: none; background: transparent;")
         self._management_title.setStyleSheet(
             f"color: white; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
         self._management_description.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_SM}px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_SM}px; border: none; background: transparent;")
 
-        self.import_button.setIcon(qta.icon("fa5s.upload", color=Theme.PINK))
+        self.import_button.setIcon(qta.icon("fa5s.upload", color=Theme.ACCENT))
         self.import_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
-                border: {BORDER_MEDIUM}px solid {Theme.PINK};
+                border: {BORDER_MEDIUM}px solid {Theme.ACCENT};
                 border-radius: {RADIUS_LG}px;
-                color: {Theme.PINK};
+                color: {Theme.ACCENT};
                 font-size: {FONT_SIZE_LG}px;
                 font-weight: {FONT_WEIGHT_BOLD};
             }}
-            QPushButton:hover {{ background-color: {Theme.BG_BUBBLE}; }}
+            QPushButton:hover {{ background-color: {Theme.BG_ELEVATED}; }}
             QPushButton:disabled {{ color: #666; border-color: #555; }}
         """)
 
         self._list_title.setStyleSheet(
-            f"color: {Theme.PINK}; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
+            f"color: {Theme.ACCENT}; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
 
-        self.grid_button.setIcon(qta.icon("fa5s.th-large", color=Theme.PINK))
-        self.list_button.setIcon(qta.icon("fa5s.list", color=Theme.PINK_SOFT))
+        self.grid_button.setIcon(qta.icon("fa5s.th-large", color=Theme.ACCENT))
+        self.list_button.setIcon(qta.icon("fa5s.list", color=Theme.ACCENT_SOFT))
 
         self.grid_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {Theme.BG_BUBBLE};
-                border: {BORDER_THIN}px solid {Theme.PINK};
+                background-color: {Theme.BG_ELEVATED};
+                border: {BORDER_THIN}px solid {Theme.ACCENT};
                 border-radius: {RADIUS_MD}px;
             }}
         """)

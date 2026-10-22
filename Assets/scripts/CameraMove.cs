@@ -7,6 +7,7 @@ public class PingPongMover : MonoBehaviour
     [SerializeField] private float moveDuration = 2f;
     [SerializeField] private float waitTime = 3f;
     [SerializeField] private float startDelay = 15f;
+    [SerializeField] private float workingAnimationDelay = 0.5f;
     [SerializeField] private AnimationCurve easing = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("References")]
@@ -69,6 +70,17 @@ public class PingPongMover : MonoBehaviour
     {
         if (moveRoutine != null) return; // ignore calls while already running (including during the start delay)
 
+        moveRoutine = StartCoroutine(RoundTrip());
+    }
+
+    private System.Collections.IEnumerator RoundTrip()
+    {
+        // Short delay before forcing the WORKING animation
+        if (workingAnimationDelay > 0f)
+        {
+            yield return new WaitForSeconds(workingAnimationDelay);
+        }
+
         // Force the WORKING animation before the camera starts moving
         if (animationSwitcher != null)
         {
@@ -79,11 +91,6 @@ public class PingPongMover : MonoBehaviour
             Debug.LogWarning("PingPongMover: no AnimationSwitcher found — animation won't be forced.");
         }
 
-        moveRoutine = StartCoroutine(RoundTrip());
-    }
-
-    private System.Collections.IEnumerator RoundTrip()
-    {
         if (startDelay > 0f)
         {
             yield return new WaitForSeconds(startDelay);
@@ -114,4 +121,4 @@ public class PingPongMover : MonoBehaviour
         transform.position = targetPoint.position;
         transform.rotation = targetPoint.rotation;
     }
-}   
+}

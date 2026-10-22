@@ -182,7 +182,7 @@ class GenericInteractionMonitor(BaseMonitor):
             self._shown_titles = self._shown_titles[-NEWS_MEMORY:]
 
             headline_list = "\n".join(f"- {title}" for title in titles)
-            prompt = f""" [SYSTEM MESSAGE: You were browsing the internet and saw these headlines:
+            prompt = f""" [SYSTEM MESSAGE: Venus were browsing the internet and saw these headlines, pause the conversation and comment to User:
 {headline_list}]
 """
 
@@ -205,7 +205,7 @@ class GenericInteractionMonitor(BaseMonitor):
         prompt = f"""=== OPEN WINDOWS ===
 {window_list}
 
-[SYSTEM MESSAGE: Venus checked the open windows. Pick one and comment.]"""
+[SYSTEM MESSAGE: Venus checked the open windows. Pause the conversation, pick one and comment.]"""
 
         print("[GenericInteractionMonitor] Commenting on an open window.")
 
@@ -222,7 +222,7 @@ class GenericInteractionMonitor(BaseMonitor):
         prompt = f"""=== SYSTEM HEALTH ===
 {summary}
 
-[SYSTEM MESSAGE: Venus just checked her system's vitals. Comment on it.]"""
+[SYSTEM MESSAGE: Venus just checked her system's vitals. Pause the conversation and comment on it.]"""
 
         def builder():
             return worker.run(user_text=prompt)

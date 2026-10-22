@@ -1,4 +1,5 @@
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QEvent
+from PyQt6.QtGui import QColor, QPainter, QLinearGradient
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollArea, QFrame
 
 from ai.ChatHistory import chat_history
@@ -23,6 +24,44 @@ from ui.utils.Spacing import (
 )
 
 THUMBNAIL_MAX_SIZE = (200, 150)
+
+CHAT_BG_COLOR = "#080108"
+TOP_FADE_HEIGHT = 80
+
+
+class FadeOverlay(QWidget):
+    """Gradient that goes from opaque (top) to transparent (bottom).
+
+    Placed over the scroll area's viewport so messages appear to fade out
+    as they scroll up. Ignores mouse events so scrolling and text selection
+    keep working underneath it.
+    """
+
+    def __init__(self, parent, color=CHAT_BG_COLOR, height=TOP_FADE_HEIGHT):
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.setFixedHeight(height)
+        self._color = QColor(color)
+
+    def set_color(self, color):
+        self._color = QColor(color)
+        self.update()
+
+    def paintEvent(self, event):
+        opaque = QColor(self._color)
+        opaque.setAlpha(255)
+        mid = QColor(self._color)
+        mid.setAlpha(120)
+        clear = QColor(self._color)
+        clear.setAlpha(0)  # same RGB, so no gray fringing
+
+        gradient = QLinearGradient(0, 0, 0, self.height())
+        gradient.setColorAt(0.0, opaque)
+        gradient.setColorAt(0.5, mid)
+        gradient.setColorAt(1.0, clear)
+
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), gradient)
 
 
 class ChatBubble(QFrame):
@@ -75,14 +114,14 @@ class ChatBubble(QFrame):
         if self._text_bubble is not None:
             self._text_bubble.setStyleSheet(f"""
                 QLabel {{
-                    background-color: {Theme.BG_BUBBLE};
+                    background-color: {Theme.BG_ELEVATED};
                     color: white;
                     padding: {SPACE_MD}px {SPACE_LG}px;
                     border-radius: {RADIUS_LG}px;
                     font-size: {FONT_SIZE_LG}px;
                 }}
             """)
-        self._time_label.setStyleSheet(f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px;")
+        self._time_label.setStyleSheet(f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_XS}px;")
 
 
 class ChatHistoryPage(QWidget):
@@ -114,16 +153,16 @@ class ChatHistoryPage(QWidget):
         self.chat_scroll.setWidgetResizable(True)
         self.chat_scroll.setStyleSheet(f"""
             QScrollArea {{
-                background-color: #080108;
+                background-color: {CHAT_BG_COLOR};
                 border: {BORDER_NONE}px;
             }}
             QScrollArea > QWidget > QWidget {{
-                background-color: #080108;
+                background-color: {CHAT_BG_COLOR};
             }}
 
             /* Fundo da barra de rolagem */
             QScrollBar:vertical {{
-                background-color: {Theme.BG_BUBBLE};
+                background-color: {Theme.BG_ELEVATED};
                 width: {SCROLLBAR_WIDTH_THIN}px;
                 margin: 0px;
                 border: none;
@@ -145,7 +184,21 @@ class ChatHistoryPage(QWidget):
             lambda _min, _max: self._scroll_to_bottom()
         )
 
+        # Fade overlay on top of the viewport: messages dissolve into the
+        # background as they scroll up.
+        viewport = self.chat_scroll.viewport()
+        self._top_fade = FadeOverlay(viewport, color=CHAT_BG_COLOR, height=TOP_FADE_HEIGHT)
+        self._top_fade.setGeometry(0, 0, viewport.width(), TOP_FADE_HEIGHT)
+        self._top_fade.raise_()
+        viewport.installEventFilter(self)
+
         return self.chat_scroll
+
+    def eventFilter(self, obj, event):
+        if obj is self.chat_scroll.viewport() and event.type() == QEvent.Type.Resize:
+            self._top_fade.setGeometry(0, 0, obj.width(), self._top_fade.height())
+            self._top_fade.raise_()
+        return super().eventFilter(obj, event)
 
     def _build_input_bar(self):
         self._input_bar = QFrame()
@@ -167,7 +220,7 @@ class ChatHistoryPage(QWidget):
         self._input_bar.setStyleSheet(f"""
             QFrame {{
                 background-color: #16051a;
-                border: {BORDER_MEDIUM}px solid {Theme.PINK};
+                border: {BORDER_MEDIUM}px solid {Theme.ACCENT};
                 border-radius: {RADIUS_XL}px;
             }}
         """)
@@ -179,8 +232,7 @@ class ChatHistoryPage(QWidget):
             side=side, image=message.get("image"),
         )
 
-        insert_index = self.messages_layout.count() - 1
-        self.messages_layout.insertWidget(insert_index, bubble)
+        self.messages_layout.addWidget(bubble)
         # rangeChanged (connected in _build_chat_area) now handles scrolling,
         # so the previous QTimer.singleShot(0, self._scroll_to_bottom) call
         # is no longer needed here.

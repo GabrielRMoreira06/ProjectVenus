@@ -9,28 +9,30 @@ theme_signals = _ThemeSignals()
 
 THEMES = {
     "classic_pink": {
-        "PINK": "#ff2fb0",
-        "PINK_SOFT": "#ff7fce",
+        "ACCENT": "#ff2fb0",
+        "ACCENT_SOFT": "#ff7fce",
+        "FOCUS": "#ff00a0",
         "BG_DARK": "#0a0007",
-        "BG_PANEL": "#170a14",#1b0c16
-        "BG_BUBBLE": "#1f0f1c",
+        "BG_SURFACE": "#170a14",
+        "BG_ELEVATED": "#1f0f1c",
     },
     "violet_dusk": {
-        "PINK": "#b24fff",
-        "PINK_SOFT": "#d59bff",
+        "ACCENT": "#b24fff",
+        "ACCENT_SOFT": "#d59bff",
+        "FOCUS": "#9d00ff",
         "BG_DARK": "#07000a",
-        "BG_PANEL": "#120a17",
-        "BG_BUBBLE": "#1a0f1f",
+        "BG_SURFACE": "#120a17",
+        "BG_ELEVATED": "#1a0f1f",
     },
     "crimson_night": {
-        "PINK": "#ff3860",
-        "PINK_SOFT": "#ff8fa3",
+        "ACCENT": "#ff3860",
+        "ACCENT_SOFT": "#ff8fa3",
+        "FOCUS": "#ff0033",
         "BG_DARK": "#0a0002",
-        "BG_PANEL": "#170608",
-        "BG_BUBBLE": "#1f0a0d",
+        "BG_SURFACE": "#170608",
+        "BG_ELEVATED": "#1f0a0d",
     },
 }
-
 # Maps Gemini's UPDATE_UI_THEME enum values to THEMES keys.
 THEME_ALIASES = {
     "CLASSIC": "classic_pink",
@@ -42,17 +44,18 @@ _current_scheme_name = "classic_pink"
 
 
 def _apply_scheme(name):
-    global PINK, PINK_SOFT, BG_DARK, BG_PANEL, BG_BUBBLE, _current_scheme_name
+    global ACCENT, FOCUS, ACCENT_SOFT, BG_DARK, BG_SURFACE, BG_ELEVATED, _current_scheme_name
     scheme = THEMES[name]
-    PINK = scheme["PINK"]
-    PINK_SOFT = scheme["PINK_SOFT"]
+    ACCENT = scheme["ACCENT"]
+    FOCUS = scheme["FOCUS"]
+    ACCENT_SOFT = scheme["ACCENT_SOFT"]
     BG_DARK = scheme["BG_DARK"]
-    BG_PANEL = scheme["BG_PANEL"]
-    BG_BUBBLE = scheme["BG_BUBBLE"]
+    BG_SURFACE = scheme["BG_SURFACE"]
+    BG_ELEVATED = scheme["BG_ELEVATED"]
     _current_scheme_name = name
 
 
-_apply_scheme(_current_scheme_name)  # sets initial PINK, PINK_SOFT, etc.
+_apply_scheme(_current_scheme_name)  # sets initial ACCENT, ACCENT_SOFT, etc.
 
 
 def set_theme(name):

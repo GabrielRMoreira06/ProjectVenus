@@ -20,4 +20,4 @@ class PlaceholderPage(QWidget):
 
     def _apply_style(self):
         self.label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 20px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: 20px; border: none; background: transparent;")

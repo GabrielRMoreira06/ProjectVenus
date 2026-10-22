@@ -95,8 +95,8 @@ class ToggleSwitch(QWidget):
         rect = QRectF(1, 1, self.width() - 2, self.height() - 2)
         radius = rect.height() / 2
 
-        track_color = QColor(Theme.PINK if self._checked else Theme.BG_BUBBLE)
-        border_color = QColor(Theme.PINK if (self._checked or self._hovered) else Theme.PINK_SOFT)
+        track_color = QColor(Theme.ACCENT if self._checked else Theme.BG_ELEVATED)
+        border_color = QColor(Theme.ACCENT if (self._checked or self._hovered) else Theme.ACCENT_SOFT)
 
         painter.setPen(QPen(border_color, 1.5))
         painter.setBrush(track_color)
@@ -141,23 +141,23 @@ class IntervalSlider(QWidget):
     def _apply_style(self):
         self.slider.setStyleSheet(f"""
             QSlider::groove:horizontal {{
-                background: {Theme.BG_BUBBLE};
+                background: {Theme.BG_ELEVATED};
                 height: 6px;
                 border-radius: 3px;
             }}
             QSlider::handle:horizontal {{
-                background: {Theme.PINK};
+                background: {Theme.ACCENT};
                 width: 16px;
                 margin: -6px 0;
                 border-radius: 8px;
             }}
             QSlider::sub-page:horizontal {{
-                background: {Theme.PINK};
+                background: {Theme.ACCENT};
                 border-radius: 3px;
             }}
         """)
         self.value_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 12px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: 12px; border: none; background: transparent;")
 
     def _on_changed(self, minutes):
         self.value_label.setText(self._format(minutes))
@@ -226,10 +226,10 @@ class InteractionRow(QFrame):
         self.title_label.setStyleSheet(
             "color: white; font-size: 15px; font-weight: bold; border: none; background: transparent;")
         self.description_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: 12px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: 12px; border: none; background: transparent;")
         if self.interval_caption is not None:
             self.interval_caption.setStyleSheet(
-                f"color: {Theme.PINK_SOFT}; font-size: 12px; border: none; background: transparent;")
+                f"color: {Theme.ACCENT_SOFT}; font-size: 12px; border: none; background: transparent;")
 
 
 class PreferencesPage(QWidget):
@@ -281,6 +281,6 @@ class PreferencesPage(QWidget):
         Theme.theme_signals.changed.connect(self._apply_style)
 
     def _apply_style(self):
-        header_style = f"color: {Theme.PINK}; font-size: 16px; font-weight: bold; border: none; background: transparent;"
+        header_style = f"color: {Theme.ACCENT}; font-size: 16px; font-weight: bold; border: none; background: transparent;"
         self.monitors_header.setStyleSheet(header_style)
         self.actions_header.setStyleSheet(header_style)

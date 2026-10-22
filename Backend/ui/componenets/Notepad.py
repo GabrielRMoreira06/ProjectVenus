@@ -261,36 +261,36 @@ class NotepadWindow(DraggableFrame):
         self.setStyleSheet(f"""
             DraggableFrame {{
                 background-color: {Theme.BG_DARK};
-                border: 1px solid {Theme.PINK};
+                border: 1px solid {Theme.ACCENT};
                 border-radius: 14px;
                 color: white;
                 font-family: "{self.font_family}";
             }}
         """)
 
-        self._icon_label.setPixmap(qta.icon("fa5s.sticky-note", color=Theme.PINK).pixmap(QSize(16, 16)))
+        self._icon_label.setPixmap(qta.icon("fa5s.sticky-note", color=Theme.ACCENT).pixmap(QSize(16, 16)))
 
         for button in (self.new_button, self.open_button, self.save_button, self.close_button):
             icon_name = button.property("icon_name")
-            button.setIcon(qta.icon(icon_name, color=Theme.PINK_SOFT, color_active="white"))
+            button.setIcon(qta.icon(icon_name, color=Theme.ACCENT_SOFT, color_active="white"))
             button.setStyleSheet(f"""
                 QPushButton {{
                     background-color: #16051a;
-                    border: 1px solid {Theme.PINK};
+                    border: 1px solid {Theme.ACCENT};
                     border-radius: 8px;
-                    color: {Theme.PINK_SOFT};
+                    color: {Theme.ACCENT_SOFT};
                 }}
                 QPushButton:hover {{
-                    background-color: {Theme.PINK};
+                    background-color: {Theme.ACCENT};
                     color: white;
                 }}
             """)
 
         self.text_edit.setStyleSheet(f"""
             QTextEdit {{
-                background-color: {Theme.BG_BUBBLE};
+                background-color: {Theme.BG_ELEVATED};
                 color: white;
-                border: 1px solid {Theme.PINK};
+                border: 1px solid {Theme.ACCENT};
                 border-radius: 8px;
                 padding: 10px;
                 font-size: 13px;

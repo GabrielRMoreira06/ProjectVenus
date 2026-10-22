@@ -6,14 +6,17 @@ from PyQt6.QtWidgets import (
 
 from ui.pages.PlaceholderPage import PlaceholderPage
 from ui.pages.WallpaperPage import WallpaperPage
+from ui.pages.NotepadPage import NotepadPage
 import ui.utils.Theme as Theme
 from ui.utils.Typography import FONT_SIZE_MD
-from ui.utils.Shapes import RADIUS_LG, RADIUS_XL, BORDER_THIN, ICON_SIZE_LG, NAV_TILE_HEIGHT, NAV_RAIL_WIDTH
+from ui.utils.Shapes import RADIUS_LG, RADIUS_XL, BORDER_THIN, ICON_SIZE_LG, NAV_TILE_HEIGHT, NAV_RAIL_WIDTH, RADIUS_SM, \
+    RADIUS_MD
 from ui.utils.Spacing import SPACE_0, SPACE_SM, SPACE_MD
 
 TOOL_ALARM = 0
 TOOL_MEMORIES = 1
 TOOL_WALLPAPER = 2
+TOOL_NOTEPAD = 3
 
 
 class ToolNavButton(QPushButton):
@@ -61,7 +64,7 @@ class ToolNavButton(QPushButton):
 
     def _apply_style(self):
         highlighted = self._active or self._hovered
-        color = "white" if highlighted else Theme.PINK_SOFT
+        color = Theme.FOCUS if highlighted else Theme.ACCENT_SOFT
 
         self._icon_label.setPixmap(qta.icon(self.icon_name, color=color).pixmap(QSize(ICON_SIZE_LG, ICON_SIZE_LG)))
         self._icon_label.setStyleSheet("border: none; background: transparent;")
@@ -71,9 +74,9 @@ class ToolNavButton(QPushButton):
         if self._active:
             self.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: {Theme.BG_BUBBLE};
-                    border: {BORDER_THIN}px solid {Theme.PINK};
-                    border-radius: {RADIUS_LG}px;
+                    background-color: {Theme.BG_ELEVATED};
+                    border: {BORDER_THIN}px solid {Theme.ACCENT};
+                    border-radius: {RADIUS_SM}px;
                 }}
             """)
         else:
@@ -81,7 +84,7 @@ class ToolNavButton(QPushButton):
                 QPushButton {{
                     background-color: transparent;
                     border: none;
-                    border-radius: {RADIUS_LG}px;
+                    border-radius: {RADIUS_MD}px;
                 }}
             """)
 
@@ -98,6 +101,7 @@ class ToolsPage(QWidget):
             ToolNavButton("fa5s.bell", "Alarm", active=True),
             ToolNavButton("fa5s.images", "Memories"),
             ToolNavButton("fa5s.image", "Wallpaper"),
+            ToolNavButton("fa5s.file-alt", "Notepad"),
         ]
 
         self._nav_frame = QFrame()
@@ -105,7 +109,7 @@ class ToolsPage(QWidget):
         self._nav_frame.setFixedWidth(NAV_RAIL_WIDTH)
 
         nav_layout = QVBoxLayout(self._nav_frame)
-        nav_layout.setContentsMargins(SPACE_0, SPACE_MD, SPACE_0, SPACE_MD)
+        nav_layout.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
         nav_layout.setSpacing(SPACE_SM)
 
         for index, button in enumerate(self.nav_buttons):
@@ -119,6 +123,7 @@ class ToolsPage(QWidget):
         self.tool_stack.addWidget(PlaceholderPage("Alarm"))
         self.tool_stack.addWidget(PlaceholderPage("Memories"))
         self.tool_stack.addWidget(WallpaperPage())
+        self.tool_stack.addWidget(NotepadPage())
         root.addWidget(self.tool_stack, stretch=1)
 
         self._apply_style()
@@ -132,7 +137,7 @@ class ToolsPage(QWidget):
     def _apply_style(self):
         self._nav_frame.setStyleSheet(f"""
             #toolsNav {{
-                background-color: {Theme.BG_PANEL};
+                background-color: {Theme.BG_SURFACE};
                 border: none;
                 border-radius: {RADIUS_XL}px;
             }}

@@ -52,10 +52,10 @@ class _AvatarCircle(QLabel):
         # Fallback if image path is invalid or missing
         self.setText(self.initials)
         self.setStyleSheet(f"""
-            background-color: {Theme.BG_BUBBLE};
-            border: {BORDER_MEDIUM}px solid {Theme.PINK};
+            background-color: {Theme.BG_ELEVATED};
+            border: {BORDER_MEDIUM}px solid {Theme.ACCENT};
             border-radius: {AVATAR_SIZE_MD // 2}px;
-            color: {Theme.PINK};
+            color: {Theme.ACCENT};
             font-size: {FONT_SIZE_XXL}px;
             font-weight: {FONT_WEIGHT_BOLD};
         """)
@@ -86,7 +86,7 @@ class _AvatarCircle(QLabel):
         painter.setClipping(False)
 
         # 3. Draw pixel-perfect anti-aliased border
-        pen = QPen(QColor(Theme.PINK))
+        pen = QPen(QColor(Theme.ACCENT))
         pen.setWidth(border_width)
         painter.setPen(pen)
 
@@ -109,9 +109,11 @@ class _MoodStatBar(QWidget):
         self.label_text = label
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACE_SM, SPACE_SM, SPACE_SM, SPACE_SM)
+        # Fix 2: small horizontal margins so labels get the full card width.
+        layout.setContentsMargins(SPACE_XS, SPACE_SM, SPACE_XS, SPACE_SM)
         layout.setSpacing(SPACE_XS)
-        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        # Fix 3: no layout-wide alignment (it shrinks children to their size
+        # hint). Individual widgets are aligned below instead.
 
         self.icon_label = QLabel()
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -129,7 +131,9 @@ class _MoodStatBar(QWidget):
         self.percent_label = QLabel("0%")
         self.percent_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        layout.addWidget(self.icon_label)
+        # Fix 3: icon and bar are centered individually; the text labels fill
+        # the card width (their text is already centered).
+        layout.addWidget(self.icon_label, alignment=Qt.AlignmentFlag.AlignHCenter)
         layout.addWidget(self.name_label)
         layout.addWidget(self.bar, alignment=Qt.AlignmentFlag.AlignHCenter)
         layout.addWidget(self.percent_label)
@@ -144,22 +148,22 @@ class _MoodStatBar(QWidget):
                 border-radius: {RADIUS_MD}px;
             }}
         """)
-        self.icon_label.setPixmap(qta.icon(self.icon_name, color=Theme.PINK).pixmap(QSize(ICON_SIZE_MD, ICON_SIZE_MD)))
+        self.icon_label.setPixmap(qta.icon(self.icon_name, color=Theme.ACCENT).pixmap(QSize(ICON_SIZE_MD, ICON_SIZE_MD)))
         self.name_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XXS}px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_XXS}px; border: none; background: transparent;")
         self.bar.setStyleSheet(f"""
             QProgressBar {{
-                background-color: {Theme.BG_BUBBLE};
-                border: {BORDER_THIN}px solid {Theme.PINK};
+                background-color: {Theme.BG_ELEVATED};
+                border: {BORDER_THIN}px solid {Theme.ACCENT};
                 border-radius: {RADIUS_SM}px;
             }}
             QProgressBar::chunk {{
-                background-color: {Theme.PINK};
+                background-color: {Theme.ACCENT};
                 border-radius: {RADIUS_SM}px;
             }}
         """)
         self.percent_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
 
     def set_value(self, value):
         value = max(0, min(100, int(value)))
@@ -228,15 +232,17 @@ class ProfileSection(QFrame):
         layout.addWidget(self.xp_bar)
 
         stats_row = QHBoxLayout()
-        stats_row.setSpacing(SPACE_SM)
+        # Fix 2: tighter gap between the stat cards.
+        stats_row.setSpacing(SPACE_XS)
 
         self.anger_bar = _MoodStatBar("fa5s.angry", "Anger")
         self.energy_bar = _MoodStatBar("fa5s.bolt", "Energy")
         self.boredom_bar = _MoodStatBar("fa5s.tired", "Boredom")
         self.affection_bar = _MoodStatBar("fa5s.heart", "Affection")
 
+        # Fix 4: equal stretch so every card gets the same share of the width.
         for stat_bar in (self.anger_bar, self.energy_bar, self.boredom_bar, self.affection_bar):
-            stats_row.addWidget(stat_bar)
+            stats_row.addWidget(stat_bar, 1)
 
         layout.addLayout(stats_row)
 
@@ -246,12 +252,12 @@ class ProfileSection(QFrame):
     def _apply_style(self):
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: {Theme.BG_BUBBLE};
+                background-color: {Theme.BG_ELEVATED};
                 border: none;
                 border-radius: {RADIUS_LG}px;
             }}
         """)
-        self._name_heart.setPixmap(qta.icon("fa5s.heart", color=Theme.PINK).pixmap(QSize(ICON_SIZE_SM, ICON_SIZE_SM)))
+        self._name_heart.setPixmap(qta.icon("fa5s.heart", color=Theme.ACCENT).pixmap(QSize(ICON_SIZE_SM, ICON_SIZE_SM)))
         self.xp_bar.setStyleSheet(f"""
             QProgressBar {{
                 background-color: #16051a;
@@ -259,16 +265,16 @@ class ProfileSection(QFrame):
                 border-radius: {RADIUS_SM}px;
             }}
             QProgressBar::chunk {{
-                background-color: {Theme.PINK};
+                background-color: {Theme.ACCENT};
                 border-radius: {RADIUS_SM}px;
             }}
         """)
         self._xp_caption.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
         self.xp_value_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
         self.level_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_XS}px; border: none; background: transparent;")
 
     def set_avatar_image(self, image_path):
         self.avatar.set_image(image_path)

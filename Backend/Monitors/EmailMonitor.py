@@ -186,7 +186,7 @@ class EmailMonitor(BaseMonitor):
 
         def builder():
             return worker.run(
-                user_text=f"[SYSTEM MESSAGE: {len(emails)} new email(s) arrived in the inbox.]\n\n{report}"
+                user_text=f"[SYSTEM MESSAGE: {len(emails)} new email(s) arrived in the inbox, pause the conversation to read them to User.]\n\n{report}"
             )
 
         self.orchestrator.add(Category.MONITOR, builder)

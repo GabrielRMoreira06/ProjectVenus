@@ -315,9 +315,9 @@ passive_monitor = PassiveMonitor(orchestrator)
 one_time_manager = OneTimeManager(
     orchestrator=orchestrator,
     checks=[
+        MemoryCleanupCheck(memory_manager=worker.memory),
         HardwareInspect(),
         DiskInspect(),
-        MemoryCleanupCheck(memory_manager=worker.memory),
     ],
 )
 

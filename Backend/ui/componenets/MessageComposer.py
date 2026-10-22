@@ -198,8 +198,8 @@ class EmojiPicker(QWidget):
 
         self.setStyleSheet(f"""
             QWidget {{
-                background-color: {Theme.BG_PANEL};
-                border: {BORDER_THIN}px solid {Theme.PINK};
+                background-color: {Theme.BG_SURFACE};
+                border: {BORDER_THIN}px solid {Theme.ACCENT};
                 border-radius: {RADIUS_MD}px;
             }}
             QPushButton {{
@@ -208,7 +208,7 @@ class EmojiPicker(QWidget):
                 font-size: {FONT_SIZE_XL}px;
             }}
             QPushButton:hover {{
-                background-color: {Theme.BG_BUBBLE};
+                background-color: {Theme.BG_ELEVATED};
                 border-radius: {RADIUS_SM}px;
             }}
         """)
@@ -377,17 +377,17 @@ class MessageComposer(QWidget):
         self.remove_image_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
-                border: {BORDER_THIN}px solid {Theme.PINK};
+                border: {BORDER_THIN}px solid {Theme.ACCENT};
                 border-radius: {RADIUS_MD}px;
-                color: {Theme.PINK_SOFT};
+                color: {Theme.ACCENT_SOFT};
             }}
             QPushButton:hover {{ color: white; }}
         """)
 
-        self.emoji_button.setIcon(qta.icon("fa5s.smile", color=Theme.PINK_SOFT, color_active="white"))
+        self.emoji_button.setIcon(qta.icon("fa5s.smile", color=Theme.ACCENT_SOFT, color_active="white"))
         self.emoji_button.setIconSize(QSize(ICON_SIZE_SM, ICON_SIZE_SM))
 
-        self.attach_button.setIcon(qta.icon("fa5s.paperclip", color=Theme.PINK_SOFT, color_active="white"))
+        self.attach_button.setIcon(qta.icon("fa5s.paperclip", color=Theme.ACCENT_SOFT, color_active="white"))
         self.attach_button.setIconSize(QSize(ICON_SIZE_SM, ICON_SIZE_SM))
 
         self.text_edit.setStyleSheet(f"""
@@ -407,9 +407,9 @@ class MessageComposer(QWidget):
             button.setStyleSheet(f"""
                 QPushButton {{
                     background-color: transparent;
-                    border: {BORDER_THIN}px solid {Theme.PINK};
+                    border: {BORDER_THIN}px solid {Theme.ACCENT};
                     border-radius: {RADIUS_LG}px;
-                    color: {Theme.PINK_SOFT};
+                    color: {Theme.ACCENT_SOFT};
                 }}
                 QPushButton:hover {{ color: white; }}
                 QPushButton:disabled {{ color: #666; border-color: #555; }}
@@ -417,22 +417,22 @@ class MessageComposer(QWidget):
 
         self.send_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {Theme.PINK};
+                background-color: {Theme.ACCENT};
                 border: none;
                 border-radius: {RADIUS_LG}px;
                 color: white;
                 font-weight: {FONT_WEIGHT_BOLD};
             }}
-            QPushButton:hover {{ background-color: {Theme.PINK_SOFT}; }}
+            QPushButton:hover {{ background-color: {Theme.ACCENT_SOFT}; }}
             QPushButton:disabled {{ background-color: #555; }}
         """)
 
     def _apply_full_style(self):
         self.text_edit.setStyleSheet(f"""
             QTextEdit {{
-                background-color: {Theme.BG_BUBBLE};
+                background-color: {Theme.BG_ELEVATED};
                 color: white;
-                border: {BORDER_THIN}px solid {Theme.PINK};
+                border: {BORDER_THIN}px solid {Theme.ACCENT};
                 border-radius: {RADIUS_MD}px;
                 padding: {SPACE_SM}px;
                 font-size: {FONT_SIZE_MD}px;
@@ -440,14 +440,14 @@ class MessageComposer(QWidget):
         """)
 
         if self.status_label is not None:
-            self.status_label.setStyleSheet(f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_XS}px;")
+            self.status_label.setStyleSheet(f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_XS}px;")
 
         self.remove_image_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
-                border: {BORDER_THIN}px solid {Theme.PINK};
+                border: {BORDER_THIN}px solid {Theme.ACCENT};
                 border-radius: {RADIUS_SM}px;
-                color: {Theme.PINK_SOFT};
+                color: {Theme.ACCENT_SOFT};
                 padding: {SPACE_XS}px {SPACE_MD}px;
             }}
             QPushButton:hover {{ color: white; }}
@@ -455,14 +455,14 @@ class MessageComposer(QWidget):
 
         self.send_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {Theme.PINK};
+                background-color: {Theme.ACCENT};
                 border: none;
                 border-radius: {RADIUS_MD}px;
                 color: white;
                 font-weight: {FONT_WEIGHT_BOLD};
                 padding: {SPACE_SM}px {SPACE_LG}px;
             }}
-            QPushButton:hover {{ background-color: {Theme.PINK_SOFT}; }}
+            QPushButton:hover {{ background-color: {Theme.ACCENT_SOFT}; }}
             QPushButton:disabled {{ background-color: #555; }}
         """)
 

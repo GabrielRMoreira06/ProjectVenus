@@ -58,7 +58,7 @@ class UptimeMonitor(BaseMonitor):
 
         def builder():
             return worker.run(
-                user_text=f"[SYSTEM MESSAGE: you detected the user's PC has been on for over {hours:.0f} hours straight.]"
+                user_text=f"[SYSTEM MESSAGE: Venus detected the user's PC has been on for over {hours:.0f} hours straight.]"
             )
 
         self.orchestrator.add(Category.MONITOR, builder)

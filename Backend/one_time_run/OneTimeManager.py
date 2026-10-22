@@ -30,7 +30,7 @@ from Orchestrator import Category
 
 class OneTimeManager:
 
-    def __init__(self, orchestrator, checks=None, silence_duration=300, poll_interval=15):
+    def __init__(self, orchestrator, checks=[], silence_duration=160, poll_interval=15):
         self.orchestrator = orchestrator
         self.checks = checks or []
         self.silence_duration = silence_duration

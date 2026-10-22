@@ -37,17 +37,18 @@ XP_GROWTH = 1.25
 
 UNLOCKS = {
     1: ("action", "STEALMOUSE"),
-    2: ("action", "FLIP"),
-    3: ("monitor", "screenpeek"),
-    4: ("action", "JUDGE"),
+    2: ("monitor", "screenpeek"),
+    3: ("action", "FLIP"),
+    4: ("monitor", "generic_interaction"),
     5: ("action", "SHOWIMAGE"),
     6: ("monitor", "uptime"),
     7: ("action", "SCREAM"),
     8: ("action", "DICE"),
     9: ("monitor", "process"),
     10: ("action", "ORGANIZEFILES"),
-    11: ("action", "ALLOWPET"),
-    12: ("monitor", "generic_interaction"),
+    11: ("action", "JUDGE"),
+    12: ("action", "ALLOWPET"),
+
 }
 
 _UNLOCK_LEVEL = {entry: level for level, entry in UNLOCKS.items()}
@@ -149,11 +150,11 @@ class ExpManager:
             unlock = UNLOCKS.get(completed_level)
 
             if unlock is None:
-                message = f"[SYSTEM MESSAGE: Level up, you're now level {reached_level}]"
+                message = f"[SYSTEM MESSAGE: Venus leveled up, you're now level {reached_level}]"
             else:
                 kind, item_id = unlock
                 name = MONITOR_CATALOG[item_id][0] if kind == "monitor" else item_id
-                message = f"[SYSTEM MESSAGE: Level up, you're now level {reached_level} and unlocked {name}]"
+                message = f"[SYSTEM MESSAGE: Venus leveled up, you're now level {reached_level} and unlocked {name}]"
 
             def builder(m=message):
                 return worker.run(user_text=m)

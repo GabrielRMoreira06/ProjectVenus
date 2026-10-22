@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QFrame, QStackedWidget
 )
-
+from PyQt6.QtWidgets import QGridLayout
 from ai.EXPManager import exp_manager
 from ai.MoodController import mood
 import ui.utils.Theme as Theme
@@ -66,6 +66,24 @@ class DraggableFrame(QFrame):
     def __init__(self):
         super().__init__()
         self._drag_offset = None
+        self._corner_widget = None
+
+    def set_corner_widget(self, widget):
+        """Pin a widget to the top-right corner, ignoring layout margins."""
+        self._corner_widget = widget
+        widget.setParent(self)
+        self._place_corner_widget()
+        widget.show()
+
+    def _place_corner_widget(self):
+        if self._corner_widget is None:
+            return
+        self._corner_widget.move(self.width() - self._corner_widget.width(), 0)
+        self._corner_widget.raise_()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._place_corner_widget()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -133,6 +151,9 @@ class PanelWindow(QWidget):
         self._apply_close_button_style()
 
     def _apply_window_style(self):
+        scrollbar_top_margin = BUTTON_HEIGHT_SM + SPACE_XS + 12
+        scrollbar_bottom_margin = 24
+
         self.setStyleSheet(f"""
             QWidget {{
                 background-color: {Theme.BG_DARK};
@@ -140,14 +161,18 @@ class PanelWindow(QWidget):
                 font-family: "{self.font_family}";
             }}
             QScrollBar:vertical {{
-                background: #16051a;
+                background: #2a0a33;
                 width: {SCROLLBAR_WIDTH}px;
-                margin: {SPACE_XS}px;
+                margin: {scrollbar_top_margin}px {SPACE_XS}px {scrollbar_bottom_margin}px {SPACE_XS}px;
             }}
             QScrollBar::handle:vertical {{
-                background: {Theme.PINK};
+                background: {Theme.ACCENT};
                 border-radius: {SCROLLBAR_HANDLE_RADIUS}px;
                 min-height: {SCROLLBAR_HANDLE_MIN_HEIGHT}px;
+            }}
+            QScrollBar::add-page:vertical,
+            QScrollBar::sub-page:vertical {{
+                background: #2a0a33;
             }}
             QScrollBar::add-line:vertical,
             QScrollBar::sub-line:vertical {{
@@ -158,31 +183,30 @@ class PanelWindow(QWidget):
     def _apply_sidebar_style(self):
         self._sidebar_frame.setStyleSheet(f"""
             QFrame {{
-                background-color: {Theme.BG_PANEL};
+                background-color: {Theme.BG_SURFACE};
                 border: none;
                 border-radius: {RADIUS_XL}px;
             }}
         """)
 
     def _apply_divider_style(self):
-        self._divider.setStyleSheet(f"background-color: {Theme.PINK}; border: none;")
+        self._divider.setStyleSheet(f"background-color: {Theme.ACCENT}; border: none;")
 
     def _apply_heart_icon(self):
-        self._sidebar_heart.setPixmap(qta.icon("fa5s.heart", color=Theme.PINK).pixmap(QSize(ICON_SIZE_LG, ICON_SIZE_LG)))
+        self._sidebar_heart.setPixmap(qta.icon("fa5s.heart", color=Theme.ACCENT).pixmap(QSize(ICON_SIZE_LG, ICON_SIZE_LG)))
 
     def _apply_close_button_style(self):
-        self._close_button.setIcon(qta.icon("fa5s.times", color=Theme.PINK_SOFT, color_active="white"))
+        self._close_button.setIcon(qta.icon("fa5s.times", color="white", color_active="white"))
         self._close_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: #16051a;
-                border: {BORDER_THIN}px solid {Theme.PINK};
-                border-radius: {RADIUS_SM}px;
-                color: {Theme.PINK_SOFT};
-                font-weight: {FONT_WEIGHT_BOLD};
+                background-color: {Theme.ACCENT};
+                border: none;
+                border-radius: 0px;
+                padding: 0px;
+                margin: 0px;
             }}
             QPushButton:hover {{
-                background-color: {Theme.PINK};
-                color: white;
+                background-color: {Theme.ACCENT_SOFT};
             }}
         """)
 
@@ -251,26 +275,34 @@ class PanelWindow(QWidget):
     def _build_main_area(self):
         container = DraggableFrame()
         container.setObjectName("mainArea")
-
         container.setStyleSheet("""
             #mainArea {
                 background-color: #080108;
             }
         """)
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(*MAIN_AREA_PADDING)
-        layout.setSpacing(LAYOUT_SPACING_LOOSE)
 
-        layout.addLayout(self._build_header())
+        layout = QGridLayout(container)
+        layout.setContentsMargins(*MAIN_AREA_PADDING)
+        layout.setSpacing(0)
 
         self.content_stack = QStackedWidget()
         self.content_stack.addWidget(ChatHistoryPage(self.process_question))
         self.content_stack.addWidget(SettingsPage())
         self.content_stack.addWidget(PreferencesPage())
         self.content_stack.addWidget(ToolsPage())
-        layout.addWidget(self.content_stack, stretch=1)
+        layout.addWidget(self.content_stack, 0, 0)
+
+        self._build_close_button()
+        container.set_corner_widget(self._close_button)
 
         return container
+
+    def _build_close_button(self):
+        self._close_button = QPushButton()
+        self._close_button.setIconSize(QSize(ICON_SIZE_MD, ICON_SIZE_MD))
+        self._close_button.setFixedSize(56, BUTTON_HEIGHT_SM)
+        self._close_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._close_button.clicked.connect(self.hide)
 
     def _build_header(self):
         header = QHBoxLayout()

@@ -14,7 +14,7 @@ Gemini once the move is done.
 import os
 import shutil
 
-FOLDER = r"C:\Users\User\Downloads"
+FOLDER = r"D:\Downloads"
 
 CATEGORIES = {
     ".jpg": "Images", ".jpeg": "Images", ".png": "Images", ".gif": "Images", ".webp": "Images",

@@ -186,7 +186,7 @@ class TTSWorker:
 
     def generate_audio(self, text):
         if self.skip_synthesis:
-            return r"C:\Users\User\Documents\ProjectVenus\Backend\audio.wav"
+            return r"D:\New folder\ProjectVenus\Backend\audio.wav"
 
         try:
             voice = self._get_voice()

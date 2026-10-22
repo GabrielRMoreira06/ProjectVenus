@@ -9,7 +9,7 @@ load_dotenv()
 
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 MODEL = "gemini-3.6-flash-lite"
-PIPER_MODEL_PATH = r"C:\Users\User\Documents\ProjectVenus\Backend\piper\en_GB-cori-medium.onnx"
+PIPER_MODEL_PATH = r"D:\New folder\ProjectVenus\Backend\piper\en_GB-cori-medium.onnx"
 
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")

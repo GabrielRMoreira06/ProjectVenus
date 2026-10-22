@@ -3545,6 +3545,7 @@ MonoBehaviour:
   moveDuration: 1.5
   waitTime: 7
   startDelay: 15
+  workingAnimationDelay: 0.5
   easing:
     serializedVersion: 2
     m_Curve:
@@ -5461,7 +5462,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Bom dia rapaziada BOm dia rapaziada Bom dia Rapaziada
+  m_text: Hi, My name Is Venus. I'm a personal AI assistant and I hate Gabriel.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 051fac532de57304f858aa04788a9566, type: 2}
   m_sharedMaterial: {fileID: -77059638112273430, guid: 051fac532de57304f858aa04788a9566, type: 2}

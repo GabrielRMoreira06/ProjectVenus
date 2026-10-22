@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import QPushButton
 
 import ui.utils.Theme as Theme
 from ui.utils.Typography import FONT_SIZE_XL
-from ui.utils.Shapes import RADIUS_LG, BORDER_THIN, ICON_SIZE_LG, BUTTON_HEIGHT_XL
+from ui.utils.Shapes import RADIUS_MD, BORDER_THIN, ICON_SIZE_LG, BUTTON_HEIGHT_XL
 from ui.utils.Spacing import SPACE_LG
 
 
@@ -29,7 +29,7 @@ class NavButton(QPushButton):
 
     def _update_icon_color(self, hovered=False):
         self._hovered = hovered
-        icon_color = "white" if (self._active or hovered) else Theme.PINK_SOFT
+        icon_color = "white" if (self._active or hovered) else Theme.ACCENT_SOFT
         self.setIcon(qta.icon(self.icon_name, color=icon_color))
         self.setIconSize(QSize(ICON_SIZE_LG, ICON_SIZE_LG))
 
@@ -49,10 +49,10 @@ class NavButton(QPushButton):
                 QPushButton {{
                     text-align: left;
                     padding-left: {SPACE_LG}px;
-                    background-color: {Theme.BG_BUBBLE};
+                    background-color: {Theme.BG_ELEVATED};
                     color: white;
-                    border: {BORDER_THIN}px solid {Theme.PINK};
-                    border-radius: {RADIUS_LG}px;
+                    border: {BORDER_THIN}px solid {Theme.ACCENT};
+                    border-radius: {RADIUS_MD}px;
                     font-size: {FONT_SIZE_XL}px;
                 }}
             """)
@@ -62,9 +62,9 @@ class NavButton(QPushButton):
                     text-align: left;
                     padding-left: {SPACE_LG}px;
                     background-color: #16051a;
-                    color: {Theme.PINK_SOFT};
+                    color: {Theme.ACCENT_SOFT};
                     border: none;
-                    border-radius: {RADIUS_LG}px;
+                    border-radius: {RADIUS_MD}px;
                     font-size: {FONT_SIZE_XL}px;
                 }}
                 QPushButton:hover {{

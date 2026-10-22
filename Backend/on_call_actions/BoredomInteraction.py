@@ -26,7 +26,7 @@ from pathlib import Path
 from PIL import Image
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
-DOWNLOADS_FOLDER = Path.home() / "Downloads"
+DOWNLOADS_FOLDER = Path(r"D:\Downloads")
 
 
 def _pick_random_image_from_disk():

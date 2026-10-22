@@ -57,7 +57,7 @@ class SettingRow(QFrame):
         self.title_label.setStyleSheet(
             f"color: white; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; border: none; background: transparent;")
         self.description_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_SM}px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_SM}px; border: none; background: transparent;")
 
 
 class VolumeSlider(QWidget):
@@ -92,23 +92,23 @@ class VolumeSlider(QWidget):
 
         self.slider.setStyleSheet(f"""
             QSlider::groove:horizontal {{
-                background: {Theme.BG_BUBBLE};
+                background: {Theme.BG_ELEVATED};
                 height: {PROGRESS_BAR_HEIGHT}px;
                 border-radius: {groove_radius}px;
             }}
             QSlider::handle:horizontal {{
-                background: {Theme.PINK};
+                background: {Theme.ACCENT};
                 width: {SLIDER_HANDLE_SIZE}px;
                 margin: -{handle_margin}px 0;
                 border-radius: {handle_radius}px;
             }}
             QSlider::sub-page:horizontal {{
-                background: {Theme.PINK};
+                background: {Theme.ACCENT};
                 border-radius: {groove_radius}px;
             }}
         """)
         self.value_label.setStyleSheet(
-            f"color: {Theme.PINK_SOFT}; font-size: {FONT_SIZE_SM}px; border: none; background: transparent;")
+            f"color: {Theme.ACCENT_SOFT}; font-size: {FONT_SIZE_SM}px; border: none; background: transparent;")
 
     def _on_changed(self, value):
         self.value_label.setText(f"{value}%")
@@ -169,7 +169,7 @@ class SettingsPage(QWidget):
 
     def _apply_style(self):
         header_style = (
-            f"color: {Theme.PINK}; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; "
+            f"color: {Theme.ACCENT}; font-size: {FONT_SIZE_LG}px; font-weight: {FONT_WEIGHT_BOLD}; "
             f"border: none; background: transparent;"
         )
         self.voice_header.setStyleSheet(header_style)
