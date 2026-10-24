@@ -45,6 +45,26 @@ public class AnimationSwitcher : MonoBehaviour
     private float targetRotationX;
     private float rotationVelocity;
 
+    public void Update()
+    {
+        // Animation switch test (keys 1-3)
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+    var kb = UnityEngine.InputSystem.Keyboard.current;
+    if (kb != null)
+    {
+        if (kb.digit1Key.wasPressedThisFrame) ChangeAnimation("WORKING");
+        if (kb.digit2Key.wasPressedThisFrame) ChangeAnimation("RELAXING");
+        if (kb.digit3Key.wasPressedThisFrame) ChangeAnimation("IDLE");
+    }
+#else
+        //if (Input.GetKeyDown(KeyCode.Alpha1)) ChangeAnimation("WORKING");
+        //if (Input.GetKeyDown(KeyCode.Alpha2)) ChangeAnimation("RELAXING");
+        //if (Input.GetKeyDown(KeyCode.Alpha3)) ChangeAnimation("IDLE");
+#endif
+
+        RotateCharacter();
+    }
+
     private void Awake()
     {
         if (animator == null)

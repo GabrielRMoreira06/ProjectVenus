@@ -77,8 +77,7 @@ ACTIONS = {
 }
 EVIL_ACTIONS = {
     "DEADPIXEL": [
-        "DEADPIXEL: silently draw a glitch on the user's screen — your reaction to being this angry.",
-        "If ACTION is DEADPIXEL, leave TEXT empty — it's a silent reaction, no comment.",
+        "DEADPIXEL: draw a glitch line on the user's screen.",
     ],
 }
 INTERACTIVE_ACTIONS = ("SHOWIMAGE", "STEALMOUSE", "ALLOWPET", "KEYBOARDCONTROL", "DICE")
@@ -107,7 +106,7 @@ UPDATE_PROFILE_PICTURE: NONE | BORED | ANGER | TIRED | POUTY | NORMAL
 
 UPDATE_UI_THEME: NONE | CLASSIC | VIOLET | CRIMSON
 
-MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time. For DAILYSUMMARY: only the NEW things relevant from today not yet in the summary (max 25 words), it is appended automatically.> | NONE
+MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time. For DAILYSUMMARY: only the NEW relevant events from today not yet in the summary (max 25 words), it is appended automatically.> | NONE
 
 MEMORY_EXPIRE: 6HOURS | 1DAY | 1WEEK | 1MONTH | PERMANENT | NONE
 

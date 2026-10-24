@@ -47,6 +47,7 @@ from one_time_run.OneTimeManager import OneTimeManager
 from ui.AppBootsTrap import run as run_app
 import ui.utils.Theme as Theme
 from ui.PanelWindow import avatar_signals, panel_signals
+from ui.componenets.DeadLine import deadline_signals
 from ui.componenets.Notepad import AUTOSAVE_PATH as NOTEPAD_AUTOSAVE_PATH, notepad_signals
 
 app = Flask(__name__)
@@ -56,7 +57,6 @@ app = Flask(__name__)
 # baseUrl (unlike /response and /ask, which Unity already prefixes itself).
 # Keep this in sync with baseUrl in PythonConnection.cs if that ever changes.
 BASE_URL = "http://127.0.0.1:5000"
-
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -141,7 +141,7 @@ def debug_tts():
 
     result = {
         "text": "DEBUG TEXT",
-        "action": "DICE",
+        "action": "DEADPIXEL",
         "mood_variant": None,
         "mood_shift": None,
         "memory_type": "NONE",
@@ -197,6 +197,10 @@ def queue_response(result):
     Unity has nothing to do with it — the action is swapped to NONE
     before this response is queued for Unity, and the actual job runs
     on its own thread (see _run_on_call_action below).
+
+    DEADPIXEL is handled the same way but entirely on the PyQt side:
+    the action is swapped to NONE and a signal asks DeadLineManager
+    (ui/componenets/DeadLine.py) to draw the line.
     """
     # Logged first, before anything below mutates `result` — this is
     # Venus's side of the session chat (PanelWindow's History tab).
@@ -230,6 +234,9 @@ def queue_response(result):
 
     action = result.get("action")
 
+    if action == "DEADPIXEL":
+        deadline_signals.spawn_requested.emit()
+        result["action"] = "NONE"
 
     if action in ON_CALL_ACTIONS:
         handler = ON_CALL_ACTIONS[action]
@@ -341,7 +348,7 @@ def process_question(text, image=None):
     (see boot_manager.py), this ISN'T a normal question — it's the
     answer to the first-boot prompt. Routing it through
     handle_name_answer() instead is what actually resumes Orchestrator;
-    witho   ut this check, the app would stay paused forever after first
+    without this check, the app would stay paused forever after first
     boot.
 
     Unlike async monitor/system requests, a sync request's result is
