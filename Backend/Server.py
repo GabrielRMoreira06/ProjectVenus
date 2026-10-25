@@ -49,7 +49,7 @@ import ui.utils.Theme as Theme
 from ui.PanelWindow import avatar_signals, panel_signals
 from ui.componenets.DeadLine import deadline_signals
 from ui.componenets.Notepad import AUTOSAVE_PATH as NOTEPAD_AUTOSAVE_PATH, notepad_signals
-
+import ai.IgnoreTracker
 app = Flask(__name__)
 
 # ImageHolder.cs fetches images with UnityWebRequestTexture.GetTexture(),

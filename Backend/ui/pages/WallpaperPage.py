@@ -9,7 +9,7 @@ from PyQt6.QtCore import Qt, QSize, QObject, QRectF, pyqtSignal
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QPainterPath
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel,
-    QPushButton, QFrame, QScrollArea, QFileDialog, QMessageBox
+    QPushButton, QFrame, QScrollArea, QFileDialog, QMessageBox, QSizePolicy
 )
 
 from ui.pages.PreferencesPage import ToggleSwitch
@@ -47,7 +47,7 @@ from ui.utils.Spacing import (
     LAYOUT_SPACING_LOOSE,
 )
 
-GRID_COLUMNS = 4
+GRID_COLUMNS = 2
 VIDEO_FILE_FILTER = "Videos (*.mp4 *.mkv *.webm *.avi *.mov)"
 THUMBNAIL_WIDTH = 400
 THUMBNAIL_FRAME_POSITION = 0.1  # grab the frame at 10% of the video, not the (often black) first one
@@ -229,12 +229,48 @@ class _ThumbnailLoader(QObject):
 thumbnail_loader = _ThumbnailLoader()
 
 
+class _ElidedLabel(QLabel):
+    """
+    Label that never forces its parent wider: long text is cut with '…'
+    instead of stretching the layout (which caused the horizontal scroll).
+    """
+
+    def __init__(self, text=""):
+        super().__init__()
+        self._full_text = text
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.setMinimumWidth(0)
+        self._update_elision()
+
+    def setText(self, text):
+        self._full_text = text
+        self._update_elision()
+
+    def refresh_elision(self):
+        self._update_elision()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._update_elision()
+
+    def _update_elision(self):
+        width = self.width()
+        if width <= 0:
+            QLabel.setText(self, self._full_text)
+            return
+        elided = self.fontMetrics().elidedText(
+            self._full_text, Qt.TextElideMode.ElideRight, width)
+        QLabel.setText(self, elided)
+
+
 class _ThumbnailLabel(QLabel):
     """Shows the placeholder icon until set_cover() is called, then paints the frame cropped to fill."""
 
     def __init__(self):
         super().__init__()
         self._cover = None
+        self.setMinimumWidth(0)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
 
     def set_cover(self, pixmap):
         self._cover = pixmap
@@ -276,6 +312,7 @@ class WallpaperCard(QFrame):
         self._active = active
         self.setToolTip(path)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setMinimumWidth(0)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACE_MD, SPACE_MD, SPACE_MD, SPACE_MD)
@@ -287,7 +324,7 @@ class WallpaperCard(QFrame):
         layout.addWidget(self.thumbnail)
 
         bottom = QHBoxLayout()
-        self.name_label = QLabel(os.path.basename(path))
+        self.name_label = _ElidedLabel(os.path.basename(path))
         self.delete_button = QPushButton()
         self.delete_button.setFixedSize(BUTTON_HEIGHT_SM, BUTTON_HEIGHT_SM)
         self.delete_button.setIconSize(QSize(ICON_SIZE_SM, ICON_SIZE_SM))
@@ -324,6 +361,7 @@ class WallpaperCard(QFrame):
         self.name_label.setStyleSheet(
             f"color: {name_color}; font-size: {FONT_SIZE_MD}px; font-weight: {weight}; "
             "border: none; background: transparent;")
+        self.name_label.refresh_elision()
 
     def _apply_style(self):
         self._apply_active_style()
@@ -351,7 +389,6 @@ class WallpaperCard(QFrame):
         super().mousePressEvent(event)
 
 
-
 class WallpaperPage(QWidget):
 
     # Emitted from the copy thread, handled on the main thread.
@@ -369,9 +406,11 @@ class WallpaperPage(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
         content = QWidget()
+        content.setMinimumWidth(0)
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(SPACE_0, SPACE_0, SPACE_0, SPACE_0)
         content_layout.setSpacing(LAYOUT_SPACING_LOOSE)
@@ -384,6 +423,7 @@ class WallpaperPage(QWidget):
         self.grid.setSpacing(SPACE_MD)
         for column in range(GRID_COLUMNS):
             self.grid.setColumnStretch(column, 1)
+            self.grid.setColumnMinimumWidth(column, 0)
         content_layout.addLayout(self.grid)
         content_layout.addStretch()
 

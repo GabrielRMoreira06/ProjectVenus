@@ -5,6 +5,10 @@ Persists long-term information about the user across sessions: facts,
 memories (dated events), and daily summaries (one per calendar day,
 appended to on every update). FACT/MEMORY entries get an auto-generated
 id and can optionally expire; entries with no expiration are kept forever.
+
+The Memories page (ui/pages/MemoriesPage.py) reads and edits entries
+through list_entries/update_entry/delete_entry and refreshes itself via
+subscribe() — listeners are called from whatever thread made the change.
 """
 
 import json
@@ -24,6 +28,7 @@ EXPIRATION_DURATIONS = {
 }
 
 VALID_TYPES = ("FACT", "MEMORY", "DAILYSUMMARY")
+CATEGORIES = ("memories", "facts", "daily_summaries")
 
 DAILY_SUMMARIES_IN_PROMPT = 7  # today + previous 6 days
 DAILY_SUMMARY_RETENTION = timedelta(weeks=1)
@@ -36,8 +41,29 @@ class MemoryManager:
         path = Path(file_path)
         self.file_path = path if path.is_absolute() else DATA_DIR / path
         self._lock = threading.RLock()
+        self._listeners = []
         self.memory = self._load()
         print(f"[MemoryManager] Using '{self.file_path}'.")
+
+    # ------------------------------------------------------------------
+    # Change notifications
+    # ------------------------------------------------------------------
+
+    def subscribe(self, listener):
+        """listener() is called after any change to the stored entries."""
+        self._listeners.append(listener)
+
+    def _notify(self):
+        for listener in list(self._listeners):
+            try:
+                listener()
+            except Exception:
+                import traceback
+                traceback.print_exc()
+
+    # ------------------------------------------------------------------
+    # Prompt
+    # ------------------------------------------------------------------
 
     def get_prompt(self):
         with self._lock:
@@ -91,6 +117,10 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY appends t
         except ValueError:
             return None
 
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
+
     def _load(self):
         data = {}
 
@@ -126,6 +156,10 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY appends t
 
         os.replace(temp_path, self.file_path)
 
+    # ------------------------------------------------------------------
+    # Saving (from Gemini responses)
+    # ------------------------------------------------------------------
+
     def save(self, entry_type, text, expires_in="NONE"):
         if entry_type not in VALID_TYPES:
             print(f"[MemoryManager] Unknown MEMORY_TYPE: '{entry_type}' — ignoring.")
@@ -133,31 +167,34 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY appends t
 
         with self._lock:
             if entry_type == "DAILYSUMMARY":
-                self._save_daily_summary(text)
-                return
+                changed = self._save_daily_summary(text)
+            else:
+                if expires_in not in EXPIRATION_DURATIONS and expires_in not in ("NONE", "PERMANENT"):
+                    print(f"[MemoryManager] Unknown MEMORY_EXPIRE: '{expires_in}' — treating as PERMANENT.")
+                    expires_in = "PERMANENT"
 
-            if expires_in not in EXPIRATION_DURATIONS and expires_in not in ("NONE", "PERMANENT"):
-                print(f"[MemoryManager] Unknown MEMORY_EXPIRE: '{expires_in}' — treating as PERMANENT.")
-                expires_in = "PERMANENT"
+                entry = {
+                    "id": uuid.uuid4().hex[:8],
+                    "text": text,
+                    "created_at": datetime.now().isoformat(timespec="minutes"),
+                    "expires_in": expires_in,
+                }
 
-            entry = {
-                "id": uuid.uuid4().hex[:8],
-                "text": text,
-                "created_at": datetime.now().isoformat(timespec="minutes"),
-                "expires_in": expires_in,
-            }
+                if entry_type == "FACT":
+                    self.memory["facts"].append(entry)
+                elif entry_type == "MEMORY":
+                    self.memory["memories"].append(entry)
 
-            if entry_type == "FACT":
-                self.memory["facts"].append(entry)
-            elif entry_type == "MEMORY":
-                self.memory["memories"].append(entry)
+                self._save()
+                changed = True
 
-            self._save()
+        if changed:
+            self._notify()
 
     def _save_daily_summary(self, text):
         text = (text or "").strip()
         if not text or text == "NONE":
-            return
+            return False
 
         now = datetime.now()
         today = now.strftime("%Y-%m-%d")
@@ -165,7 +202,7 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY appends t
         existing = self.memory["daily_summaries"].get(today, {}).get("text", "").strip()
 
         if text in existing:
-            return
+            return False
 
         combined = f"{existing} {text}".strip()
 
@@ -181,6 +218,96 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY appends t
         }
 
         self._save()
+        return True
+
+    # ------------------------------------------------------------------
+    # Browsing and editing (Memories page)
+    # ------------------------------------------------------------------
+
+    def counts(self):
+        with self._lock:
+            return {
+                "memories": len(self.memory["memories"]),
+                "facts": len(self.memory["facts"]),
+                "daily_summaries": len(self.memory["daily_summaries"]),
+            }
+
+    def list_entries(self, category):
+        """
+        Newest first. Each entry is {"id", "text", "date"} — `date` is a
+        datetime or None. For daily summaries the id is the date key.
+        """
+        if category not in CATEGORIES:
+            return []
+
+        with self._lock:
+            if category == "daily_summaries":
+                entries = []
+                for key, value in self.memory["daily_summaries"].items():
+                    try:
+                        date = datetime.strptime(key, "%Y-%m-%d")
+                    except ValueError:
+                        date = None
+                    entries.append({"id": key, "text": value.get("text", ""), "date": date})
+            else:
+                entries = [
+                    {
+                        "id": item["id"],
+                        "text": item["text"],
+                        "date": self._parse_created_at(item.get("created_at")),
+                    }
+                    for item in self.memory[category]
+                ]
+
+        entries.sort(key=lambda e: e["date"] or datetime.min, reverse=True)
+        return entries
+
+    def update_entry(self, category, entry_id, text):
+        text = (text or "").strip()
+        if category not in CATEGORIES or not text:
+            return False
+
+        with self._lock:
+            if category == "daily_summaries":
+                target = self.memory["daily_summaries"].get(entry_id)
+                if target is None:
+                    return False
+                target["text"] = text
+                target["updated_at"] = datetime.now().isoformat(timespec="minutes")
+            else:
+                target = next((i for i in self.memory[category] if i.get("id") == entry_id), None)
+                if target is None:
+                    return False
+                target["text"] = text
+
+            self._save()
+
+        self._notify()
+        return True
+
+    def delete_entry(self, category, entry_id):
+        if category not in CATEGORIES:
+            return False
+
+        with self._lock:
+            if category == "daily_summaries":
+                if entry_id not in self.memory["daily_summaries"]:
+                    return False
+                del self.memory["daily_summaries"][entry_id]
+            else:
+                remaining = [i for i in self.memory[category] if i.get("id") != entry_id]
+                if len(remaining) == len(self.memory[category]):
+                    return False
+                self.memory[category] = remaining
+
+            self._save()
+
+        self._notify()
+        return True
+
+    # ------------------------------------------------------------------
+    # Expiration
+    # ------------------------------------------------------------------
 
     def clear_expired(self):
         with self._lock:
@@ -225,3 +352,6 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY appends t
             if removed_count > 0:
                 print(f"[MemoryManager] Removed {removed_count} expired memory entrie(s).")
                 self._save()
+
+        if removed_count > 0:
+            self._notify()

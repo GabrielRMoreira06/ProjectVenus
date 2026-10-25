@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ui.pages.PlaceholderPage import PlaceholderPage
+from ui.pages.MemoriesPage import MemoriesPage
 from ui.pages.WallpaperPage import WallpaperPage
 from ui.pages.NotepadPage import NotepadPage
 import ui.utils.Theme as Theme
@@ -121,7 +122,7 @@ class ToolsPage(QWidget):
 
         self.tool_stack = QStackedWidget()
         self.tool_stack.addWidget(PlaceholderPage("Alarm"))
-        self.tool_stack.addWidget(PlaceholderPage("Memories"))
+        self.tool_stack.addWidget(MemoriesPage())
         self.tool_stack.addWidget(WallpaperPage())
         self.tool_stack.addWidget(NotepadPage())
         root.addWidget(self.tool_stack, stretch=1)
