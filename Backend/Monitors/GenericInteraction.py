@@ -3,8 +3,8 @@ generic_interaction.py
 
 A monitor with no metric to watch — it exists purely to vary the kind
 of thing Venus says when nothing else has happened in a while. Three
-behaviors: browse the news, comment on one of their open windows, or
-report on system health.
+behaviors: recommend a game from Steam, comment on one of their open
+windows, or report on system health.
 
 This is the reference example of the full pipeline every monitor
 should follow:
@@ -29,10 +29,14 @@ should follow:
      queue the response for Unity to pick up. This monitor never talks
      to Unity, or even needs to know delivery exists.
 
-NEWS BROWSING: pulls the Google News RSS feed for technology and hands
-three headlines to Gemini. The feed is fetched inside builder() (not in
-check()) so the headlines are as fresh as possible at delivery time and
-a slow network never blocks the monitor loop.
+GAME RECOMMENDATION: all three steps run inside builder(), so they stay
+serialized with every other use of worker.chat. (1) A silent request
+goes through the SAME chat session (worker.chat) and asks for a short
+Steam search query — no parsing, no TTS, nothing delivered, but the
+exchange stays in the session history, so Venus picks with context and
+remembers having picked. (2) The query goes to Steam's keyless
+storesearch + appdetails endpoints. (3) The game's details are handed to
+worker.run() as a normal SYSTEM message.
 
 HEALTH REPORT: CPU%, RAM%, per-partition disk usage, and disk I/O
 activity since the last report — all via psutil, no extra
@@ -44,10 +48,9 @@ without pulling in something like LibreHardwareMonitor.
 import ctypes
 import random
 import time
-import urllib.request
 
-import feedparser
 import psutil
+import requests
 
 from ai.core.GeminiWorker import worker
 from Orchestrator import Category
@@ -55,11 +58,12 @@ from Monitors.BaseMonitor import BaseMonitor
 
 EXCLUDED_TITLES = {"Program Manager", "Windows Input Experience"}
 
-NEWS_URL = "https://news.google.com/rss/search?q=technology&hl=en-US&gl=US&ceid=US:en"
-NEWS_TIMEOUT = 10        # seconds
-NEWS_POOL_SIZE = 15      # how many top entries to pick from
-NEWS_TITLES_TO_SEND = 3
-NEWS_MEMORY = 30         # how many already-shown titles to remember
+STEAM_SEARCH_URL = "https://store.steampowered.com/api/storesearch/"
+STEAM_DETAILS_URL = "https://store.steampowered.com/api/appdetails"
+STEAM_PAGE_URL = "https://store.steampowered.com/app/{}"
+STEAM_TIMEOUT = 10      # seconds
+STEAM_CANDIDATES = 5    # how many search results to try before giving up
+GAME_MEMORY = 30        # how many already-recommended games to remember
 
 
 def get_open_windows():
@@ -96,40 +100,66 @@ def get_open_windows():
     return [w for w in windows if not (w in seen or seen.add(w))]
 
 
-def fetch_news_titles(exclude=None, count=NEWS_TITLES_TO_SEND):
+def search_steam(query, exclude=None):
     """
-    Browses the Google News technology feed and returns `count`
-    headlines picked at random from the top results, skipping any in
-    `exclude` (titles already shown recently). Returns an empty list on
-    any network/parse failure.
-
-    The feed is downloaded with urllib so a timeout can be enforced
-    (feedparser.parse(url) has none), then the raw bytes are handed to
-    feedparser for parsing.
+    Searches the Steam store and returns up to STEAM_CANDIDATES apps
+    (dicts with at least "id" and "name"), skipping any whose name is
+    in `exclude`.
     """
     exclude = exclude or set()
 
-    try:
-        request = urllib.request.Request(NEWS_URL, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(request, timeout=NEWS_TIMEOUT) as response:
-            raw = response.read()
+    response = requests.get(
+        STEAM_SEARCH_URL,
+        params={"term": query, "l": "english", "cc": "us"},
+        timeout=STEAM_TIMEOUT,
+    )
+    response.raise_for_status()
 
-        feed = feedparser.parse(raw)
-    except Exception as e:
-        print(f"[GenericInteractionMonitor] News fetch failed: {e}")
-        return []
+    items = response.json().get("items", [])
+    candidates = [
+        item for item in items
+        if item.get("type") == "app" and item.get("name") not in exclude
+    ]
 
-    titles = [entry.title.strip() for entry in feed.entries[:NEWS_POOL_SIZE] if getattr(entry, "title", "")]
-    fresh = [t for t in titles if t not in exclude]
+    return candidates[:STEAM_CANDIDATES]
 
-    # If everything in the pool was already shown, reuse the pool
-    # rather than returning nothing.
-    pool = fresh if len(fresh) >= count else titles
 
-    if not pool:
-        return []
+def fetch_game_details(app_id):
+    """Returns Steam's appdetails "data" dict for `app_id`, or None if unavailable."""
+    response = requests.get(
+        STEAM_DETAILS_URL,
+        params={"appids": app_id, "cc": "us", "l": "english"},
+        timeout=STEAM_TIMEOUT,
+    )
+    response.raise_for_status()
 
-    return random.sample(pool, min(count, len(pool)))
+    entry = response.json().get(str(app_id), {})
+
+    if not entry.get("success"):
+        return None
+
+    return entry.get("data") or None
+
+
+def format_game_details(app_id, data):
+    if data.get("is_free"):
+        price = "Free to play"
+    else:
+        price = data.get("price_overview", {}).get("final_formatted", "unknown")
+
+    lines = [
+        f"Name: {data.get('name', 'unknown')}",
+        f"Description: {data.get('short_description', 'none')}",
+        f"Price: {price}",
+    ]
+
+    metacritic = data.get("metacritic", {}).get("score")
+    if metacritic:
+        lines.append(f"Metacritic: {metacritic}")
+
+    lines.append(f"Steam page: {STEAM_PAGE_URL.format(app_id)}")
+
+    return "\n".join(lines)
 
 
 class GenericInteractionMonitor(BaseMonitor):
@@ -138,7 +168,7 @@ class GenericInteractionMonitor(BaseMonitor):
         super().__init__(orchestrator, interval)
 
         self.behavior_weights = {
-            "browse": 3,
+            "game": 3,
             "inspect": 3,
             "health_report": 3,
         }
@@ -149,9 +179,9 @@ class GenericInteractionMonitor(BaseMonitor):
         self._last_io_counters = None
         self._last_io_time = None
 
-        # Headlines already sent to Gemini, so consecutive browses
-        # don't repeat the same news.
-        self._shown_titles = []
+        # Games already recommended, so consecutive recommendations
+        # don't repeat.
+        self._shown_games = []
 
     def check(self):
         behavior = self._choose_behavior()
@@ -161,44 +191,92 @@ class GenericInteractionMonitor(BaseMonitor):
         elif behavior == "health_report":
             self._fire_health_report()
         else:
-            self._fire_ask()
+            self._fire_game()
 
     def _choose_behavior(self):
         behaviors = list(self.behavior_weights.keys())
         weights = list(self.behavior_weights.values())
         return random.choices(behaviors, weights=weights, k=1)[0]
 
-    def _fire_ask(self):
-        print("[GenericInteractionMonitor] browsing news.")
+    # ------------------------------------------------------------------
+    # Game recommendation
+    # ------------------------------------------------------------------
+
+    def _request_game_query(self):
+        shown = ", ".join(self._shown_games) or "none"
+
+        prompt = (
+            "[SYSTEM MESSAGE: you want to recommend a game to the user. "
+            "Reply with ONLY a short Steam store search query (1-3 words): "
+            "a specific game title or genre keywords. "
+            "Plain text, not the usual response format, no explanation. "
+            f"Already recommended, pick something else: {shown}]"
+        )
+
+        response = worker.chat.send_message([prompt])
+
+        lines = (response.text or "").strip().splitlines()
+        query = lines[0].strip() if lines else ""
+
+        if query.upper().startswith("TEXT:"):
+            query = query[5:].strip()
+
+        return query.strip('"')
+
+    def _find_game(self, query):
+        for candidate in search_steam(query, exclude=set(self._shown_games)):
+            data = fetch_game_details(candidate["id"])
+
+            if data is not None:
+                return format_game_details(candidate["id"], data), data.get("name", candidate["name"])
+
+        return None
+
+    def _fire_game(self):
+        print("[GenericInteractionMonitor] Looking for a game recommendation.")
 
         def builder():
-            titles = fetch_news_titles(exclude=set(self._shown_titles))
+            try:
+                query = self._request_game_query()
 
-            if not titles:
-                print("[GenericInteractionMonitor] No news available, nothing to report.")
-                return worker.run(user_text="[SYSTEM MESSAGE: nothing to report.]")
+                if not query:
+                    print("[GenericInteractionMonitor] Gemini returned no search query, skipping.")
+                    return None
 
-            self._shown_titles.extend(titles)
-            self._shown_titles = self._shown_titles[-NEWS_MEMORY:]
+                print(f"[GenericInteractionMonitor] Steam query: '{query}'")
 
-            headline_list = "\n".join(f"- {title}" for title in titles)
-            prompt = f""" [SYSTEM MESSAGE: Venus were browsing the internet and saw these headlines, pause the conversation and comment to User:
-{headline_list}]
-"""
+                found = self._find_game(query)
+            except Exception as e:
+                print(f"[GenericInteractionMonitor] Game search failed: {e}")
+                return None
 
+            if found is None:
+                print(f"[GenericInteractionMonitor] No usable Steam result for '{query}', skipping.")
+                return None
 
-            print(f"[GenericInteractionMonitor] Headlines:\n{headline_list}")
+            details, name = found
 
-            return worker.run(user_text=prompt)
+            self._shown_games.append(name)
+            self._shown_games = self._shown_games[-GAME_MEMORY:]
+
+            print(f"[GenericInteractionMonitor] Game found:\n{details}")
+
+            return worker.run(
+                user_text=f"[SYSTEM MESSAGE: you found this game, comment about it to the user.\n{details} hint: use SHOWIMAGE passing the game name]"
+            )
 
         self.orchestrator.add(Category.MONITOR, builder)
+
+    # ------------------------------------------------------------------
+    # Open windows
+    # ------------------------------------------------------------------
 
     def _fire_inspect(self):
         windows = get_open_windows()
 
         if not windows:
-            print("[GenericInteractionMonitor] No windows found, falling back to 'ask'.")
-            self._fire_ask()
+            print("[GenericInteractionMonitor] No windows found, falling back to 'game'.")
+            self._fire_game()
             return
 
         window_list = "\n".join(f"- {title}" for title in windows)
@@ -213,6 +291,10 @@ class GenericInteractionMonitor(BaseMonitor):
             return worker.run(user_text=prompt)
 
         self.orchestrator.add(Category.MONITOR, builder)
+
+    # ------------------------------------------------------------------
+    # Health report
+    # ------------------------------------------------------------------
 
     def _fire_health_report(self):
         summary = self._collect_health_summary()
