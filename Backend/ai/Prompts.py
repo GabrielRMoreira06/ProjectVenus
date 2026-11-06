@@ -106,7 +106,7 @@ UPDATE_PROFILE_PICTURE: NONE | BORED | ANGER | TIRED | POUTY | NORMAL
 
 UPDATE_UI_THEME: NONE | CLASSIC | VIOLET | CRIMSON
 
-MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time. For DAILYSUMMARY: only the NEW relevant events from today not yet in the summary (max 25 words), it is appended automatically.> | NONE
+MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time. For DAILYSUMMARY: the COMPLETE updated summary of today (max 160 words), it replaces the previous one.> | NONE
 
 MEMORY_EXPIRE: 6HOURS | 1DAY | 1WEEK | 1MONTH | PERMANENT | NONE
 
@@ -134,7 +134,9 @@ def build_response_rules_explanation(action_ids):
     lines.append("- MEMORY: a note to yourself. this is your own memory. save what is worthy to remember")
     lines.append("- FACT: stable information about the user or Venus, their preferences, projects, habits, or other useful long-term information.")
     lines.append(
-        "- DAILYSUMMARY: Today's summary. MEMORY_TEXT is only the NEW information to ADD to today's summary, never a rewrite of it. MEMORY_EXPIRE must be NONE.")
+        "- DAILYSUMMARY: Today's summary. MEMORY_TEXT must be the FULL updated summary of today, rewritten from scratch: "
+        "merge TODAY'S SUMMARY (shown to you) with what just happened, drop trivia, keep it under 160 words. "
+        "It REPLACES the previous summary. MEMORY_EXPIRE must be NONE.")
     interactive = [a for a in INTERACTIVE_ACTIONS if a in action_ids]
     if interactive:
         lines.append(f"- Use {', '.join(interactive)} to interact with User.")

@@ -25,6 +25,10 @@ pattern as Reminder.py/EXPManager.py). Each `_*_alert_firing` flag is
 the rearm guard — without it, every mood shift landing while an
 interaction is still queued/in-flight would trigger another one on
 top of it.
+
+Energy escalates in both directions: very low energy fires
+LOWERBRIGHTNESS, very high energy fires PONG (Unity shows a Play
+button; see PongGame.cs).
 """
 
 import json
@@ -34,6 +38,7 @@ from config import STATE_DIR
 
 ANGER_ALERT_THRESHOLD = 80
 ENERGY_ALERT_THRESHOLD = 20
+ENERGY_HIGH_ALERT_THRESHOLD = 80
 BOREDOM_ALERT_THRESHOLD = 70
 
 def _alert_chance(value, threshold, extreme):
@@ -71,6 +76,7 @@ class MoodController:
 
         self._anger_alert_firing = False
         self._energy_alert_firing = False
+        self._pong_alert_firing = False
         self._boredom_alert_firing = False
 
         self._total_volume_reduced = 0.0
@@ -134,6 +140,7 @@ Affection: {self.affection}/100
             self._check_anger_threshold()
         elif variant == MoodVariant.ENERGY:
             self._check_energy_threshold()
+            self._check_high_energy_threshold()
         elif variant == MoodVariant.BOREDOM:
             self._check_boredom_threshold()
 
@@ -202,7 +209,7 @@ Affection: {self.affection}/100
         orchestrator.add(Category.MONITOR, builder)
 
     # ------------------------------------------------------------------
-    # Energy escalation
+    # Energy escalation (low)
     # ------------------------------------------------------------------
 
     def _check_energy_threshold(self):
@@ -245,6 +252,51 @@ Affection: {self.affection}/100
                 return result
             finally:
                 self._energy_alert_firing = False
+
+        orchestrator.add(Category.MONITOR, builder)
+
+    # ------------------------------------------------------------------
+    # Energy escalation (high)
+    # ------------------------------------------------------------------
+
+    def _check_high_energy_threshold(self):
+        if self.energy < ENERGY_HIGH_ALERT_THRESHOLD:
+            return
+
+        if self._pong_alert_firing:
+            return
+
+        if random.random() >= _alert_chance(self.energy, ENERGY_HIGH_ALERT_THRESHOLD, 100):
+            return
+
+        self._pong_alert_firing = True
+        self._fire_pong_interaction()
+
+    def _fire_pong_interaction(self):
+        import sys
+        orchestrator = sys.modules["__main__"].orchestrator
+
+        from Orchestrator import Category
+        from ai.core.GeminiWorker import worker
+
+        print(f"[MoodController] Energy at {self.energy}, triggering PONG interaction.")
+
+        def builder():
+            try:
+                result = worker.run(
+                    user_text="""
+                    [SYSTEM MESSAGE: your energy is too high. Pick your action.
+                    PONG: challenge the user to a game of pong]
+                    """,
+                    allowed_actions={"PONG"},
+                )
+
+                if result["action"] == "PONG":
+                    self.adjust(MoodVariant.ENERGY, 50 - self.energy)
+
+                return result
+            finally:
+                self._pong_alert_firing = False
 
         orchestrator.add(Category.MONITOR, builder)
 

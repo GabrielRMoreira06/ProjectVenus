@@ -1,9 +1,10 @@
 """
 FindFile.py
 
-Searches the user's common folders (and, as a last resort, the whole
-C: drive) for files whose name contains the search text. Registered as
-the FINDFILE on-call action (see on_call_actions/__init__.py).
+Searches the user's common folders (and, as a last resort, every drive
+on the machine) for files whose name contains the search text.
+Registered as the FINDFILE on-call action (see
+on_call_actions/__init__.py).
 
 Adapted from the original synchronous, input()-driven CLI version —
 that interactive "type a number to pick a file" step doesn't make
@@ -14,21 +15,23 @@ list of matches is handed back as text for Venus to relay.
 
 find_file() is meant to be slow-tolerant: Server.py always runs it on
 its own thread, never inside Orchestrator's worker thread, so a full
-C:\\ scan doesn't stall anything else queued up behind it.
+multi-drive scan doesn't stall anything else queued up behind it.
 """
 
 import os
 import subprocess
 
-# Skipped when the search falls back to scanning all of C:\ — huge,
-# low-signal, or permission-locked system folders.
-IGNORED_FOLDERS = {
-    os.path.normcase(r"C:\Windows"),
-    os.path.normcase(r"C:\Program Files"),
-    os.path.normcase(r"C:\Program Files (x86)"),
-    os.path.normcase(r"C:\$Recycle.Bin"),
-    os.path.normcase(r"C:\System Volume Information"),
-}
+import psutil
+
+# Folder names skipped on EVERY drive when the search falls back to a
+# full scan — huge, low-signal, or permission-locked system folders.
+IGNORED_FOLDER_NAMES = (
+    "Windows",
+    "Program Files",
+    "Program Files (x86)",
+    "$Recycle.Bin",
+    "System Volume Information",
+)
 
 MAX_RESULTS_LISTED = 20
 
@@ -52,6 +55,7 @@ def find_file(result):
         os.path.join(home, "Documents"),
         os.path.join(home, "Pictures"),
         os.path.join(home, "Desktop"),
+        r"D:\Downloads",
     ]
 
     matches = _search_folders(main_folders, query)
@@ -68,9 +72,12 @@ def find_file(result):
         except (PermissionError, OSError):
             pass
 
-    # Fallback 2: last resort, the whole C: drive.
+    # Fallback 2: last resort, every drive on the machine (C:\, D:\, ...).
     if not matches:
-        matches = _search_folders([r"C:\\"], query, ignored=IGNORED_FOLDERS)
+        drive_roots = _get_drive_roots()
+        matches = _search_folders(
+            drive_roots, query, ignored=_build_ignored_folders(drive_roots)
+        )
 
     if not matches:
         return f"No files matching '{query}' were found on the user's computer."
@@ -85,6 +92,30 @@ def find_file(result):
     truncated_note = f"\n(+{remaining} more not shown)" if remaining > 0 else ""
 
     return f"Found {len(matches)} files matching '{query}':\n{listing}{truncated_note}"
+
+
+def _get_drive_roots():
+    """
+    Mount points of every fixed/local drive (C:\\, D:\\, ...), skipping
+    CD-ROMs. Same filter DiskInspector uses, so a newly added drive is
+    picked up automatically with no code change.
+    """
+    roots = []
+
+    for partition in psutil.disk_partitions(all=False):
+        if "cdrom" in partition.opts or partition.fstype == "":
+            continue
+        roots.append(partition.mountpoint)
+
+    return roots
+
+
+def _build_ignored_folders(drive_roots):
+    return {
+        os.path.normcase(os.path.join(root, name))
+        for root in drive_roots
+        for name in IGNORED_FOLDER_NAMES
+    }
 
 
 def _search_folders(folders, query, ignored=None):

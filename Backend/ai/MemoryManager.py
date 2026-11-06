@@ -78,7 +78,7 @@ FACTS:
 MEMORIES (with date/time/day of week, so you can notice routine patterns):
 {memories}
 
-DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY appends to today's entry):
+DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY REPLACES today's entry):
 {daily_summaries}
 """
 
@@ -201,19 +201,16 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY appends t
 
         existing = self.memory["daily_summaries"].get(today, {}).get("text", "").strip()
 
-        if text in existing:
+        if text == existing:
             return False
 
-        combined = f"{existing} {text}".strip()
-
-        if len(combined) > DAILY_SUMMARY_MAX_CHARS:
-            combined = combined[-DAILY_SUMMARY_MAX_CHARS:]
-            cut = combined.find(". ")
-            if 0 <= cut < len(combined) - 1:
-                combined = combined[cut + 2:]
+        # Safety cap only: the prompt asks her to stay short, this just
+        # stops a runaway rewrite from bloating memory.json.
+        if len(text) > DAILY_SUMMARY_MAX_CHARS:
+            text = text[:DAILY_SUMMARY_MAX_CHARS].rsplit(" ", 1)[0]
 
         self.memory["daily_summaries"][today] = {
-            "text": combined,
+            "text": text,
             "updated_at": now.isoformat(timespec="minutes"),
         }
 
@@ -355,3 +352,8 @@ DAILY SUMMARIES (most recent days, today's first; sending DAILYSUMMARY appends t
 
         if removed_count > 0:
             self._notify()
+
+def get_today_summary(self):
+    with self._lock:
+        today = datetime.now().strftime("%Y-%m-%d")
+        return self.memory["daily_summaries"].get(today, {}).get("text") or "(none yet)"

@@ -2,47 +2,13 @@
 generic_interaction.py
 
 A monitor with no metric to watch — it exists purely to vary the kind
-of thing Venus says when nothing else has happened in a while. Three
-behaviors: recommend a game from Steam, comment on one of their open
-windows, or report on system health.
+of thing Venus says when nothing else has happened in a while. Four
+behaviors: recommend a Steam game, comment on one of their open
+windows, report on system health, or talk to herself.
 
-This is the reference example of the full pipeline every monitor
-should follow:
-
-  1. INTERNAL COOLDOWN — BaseMonitor's own `interval` timer decides
-     when this monitor is even allowed to consider firing again.
-  2. ORCHESTRATOR — `check()` never calls Gemini itself. It builds a
-     zero-argument `builder` function and hands it to
-     `orchestrator.add(category, builder)`. From there, Orchestrator
-     decides WHEN builder() actually runs, based on priority
-     (Category) and the GLOBAL cooldown (min_delivery_spacing) shared
-     across every monitor and the user.
-  3. GEMINI WORKER — when it's this request's turn, builder() calls
-     `worker.run(...)`, which sends the message to the ongoing Gemini
-     chat session.
-  4. RESPONSE PARSER — `worker.run()` already parses the raw model
-     text into a structured dict before returning it. Nothing here
-     touches ResponseParser directly — that's an implementation detail
-     of GeminiWorker, not of the monitor.
-  5. SEND TO UNITY — builder()'s return value is handed to
-     Orchestrator's `on_result` callback, wired up once in server.py to
-     queue the response for Unity to pick up. This monitor never talks
-     to Unity, or even needs to know delivery exists.
-
-GAME RECOMMENDATION: all three steps run inside builder(), so they stay
-serialized with every other use of worker.chat. (1) A silent request
-goes through the SAME chat session (worker.chat) and asks for a short
-Steam search query — no parsing, no TTS, nothing delivered, but the
-exchange stays in the session history, so Venus picks with context and
-remembers having picked. (2) The query goes to Steam's keyless
-storesearch + appdetails endpoints. (3) The game's details are handed to
-worker.run() as a normal SYSTEM message.
-
-HEALTH REPORT: CPU%, RAM%, per-partition disk usage, and disk I/O
-activity since the last report — all via psutil, no extra
-dependencies. GPU and temperature are deliberately left out, same
-reasoning as HardwareMonitor.py: no vendor-neutral way to read them
-without pulling in something like LibreHardwareMonitor.
+Pipeline (same as every monitor): BaseMonitor interval -> check() ->
+orchestrator.add(Category.MONITOR, builder) -> worker.run() ->
+queue_response() -> Unity.
 """
 
 import ctypes
@@ -65,14 +31,23 @@ STEAM_TIMEOUT = 10      # seconds
 STEAM_CANDIDATES = 5    # how many search results to try before giving up
 GAME_MEMORY = 30        # how many already-recommended games to remember
 
+# Loose seeds so consecutive self-talk doesn't circle the same thought.
+SELF_TALK_TOPICS = [
+    "something you noticed about your own situation, living on a screen",
+    "a passing opinion about the time of day",
+    "a random thought about computers or software",
+    "something you're mildly annoyed by",
+    "a small observation about the desktop around you",
+    "a half-formed thought you don't finish",
+    "something you're looking forward to, or dreading",
+]
+
 
 def get_open_windows():
     """
     Returns the titles of every visible open window on the system —
     gives Gemini a list of "things it could comment on". Only titles,
-    never window content (that was tried via pywinauto and dropped:
-    poor results on most modern apps, which don't expose content
-    through Windows accessibility APIs).
+    never window content.
     """
     windows = []
 
@@ -168,9 +143,10 @@ class GenericInteractionMonitor(BaseMonitor):
         super().__init__(orchestrator, interval)
 
         self.behavior_weights = {
-            "game": 3,
+            "game": 1,
             "inspect": 3,
             "health_report": 3,
+            "self_talk": 5,
         }
 
         # Disk I/O counters are cumulative since boot, so the first
@@ -190,6 +166,8 @@ class GenericInteractionMonitor(BaseMonitor):
             self._fire_inspect()
         elif behavior == "health_report":
             self._fire_health_report()
+        elif behavior == "self_talk":
+            self._fire_self_talk()
         else:
             self._fire_game()
 
@@ -197,6 +175,27 @@ class GenericInteractionMonitor(BaseMonitor):
         behaviors = list(self.behavior_weights.keys())
         weights = list(self.behavior_weights.values())
         return random.choices(behaviors, weights=weights, k=1)[0]
+
+    # ------------------------------------------------------------------
+    # Self talk
+    # ------------------------------------------------------------------
+
+    def _fire_self_talk(self):
+        topic = random.choice(SELF_TALK_TOPICS)
+
+        print(f"[GenericInteractionMonitor] Self talk ({topic}).")
+
+        prompt = (
+            "[SYSTEM MESSAGE: Venus is alone with her thoughts. "
+            "Comment something to yourself."
+            f"Don't expects an answer.]"
+            f"Loose theme: {topic}.]"
+        )
+
+        def builder():
+            return worker.run(user_text=prompt)
+
+        self.orchestrator.add(Category.MONITOR, builder)
 
     # ------------------------------------------------------------------
     # Game recommendation

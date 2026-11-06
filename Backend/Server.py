@@ -141,7 +141,7 @@ def debug_tts():
 
     result = {
         "text": "DEBUG TEXT",
-        "action": "DEADPIXEL",
+        "action": "PONG",
         "mood_variant": None,
         "mood_shift": None,
         "memory_type": "NONE",

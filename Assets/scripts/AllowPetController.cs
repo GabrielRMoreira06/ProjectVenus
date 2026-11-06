@@ -16,6 +16,11 @@ using UnityEngine.UI;
 /// Não precisa de ComputePenetration nem de nenhuma lógica de
 /// colisão em tempo real.
 ///
+/// Quando o botão do mouse é solto, a mão volta ao ponto de ancoragem
+/// girando de volta pelo MESMO arco (anguloAtual -> 0), então o retorno
+/// também nunca atravessa a cabeça. A volta não conta pro progresso da
+/// barra.
+///
 /// A sessão agora tem um critério de término real: uma barra de
 /// progresso (pet_bar) enche conforme a mão se movimenta; ao encher
 /// por completo, a sessão é encerrada.
@@ -54,6 +59,11 @@ public class AllowPetController : MonoBehaviour
 
     [Tooltip("Graus de giro por pixel de movimento horizontal do mouse. Inverta o sinal (valor negativo) se a direção do giro estiver invertida.")]
     public float sensibilidadeArrasto = 0.2f;
+
+    // NOVO
+    [Header("Retorno ao ponto de ancoragem")]
+    [Tooltip("Velocidade, em graus por segundo, com que a mão volta ao ponto de ancoragem (spawn) depois que o botão do mouse é solto. Valores menores = volta mais lenta. Zero ou negativo = volta instantânea (snap).")]
+    public float velocidadeRetornoGraus = 180f;
 
     [Header("Reação do osso")]
     [Tooltip("Quanto o deslocamento da mão (em unidades de mundo por frame) vira força de impulso na PokeSpring")]
@@ -395,9 +405,22 @@ public class AllowPetController : MonoBehaviour
             PararArrasto();
         }
 
+        // NOVO: rede de segurança. Se por algum motivo o evento de
+        // "soltar" foi perdido (ex: botão solto fora da janela, foco
+        // perdido), o estado real do botão ainda derruba o arrasto.
+        if (arrastando && !Input.GetMouseButton(0))
+        {
+            PararArrasto();
+        }
+
         if (arrastando)
         {
             AtualizarArrasto();
+        }
+        else
+        {
+            // NOVO: sem botão pressionado, a mão volta ao spawn.
+            RetornarAoPontoDeAncoragem();
         }
 
         AtualizarFechamentoOlhos();
@@ -444,6 +467,10 @@ public class AllowPetController : MonoBehaviour
     /// começa a tocar o som de carinho em loop. O fechamento dos olhos
     /// é só sinalizado aqui (pesoOlhoDesejado) — quem realmente escreve
     /// na expression do VRM, suavemente, é AtualizarFechamentoOlhos().
+    ///
+    /// Se o usuário pegar a mão de novo no meio do retorno, o arrasto
+    /// continua de onde ela está (anguloAtual não é resetado), então
+    /// não há salto.
     /// </summary>
     private void IniciarArrasto()
     {
@@ -503,6 +530,55 @@ public class AllowPetController : MonoBehaviour
         }
     }
 
+    // NOVO
+    /// <summary>
+    /// Calcula a posição da mão no arco para o anguloAtual. Usado tanto
+    /// no arrasto quanto no retorno, pra garantir que os dois usem
+    /// exatamente a mesma trajetória (mesmo raio, mesmo eixo).
+    /// </summary>
+    private Vector3 CalcularPosicaoNoArco()
+    {
+        Vector3 centroCabeca = colisorCabeca.bounds.center;
+
+        // Gira a direção de repouso ao redor do eixo de visão da câmera
+        // — ou seja, dentro do plano que o jogador está vendo — pra que
+        // "arrastar pra direita" sempre pareça girar pra direita na
+        // tela, independente de onde a câmera está posicionada na cena.
+        Vector3 eixoRotacao = cameraPrincipal.transform.forward;
+        Vector3 direcaoAtual = Quaternion.AngleAxis(anguloAtual, eixoRotacao) * direcaoRepousoBase;
+
+        return centroCabeca + direcaoAtual * raioArco;
+    }
+
+    // NOVO
+    /// <summary>
+    /// Chamado a cada frame em que o botão do mouse NÃO está pressionado.
+    /// Gira anguloAtual de volta até 0 (o ponto de ancoragem), pelo mesmo
+    /// arco usado no arrasto — então a mão nunca atravessa a cabeça na
+    /// volta. Não mexe na barra de progresso, no som nem nos impulsos da
+    /// cabeça: a volta é só visual.
+    /// </summary>
+    private void RetornarAoPontoDeAncoragem()
+    {
+        if (cameraPrincipal == null || colisorCabeca == null) return;
+        if (Mathf.Approximately(anguloAtual, 0f)) return;
+
+        if (velocidadeRetornoGraus > 0f)
+        {
+            anguloAtual = Mathf.MoveTowards(anguloAtual, 0f, velocidadeRetornoGraus * Time.deltaTime);
+        }
+        else
+        {
+            anguloAtual = 0f; // snap instantâneo
+        }
+
+        Vector3 novaPosicao = CalcularPosicaoNoArco();
+        transform.position = novaPosicao;
+        posicaoAnterior = novaPosicao;
+
+        AtualizarInclinacaoMao();
+    }
+
     /// <summary>
     /// NÃO calcula a posição da mão a partir de onde o mouse está no
     /// mundo. Em vez disso, usa só o quanto o mouse se moveu na
@@ -529,16 +605,7 @@ public class AllowPetController : MonoBehaviour
         // de fato se movendo mais.
         float variacaoAngular = Mathf.Abs(anguloAtual - anguloAntes);
 
-        Vector3 centroCabeca = colisorCabeca.bounds.center;
-
-        // Gira a direção de repouso ao redor do eixo de visão da câmera
-        // — ou seja, dentro do plano que o jogador está vendo — pra que
-        // "arrastar pra direita" sempre pareça girar pra direita na
-        // tela, independente de onde a câmera está posicionada na cena.
-        Vector3 eixoRotacao = cameraPrincipal.transform.forward;
-        Vector3 direcaoAtual = Quaternion.AngleAxis(anguloAtual, eixoRotacao) * direcaoRepousoBase;
-
-        Vector3 novaPosicao = centroCabeca + direcaoAtual * raioArco;
+        Vector3 novaPosicao = CalcularPosicaoNoArco();
         Vector3 movimentoMundoNoFrame = novaPosicao - posicaoAnterior;
 
         // Importante: a checagem de "a mão está se movendo" pro som usa

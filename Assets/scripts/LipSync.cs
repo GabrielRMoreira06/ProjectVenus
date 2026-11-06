@@ -20,8 +20,19 @@ public class FakeLipSync : MonoBehaviour
     [Tooltip("Interpolation speed to prevent jerky movements")]
     public float smoothing = 15f;
 
+    [Tooltip("How often (in seconds) to re-randomize the viseme distribution")]
+    public float visemeRandomizeInterval = 0.12f;
+
+    [Header("Reset on speech start")]
+    [Tooltip("Other expressions that affect the mouth and should be reset to default when speech starts (e.g. Happy, Angry, Sad).")]
+    public ExpressionKey[] expressionsToResetOnSpeechStart = new ExpressionKey[0];
+
     private float currentWeight = 0f;
     private readonly float[] samples = new float[256];
+
+    private float rAa = 1f, rIh = 1f, rOu = 1f;
+    private float timeSinceLastRandomize = 0f;
+    private bool wasPlaying = false;
 
     void Start()
     {
@@ -41,24 +52,54 @@ public class FakeLipSync : MonoBehaviour
         }
     }
 
-    private float rAa, rIh, rOu = 1f;
-    private float timeSinceLastRandomize = 0f;
-    public float visemeRandomizeInterval = 0.12f; // how often (in seconds) to re-randomize the viseme distribution
+    private void RandomizeVisemes()
+    {
+        timeSinceLastRandomize = 0f;
+        rAa = Random.value;
+        rIh = Random.value;
+        rOu = Random.value;
+    }
+
+    /// <summary>
+    /// Puts the mouth back to its default (neutral) state.
+    /// </summary>
+    private void ResetMouth()
+    {
+        currentWeight = 0f;
+        RandomizeVisemes();
+
+        var expression = vrm10Instance.Runtime.Expression;
+
+        expression.SetWeight(ExpressionKey.Aa, 0f);
+        expression.SetWeight(ExpressionKey.Ih, 0f);
+        expression.SetWeight(ExpressionKey.Ou, 0f);
+
+        foreach (var key in expressionsToResetOnSpeechStart)
+        {
+            expression.SetWeight(key, 0f);
+        }
+    }
 
     public void UpdateAnimation(AudioSource audioSource)
     {
         if (vrm10Instance == null) return;
 
+        bool isPlaying = audioSource.isPlaying;
+
+        // Speech just started: reset the mouth to default
+        if (isPlaying && !wasPlaying)
+        {
+            ResetMouth();
+        }
+        wasPlaying = isPlaying;
+
         timeSinceLastRandomize += Time.deltaTime;
         if (timeSinceLastRandomize >= visemeRandomizeInterval)
         {
-            timeSinceLastRandomize = 0f;
-            rAa = Random.value;
-            rIh = Random.value;
-            rOu = Random.value;
+            RandomizeVisemes();
         }
 
-        if (audioSource.isPlaying)
+        if (isPlaying)
         {
             audioSource.GetOutputData(samples, 0);
 
@@ -78,9 +119,11 @@ public class FakeLipSync : MonoBehaviour
         }
 
         float totalWeight = rAa + rIh + rOu;
+        if (totalWeight < 0.0001f) totalWeight = 1f;
 
-        vrm10Instance.Runtime.Expression.SetWeight(ExpressionKey.Aa, currentWeight * (rAa / totalWeight));
-        vrm10Instance.Runtime.Expression.SetWeight(ExpressionKey.Ih, currentWeight * (rIh / totalWeight));
-        vrm10Instance.Runtime.Expression.SetWeight(ExpressionKey.Ou, currentWeight * (rOu / totalWeight));
+        var expr = vrm10Instance.Runtime.Expression;
+        expr.SetWeight(ExpressionKey.Aa, currentWeight * (rAa / totalWeight));
+        expr.SetWeight(ExpressionKey.Ih, currentWeight * (rIh / totalWeight));
+        expr.SetWeight(ExpressionKey.Ou, currentWeight * (rOu / totalWeight));
     }
 }
