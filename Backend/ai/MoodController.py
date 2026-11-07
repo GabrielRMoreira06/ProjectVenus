@@ -40,6 +40,7 @@ ANGER_ALERT_THRESHOLD = 80
 ENERGY_ALERT_THRESHOLD = 20
 ENERGY_HIGH_ALERT_THRESHOLD = 80
 BOREDOM_ALERT_THRESHOLD = 70
+AFFECTION_ALERT_THRESHOLD = 80
 
 def _alert_chance(value, threshold, extreme):
     progress = (value - threshold) / (extreme - threshold)
@@ -67,7 +68,7 @@ class MoodController:
 
     def __init__(self, file_path=STATE_DIR / "mood_state.json"):
         self.file_path = Path(file_path)
-
+        self._note_alert_firing = False
         state = self._load()
 
         # One attribute per variant, lowercase (self.anger, self.energy, ...)
@@ -143,6 +144,8 @@ Affection: {self.affection}/100
             self._check_high_energy_threshold()
         elif variant == MoodVariant.BOREDOM:
             self._check_boredom_threshold()
+        elif variant == MoodVariant.AFFECTION:
+            self._check_affection_threshold()
 
     def apply_shift(self, variant, shift, amount=8):
         """
@@ -323,6 +326,47 @@ Affection: {self.affection}/100
         from on_call_actions.BoredomInteraction import fire as fire_boredom_interaction
         fire_boredom_interaction(self)
 
+    def _check_affection_threshold(self):
+        if self.affection < AFFECTION_ALERT_THRESHOLD:
+            return
+
+        if self._note_alert_firing:
+            return
+
+        if random.random() >= _alert_chance(self.affection, AFFECTION_ALERT_THRESHOLD, 100):
+            return
+
+        self._note_alert_firing = True
+        self._fire_note_interaction()
+
+    def _fire_note_interaction(self):
+        import sys
+        orchestrator = sys.modules["__main__"].orchestrator
+
+        from Orchestrator import Category
+        from ai.core.GeminiWorker import worker
+
+        print(f"[MoodController] Affection at {self.affection}, triggering STICKYNOTE interaction.")
+
+        def builder():
+            try:
+                result = worker.run(
+                    user_text="""
+                    [SYSTEM MESSAGE: your affection is high. Pick your action.
+                    STICKYNOTE: leave a sticky note on the user's desktop. Fill NOTE_CONTENT with an honest, personal opinion about the user (max 40 words), based on what you know about them. TEXT is only a short line saying you left it.]
+                    """,
+                    allowed_actions={"STICKYNOTE"},
+                    full_context=True,
+                )
+
+                if result["action"] == "STICKYNOTE":
+                    self.adjust(MoodVariant.AFFECTION, 60 - self.affection)
+
+                return result
+            finally:
+                self._note_alert_firing = False
+
+        orchestrator.add(Category.MONITOR, builder)
 
 # Shared instance used across the backend. Kept as a module-level
 # singleton (rather than constructed everywhere) because mood is

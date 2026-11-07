@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import QApplication
 from ui.PanelWindow import PanelWindow
 from ui.componenets.DeadLine import DeadLineManager
 from ai.wallpaper.WallpaperManager import wallpaper_manager
-
+from ui.componenets.StickyNote import StickyNoteManager
 
 def run(process_question, open_automatically=False):
     app = QApplication(sys.argv)
@@ -34,6 +34,7 @@ def run(process_question, open_automatically=False):
     app.aboutToQuit.connect(wallpaper_manager.stop)
 
     dead_line_manager = DeadLineManager()
+    sticky_note_manager = StickyNoteManager()
 
     panel_window = PanelWindow(process_question)
     keyboard.add_hotkey("ctrl+alt+h", panel_window.toggle_requested.emit)

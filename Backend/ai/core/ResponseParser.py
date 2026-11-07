@@ -11,7 +11,7 @@ VALID_ACTIONS = {
     "NONE", "STEALMOUSE", "SHOWIMAGE", "ALLOWPET", "FINDFILE",
     "KEYBOARDCONTROL", "SCREAM", "REMINDER", "FLIP", "ORGANIZEFILES",
     "JUDGE", "CLEANDISK", "DEADPIXEL", "LOWERBRIGHTNESS", "NOTEPAD", "DICE",
-    "PONG", "INTERNETCHECK",
+    "PONG", "INTERNETCHECK", "STICKYNOTE",
 }
 
 VALID_ANIMATIONS = {"NONE", "IDLE", "WORKING", "RELAXING"}
@@ -36,11 +36,11 @@ FIELDS = {
     "UPDATE_PROFILE_PICTURE": ("update_profile_picture", "NONE"),
     "UPDATE_UI_THEME": ("update_ui_theme", "NONE"),
     "EDIT_CONTENT": ("edit_content", "NONE"),
+    "NOTE_CONTENT": ("note_content", "NONE"),
 }
 
 # fields that are allowed to span several lines
-MULTILINE_FIELDS = {"text", "edit_content"}
-
+MULTILINE_FIELDS = {"text", "edit_content", "note_content"}
 
 class ResponseParser:
 

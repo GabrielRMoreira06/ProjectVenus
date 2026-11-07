@@ -123,6 +123,8 @@ REMINDER_QUERY: <short description of what to remind the user about, required if
 
 REMINDER_MINUTES: <Time to trigger the reminder (e.g., 60), only the number. convert to minutes, required if ACTION is REMINDER> | NONE
 
+NOTE_CONTENT: <sticky note content, only used when ACTION is STICKYNOTE> | NONE
+
 EDIT_CONTENT: <new content to overwrite the user's notepad with, only used right after a NOTEPAD follow-up> | NONE
 """
 

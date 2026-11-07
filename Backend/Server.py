@@ -50,6 +50,8 @@ from ui.PanelWindow import avatar_signals, panel_signals
 from ui.componenets.DeadLine import deadline_signals
 from ui.componenets.Notepad import AUTOSAVE_PATH as NOTEPAD_AUTOSAVE_PATH, notepad_signals
 import ai.IgnoreTracker
+from ui.componenets.StickyNote import sticky_note_signals
+
 app = Flask(__name__)
 
 # ImageHolder.cs fetches images with UnityWebRequestTexture.GetTexture(),
@@ -231,6 +233,15 @@ def queue_response(result):
         except OSError:
             pass
         notepad_signals.content_changed.emit(edit_content)
+
+
+
+    # in queue_response, after the edit_content block:
+    note_content = result.pop("note_content", "NONE")
+    if result.get("action") == "STICKYNOTE":
+        if note_content != "NONE":
+            sticky_note_signals.spawn_requested.emit(note_content)
+        result["action"] = "NONE"
 
     action = result.get("action")
 
@@ -425,6 +436,7 @@ if __name__ == "__main__":
     # they're expected to answer. Any other time, it only opens via the
     # hotkey.
     run_app(process_question, open_automatically=boot_manager.is_waiting_for_name())
+
 
 
 
