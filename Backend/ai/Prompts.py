@@ -74,6 +74,9 @@ ACTIONS = {
         "You won't know the result yet — a short follow-up message with what was "
         "rolled will come later, so keep TEXT to something like announcing you're rolling.",
     ],
+    "INTERNETCHECK": [
+        "INTERNETCHECK: test the user's internet connection.",
+    ],
 }
 EVIL_ACTIONS = {
     "DEADPIXEL": [

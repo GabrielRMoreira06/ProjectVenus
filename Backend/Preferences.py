@@ -84,7 +84,7 @@ ACTION_CATALOG = {
     "ORGANIZEFILES": ("Organize downloads", "Sorts loose files in your Downloads folder into subfolders by type."),
     "NOTEPAD": ("Notepad", "Reads what's written in your notepad, and can rewrite its content."),
     "DICE": ("Dice roll", "Rolls a physical die on screen and reports what it landed on."),
-
+    "INTERNETCHECK": ("Internet check", "Tests your ping, download and upload speed."),
 }
 
 DEFAULT_VOICE_VOLUME = 100

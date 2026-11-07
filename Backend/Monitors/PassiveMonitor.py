@@ -25,6 +25,9 @@ Anger is no longer a polling monitor here — MoodController now fires
 its DEADPIXEL interaction directly off a threshold check inside
 adjust() (see ai/MoodController.py).
 
+MeetUser is no longer a polling monitor either — it's a message-count
+tracker (see Monitors/MeetUser.py), same shape as ai/IgnoreTracker.py.
+
 To add a new passive monitor: subclass BaseMonitor in Monitors/, add
 it to Preferences.MONITOR_CATALOG with a description and default
 interval, then add it to _default_monitors() below.
@@ -32,7 +35,6 @@ interval, then add it to _default_monitors() below.
 
 import threading
 
-from Monitors.MeetUser import MeetUserMonitor
 from ai.EXPManager import exp_manager
 from Monitors.GenericInteraction import GenericInteractionMonitor
 from Monitors.HadwereMonitor import HardwareMonitor
@@ -60,7 +62,6 @@ class PassiveMonitor:
             self._build("screenpeek", ScreenPeekMonitor),
             self._build("generic_interaction", GenericInteractionMonitor),
             self._build("email", EmailMonitor),
-            self._build("meetuser", MeetUserMonitor),
         ]
 
     def _build(self, monitor_id, monitor_class):

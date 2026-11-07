@@ -27,6 +27,7 @@ from on_call_actions.KeyboardControl import keyboard_control
 from on_call_actions.Reminder import set_reminder
 from on_call_actions.CleanDIsk import clean_disk
 from on_call_actions.Notepad import read_notepad
+from on_call_actions.InternetCheck import internet_check
 
 ON_CALL_ACTIONS = {
     "FINDFILE": find_file,
@@ -35,4 +36,5 @@ ON_CALL_ACTIONS = {
     "ORGANIZEFILES": organize_files,
     "CLEANDISK": clean_disk,
     "NOTEPAD": read_notepad,
+    "INTERNETCHECK": internet_check,
 }

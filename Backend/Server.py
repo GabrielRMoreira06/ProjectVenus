@@ -140,7 +140,7 @@ def debug_tts():
     audio_path = worker.tts.generate_audio(text)
 
     result = {
-        "text": "DEBUG TEXT",
+        "text": "DEBUG FORCE PONG INTERACTION",
         "action": "PONG",
         "mood_variant": None,
         "mood_shift": None,

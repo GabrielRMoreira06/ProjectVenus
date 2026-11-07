@@ -291,8 +291,12 @@ Affection: {self.affection}/100
                     allowed_actions={"PONG"},
                 )
 
-                if result["action"] == "PONG":
-                    self.adjust(MoodVariant.ENERGY, 50 - self.energy)
+                print(f"[MoodController] PONG interaction: model returned action='{result['action']}'")
+
+                # Restricted call: the only valid action is PONG, so force it
+                # (same approach as BoredomInteraction).
+                result["action"] = "PONG"
+                self.adjust(MoodVariant.ENERGY, 50 - self.energy)
 
                 return result
             finally:
