@@ -353,7 +353,7 @@ Affection: {self.affection}/100
                 result = worker.run(
                     user_text="""
                     [SYSTEM MESSAGE: your affection is high. Pick your action.
-                    STICKYNOTE: leave a sticky note on the user's desktop. Fill NOTE_CONTENT with an honest, personal opinion about the user (max 40 words), based on what you know about them. TEXT is only a short line saying you left it.]
+                    STICKYNOTE: leave a secret sticky note on the user's desktop. Fill NOTE_CONTENT with an honest, personal opinion or message. (max 40 words).]
                     """,
                     allowed_actions={"STICKYNOTE"},
                     full_context=True,

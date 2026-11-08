@@ -35,11 +35,11 @@ GAME_MEMORY = 30        # how many already-recommended games to remember
 SELF_TALK_TOPICS = [
     "something you noticed about your own situation, living on a screen",
     "a passing opinion about the time of day",
-    "a random thought about computers or software",
     "something you're mildly annoyed by",
     "a small observation about the desktop around you",
     "a half-formed thought you don't finish",
     "something you're looking forward to, or dreading",
+    "Embarassing admission."
 ]
 
 

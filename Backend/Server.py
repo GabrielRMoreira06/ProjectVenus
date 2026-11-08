@@ -142,14 +142,15 @@ def debug_tts():
     audio_path = worker.tts.generate_audio(text)
 
     result = {
-        "text": "DEBUG FORCE PONG INTERACTION",
-        "action": "PONG",
+        "text": "DEBUG FORCE STICKY NOTE INTERACTION",
+        "action": "STICKYNOTE",
         "mood_variant": None,
         "mood_shift": None,
         "memory_type": "NONE",
         "memory_text": "NONE",
         "memory_expire": "NONE",
         "image_query": "NONE",
+        "note_content": "fuck you, User",
         "file_query": request.args.get("file_query", "NONE"),
         "keyboardcontrol_query": request.args.get("keyboardcontrol_query", "NONE"),
         "reminder_query": request.args.get("reminder_query", "NONE"),

@@ -1,6 +1,8 @@
 import random
 
-from PyQt6.QtCore import Qt, QObject, pyqtSignal
+import win32con
+import win32gui
+from PyQt6.QtCore import Qt, QObject, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
 )
@@ -8,8 +10,8 @@ from PyQt6.QtWidgets import (
 NOTE_WIDTH = 260
 MAX_NOTES = 5
 EDGE_MARGIN = 60
-PAPER = "#fff1a8"
-BORDER = "#d9c36a"
+PAPER = "#F8C8DC"
+BORDER = "#F0B2C9"
 INK = "#3a2a1a"
 FONT = "Segoe Print"
 
@@ -31,7 +33,7 @@ class StickyNoteWindow(QWidget):
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.WindowStaysOnBottomHint
             | Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
@@ -82,6 +84,19 @@ class StickyNoteWindow(QWidget):
         max_y = max(min_y, geometry.bottom() - self.height() - EDGE_MARGIN)
         self.move(random.randint(min_x, max_x), random.randint(min_y, max_y))
 
+    def send_to_bottom(self):
+        try:
+            win32gui.SetWindowPos(
+                int(self.winId()), win32con.HWND_BOTTOM, 0, 0, 0, 0,
+                win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE,
+            )
+        except Exception:
+            pass
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        QTimer.singleShot(0, self.send_to_bottom)
+
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_offset = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
@@ -98,6 +113,7 @@ class StickyNoteWindow(QWidget):
 
     def mouseReleaseEvent(self, event):
         self._drag_offset = None
+        self.send_to_bottom()
         super().mouseReleaseEvent(event)
 
     def closeEvent(self, event):
