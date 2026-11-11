@@ -6,7 +6,7 @@ of thing Venus says when nothing else has happened in a while. Four
 behaviors: recommend a Steam game, comment on one of their open
 windows, report on system health, or talk to herself.
 
-Pipeline (same as every monitor): BaseMonitor interval -> check() ->
+Pipeline (same as every monitor): PassiveMonitor turn -> check() ->
 orchestrator.add(Category.MONITOR, builder) -> worker.run() ->
 queue_response() -> Unity.
 """
@@ -139,8 +139,8 @@ def format_game_details(app_id, data):
 
 class GenericInteractionMonitor(BaseMonitor):
 
-    def __init__(self, orchestrator, interval=2000):
-        super().__init__(orchestrator, interval)
+    def __init__(self, orchestrator, pace=7):
+        super().__init__(orchestrator, pace)
 
         self.behavior_weights = {
             "game": 1,
@@ -170,6 +170,8 @@ class GenericInteractionMonitor(BaseMonitor):
             self._fire_self_talk()
         else:
             self._fire_game()
+
+        return True
 
     def _choose_behavior(self):
         behaviors = list(self.behavior_weights.keys())

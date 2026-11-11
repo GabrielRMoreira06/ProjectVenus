@@ -109,7 +109,7 @@ UPDATE_PROFILE_PICTURE: NONE | BORED | ANGER | TIRED | POUTY | NORMAL
 
 UPDATE_UI_THEME: NONE | CLASSIC | VIOLET | CRIMSON
 
-MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time. For DAILYSUMMARY: the COMPLETE updated summary of today (max 160 words), it replaces the previous one.> | NONE
+MEMORY_TEXT: <short information worth remembering for future use. no trivial information. No date. No time. For DAILYSUMMARY: the COMPLETE updated summary of today (max 400 characters), it replaces the previous one.> | NONE
 
 MEMORY_EXPIRE: 6HOURS | 1DAY | 1WEEK | 1MONTH | PERMANENT | NONE
 

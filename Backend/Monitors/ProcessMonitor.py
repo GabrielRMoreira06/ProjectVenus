@@ -27,8 +27,8 @@ IGNORED_SYSTEM_PIDS = {0, 4}  # 0 = System Idle Process, 4 = System
 
 class ProcessMonitor(BaseMonitor):
 
-    def __init__(self, orchestrator, interval=3600, cpu_limit=85, ram_limit=85):
-        super().__init__(orchestrator, interval)
+    def __init__(self, orchestrator, pace=12, cpu_limit=85, ram_limit=85):
+        super().__init__(orchestrator, pace)
         self.cpu_limit = cpu_limit
         self.ram_limit = ram_limit
 
@@ -89,11 +89,12 @@ class ProcessMonitor(BaseMonitor):
             break
 
         if candidate is None:
-            return
+            return False
 
         pid, name, kind, value = candidate
         self._already_alerted[pid] = True
         self._fire(name, kind, value)
+        return True
 
     def _fire(self, name, kind, value):
         print(f"[ProcessMonitor] Process '{name}' using {value:.0f}% of {kind}, alerting.")

@@ -1,10 +1,9 @@
 """
 screen_peek_monitor.py
 
-Every `interval`, Venus takes a peek at the user's screen and comments
-on what she sees. Unlike most monitors, this one doesn't depend on any
-threshold — it fires purely on a timer, subject only to Orchestrator's
-global cooldown and priority.
+When it gets a turn, Venus takes a peek at the user's screen and
+comments on what she sees. Unlike most monitors, this one doesn't
+depend on any threshold — it always fires when it's its turn.
 """
 
 from ai.tools.ScreenCapture import capture_screen
@@ -15,11 +14,12 @@ from Monitors.BaseMonitor import BaseMonitor
 
 class ScreenPeekMonitor(BaseMonitor):
 
-    def __init__(self, orchestrator, interval=1200):
-        super().__init__(orchestrator, interval)
+    def __init__(self, orchestrator, pace=4):
+        super().__init__(orchestrator, pace)
 
     def check(self):
         self._fire()
+        return True
 
     def _fire(self):
         print("[ScreenPeekMonitor] Peeking at the user's screen.")

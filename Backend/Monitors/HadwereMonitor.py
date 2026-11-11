@@ -18,8 +18,8 @@ from Monitors.BaseMonitor import BaseMonitor
 
 class HardwareMonitor(BaseMonitor):
 
-    def __init__(self, orchestrator, interval=900, usage_limit=85):
-        super().__init__(orchestrator, interval)
+    def __init__(self, orchestrator, pace=3, usage_limit=85):
+        super().__init__(orchestrator, pace)
         self.usage_limit = usage_limit
 
     def check(self):
@@ -30,7 +30,9 @@ class HardwareMonitor(BaseMonitor):
                 continue
 
             self._fire(component, value)
-            return  # one alert per check is enough
+            return True  # one alert per check is enough
+
+        return False
 
     def _collect_usage(self):
         return {

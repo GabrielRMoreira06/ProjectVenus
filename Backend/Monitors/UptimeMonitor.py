@@ -22,8 +22,8 @@ from Monitors.BaseMonitor import BaseMonitor
 
 class UptimeMonitor(BaseMonitor):
 
-    def __init__(self, orchestrator, interval=72000, initial_threshold=4 * 3600, repeat_interval=2 * 3600):
-        super().__init__(orchestrator, interval)
+    def __init__(self, orchestrator, pace=12, initial_threshold=4 * 3600, repeat_interval=2 * 3600):
+        super().__init__(orchestrator, pace)
         self.initial_threshold = initial_threshold
         self.repeat_interval = repeat_interval
 
@@ -44,13 +44,14 @@ class UptimeMonitor(BaseMonitor):
         uptime = self._uptime_seconds()
 
         if uptime < self._next_threshold:
-            return
+            return False
 
         self._fire(uptime)
 
         # Schedules the next alert regardless of anything else — avoids
         # re-alerting seconds later for the same threshold.
         self._next_threshold += self.repeat_interval
+        return True
 
     def _fire(self, uptime):
         hours = uptime / 3600

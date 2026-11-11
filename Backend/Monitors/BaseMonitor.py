@@ -1,54 +1,31 @@
 """
 base_monitor.py
 
-Base class for passive monitors. Each monitor runs on its own thread,
-checking its condition on a fixed interval — that interval IS the
-monitor's internal cooldown: what stops THIS monitor from firing more
-often than makes sense for whatever it's watching.
+Base class for passive monitors. A monitor no longer has its own
+thread or its own timer: PassiveMonitor owns the single global idle
+cooldown and decides when each monitor gets a turn.
 
-Global cooldown and priority ordering ACROSS different monitors is not
-this class's job — that's handled entirely by Orchestrator once a
-monitor calls orchestrator.add(). A monitor only ever has to decide
-"is my own condition met right now?", never "am I allowed to run given
-everything else going on."
+`pace` is how many global idle cooldowns must pass between this
+monitor's turns (pace 3 = every 3rd cooldown). `enabled`, `locked` and
+`pace` are read fresh by PassiveMonitor, so Preferences changes and XP
+unlocks apply live. `locked` is the XP-progression gate (see
+ai/EXPManager.py): a locked monitor never gets a turn, regardless of
+`enabled`.
 
-Subclasses implement `check()`, which should decide whether its
-condition is met and, if so, build a zero-argument builder function
-and call `self.orchestrator.add(category, builder)`.
-
-`interval`, `enabled` and `locked` are all read fresh on every loop
-iteration, not just once at construction — this is what lets
-PassiveMonitor apply a Preferences change or an XP unlock live, just
-by setting these attributes, with no thread restart needed. `locked`
-is the XP-progression gate (see ai/EXPManager.py): a locked monitor
-never runs, regardless of `enabled`.
+Subclasses implement `check()`. It returns True if it actually queued
+something with `self.orchestrator.add(category, builder)`, and False
+if its condition wasn't met — in that case PassiveMonitor immediately
+gives the turn to the next due monitor instead of wasting the slot.
 """
-
-import threading
-import time
 
 
 class BaseMonitor:
 
-    def __init__(self, orchestrator, interval):
+    def __init__(self, orchestrator, pace=1):
         self.orchestrator = orchestrator
-        self.interval = interval
+        self.pace = pace
         self.enabled = True
         self.locked = False
-        self._running = False
-
-    def start(self):
-        self._running = True
-        threading.Thread(target=self._loop, daemon=True, name=self.__class__.__name__).start()
-
-    def stop(self):
-        self._running = False
-
-    def _loop(self):
-        while self._running:
-            time.sleep(self.interval)
-            if self.enabled and not self.locked:
-                self.check()
 
     def check(self):
         raise NotImplementedError

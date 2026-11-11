@@ -7,8 +7,10 @@ from PyQt6.QtWidgets import (
     QScrollArea, QFrame, QSlider
 )
 
-from Preferences import preferences, MONITOR_CATALOG, ACTION_CATALOG
+from Preferences import preferences, MONITOR_CATALOG, ACTION_CATALOG, IDLE_COOLDOWN_SECONDS
 import ui.utils.Theme as Theme
+
+MAX_PACE = 72  # 72 cooldowns = 6h at the default 5 min cooldown
 
 
 class ToggleSwitch(QWidget):
@@ -114,10 +116,10 @@ class ToggleSwitch(QWidget):
         painter.end()
 
 
-class IntervalSlider(QWidget):
-    valueChangedMinutes = pyqtSignal(int)
+class PaceSlider(QWidget):
+    valueChangedPace = pyqtSignal(int)
 
-    def __init__(self, initial_minutes):
+    def __init__(self, initial_pace):
         super().__init__()
 
         layout = QHBoxLayout(self)
@@ -125,12 +127,12 @@ class IntervalSlider(QWidget):
         layout.setSpacing(10)
 
         self.slider = QSlider(Qt.Orientation.Horizontal)
-        self.slider.setRange(1, 360)
-        self.slider.setValue(max(1, min(360, initial_minutes)))
+        self.slider.setRange(1, MAX_PACE)
+        self.slider.setValue(max(1, min(MAX_PACE, initial_pace)))
         self.slider.valueChanged.connect(self._on_changed)
 
         self.value_label = QLabel(self._format(self.slider.value()))
-        self.value_label.setFixedWidth(60)
+        self.value_label.setFixedWidth(110)
 
         layout.addWidget(self.slider, stretch=1)
         layout.addWidget(self.value_label)
@@ -159,21 +161,23 @@ class IntervalSlider(QWidget):
         self.value_label.setStyleSheet(
             f"color: {Theme.ACCENT_SOFT}; font-size: 12px; border: none; background: transparent;")
 
-    def _on_changed(self, minutes):
-        self.value_label.setText(self._format(minutes))
-        self.valueChangedMinutes.emit(minutes)
+    def _on_changed(self, pace):
+        self.value_label.setText(self._format(pace))
+        self.valueChangedPace.emit(pace)
 
     @staticmethod
-    def _format(minutes):
+    def _format(pace):
+        minutes = pace * IDLE_COOLDOWN_SECONDS // 60
         if minutes < 60:
-            return f"{minutes} min"
+            return f"{pace}  (~{minutes} min)"
         hours, remaining = divmod(minutes, 60)
-        return f"{hours}h {remaining}m" if remaining else f"{hours}h"
+        approx = f"{hours}h {remaining}m" if remaining else f"{hours}h"
+        return f"{pace}  (~{approx})"
 
 
 class InteractionRow(QFrame):
     def __init__(self, title, description, checked, on_toggled,
-                 initial_minutes=None, on_interval_changed=None):
+                 initial_pace=None, on_pace_changed=None):
         super().__init__()
 
         layout = QVBoxLayout(self)
@@ -196,22 +200,22 @@ class InteractionRow(QFrame):
         self.description_label.setWordWrap(True)
         layout.addWidget(self.description_label)
 
-        self.interval_slider = None
+        self.pace_slider = None
 
-        if initial_minutes is not None:
-            interval_row = QHBoxLayout()
+        if initial_pace is not None:
+            pace_row = QHBoxLayout()
 
-            self.interval_caption = QLabel("Check every:")
-            interval_row.addWidget(self.interval_caption)
+            self.pace_caption = QLabel("Pace (idle cooldowns):")
+            pace_row.addWidget(self.pace_caption)
 
-            self.interval_slider = IntervalSlider(initial_minutes)
-            if on_interval_changed is not None:
-                self.interval_slider.valueChangedMinutes.connect(on_interval_changed)
-            interval_row.addWidget(self.interval_slider, stretch=1)
+            self.pace_slider = PaceSlider(initial_pace)
+            if on_pace_changed is not None:
+                self.pace_slider.valueChangedPace.connect(on_pace_changed)
+            pace_row.addWidget(self.pace_slider, stretch=1)
 
-            layout.addLayout(interval_row)
+            layout.addLayout(pace_row)
         else:
-            self.interval_caption = None
+            self.pace_caption = None
 
         self._apply_style()
         Theme.theme_signals.changed.connect(self._apply_style)
@@ -227,8 +231,8 @@ class InteractionRow(QFrame):
             "color: white; font-size: 15px; font-weight: bold; border: none; background: transparent;")
         self.description_label.setStyleSheet(
             f"color: {Theme.ACCENT_SOFT}; font-size: 12px; border: none; background: transparent;")
-        if self.interval_caption is not None:
-            self.interval_caption.setStyleSheet(
+        if self.pace_caption is not None:
+            self.pace_caption.setStyleSheet(
                 f"color: {Theme.ACCENT_SOFT}; font-size: 12px; border: none; background: transparent;")
 
 
@@ -250,15 +254,15 @@ class PreferencesPage(QWidget):
         self.monitors_header = QLabel("Passive behaviors")
         content_layout.addWidget(self.monitors_header)
 
-        for monitor_id, (label, description, _default) in MONITOR_CATALOG.items():
-            initial_minutes = max(1, preferences.get_monitor_interval(monitor_id) // 60)
+        for monitor_id, (label, description, default_pace) in MONITOR_CATALOG.items():
+            initial_pace = None if default_pace is None else preferences.get_monitor_pace(monitor_id)
 
             row = InteractionRow(
                 label, description,
                 checked=preferences.is_monitor_enabled(monitor_id),
                 on_toggled=lambda checked, m=monitor_id: preferences.set_monitor_enabled(m, checked),
-                initial_minutes=initial_minutes,
-                on_interval_changed=lambda minutes, m=monitor_id: preferences.set_monitor_interval(m, minutes * 60),
+                initial_pace=initial_pace,
+                on_pace_changed=lambda pace, m=monitor_id: preferences.set_monitor_pace(m, pace),
             )
             content_layout.addWidget(row)
 

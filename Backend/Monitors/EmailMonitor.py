@@ -5,7 +5,7 @@ Polls the configured inbox via IMAP for unseen emails since the last
 check. Each batch of new emails is first sent to a separate, clean Gemini
 call (no Venus context, no tools) that produces a simplified report.
 Only that report is handed to the main Gemini call, through the usual
-pipeline (internal cooldown -> builder -> Orchestrator -> GeminiWorker).
+pipeline (PassiveMonitor turn -> builder -> Orchestrator -> GeminiWorker).
 
 Notify-only: no auto-reply, no sending, no marking anything other than
 what IMAP itself marks as read on fetch.
@@ -52,17 +52,18 @@ SUMMARY_SYSTEM_PROMPT = (
 
 class EmailMonitor(BaseMonitor):
 
-    def __init__(self, orchestrator, interval=3000):
-        super().__init__(orchestrator, interval)
+    def __init__(self, orchestrator, pace=1):
+        super().__init__(orchestrator, pace)
         self._client = genai.Client(api_key=GEMINI_KEY)
 
     def check(self):
         emails = self._fetch_unseen()
 
         if not emails:
-            return
+            return False
 
         self._fire(emails)
+        return True
 
     # ------------------------------------------------------------------
     # IMAP

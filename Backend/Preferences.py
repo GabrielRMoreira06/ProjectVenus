@@ -2,71 +2,80 @@
 Preferences.py
 
 Persists which "interactions" — passive monitors and Gemini-decided
-ACTIONS — are enabled, and at what interval the monitors poll. Also
-persists standalone app settings (voice volume, effects) that aren't
-tied to a monitor or action. Same pattern as MoodController/
-MemoryManager: one JSON file, loaded once, rewritten on every change.
+ACTIONS — are enabled, and each monitor's pace. Also persists
+standalone app settings (voice volume, effects) that aren't tied to a
+monitor or action. Same pattern as MoodController/MemoryManager: one
+JSON file, loaded once, rewritten on every change.
 
 Two kinds of interaction, because they're controlled differently:
-  - MONITORS: background threads with a real polling interval (see
-    Monitors/BaseMonitor.py). Both `enabled` and `interval` apply, and
-    take effect live — BaseMonitor reads both fresh every loop
-    iteration, so PassiveMonitor just has to update the attributes.
+  - MONITORS: scheduled by PassiveMonitor's single global idle
+    cooldown (IDLE_COOLDOWN_SECONDS). Each has `enabled` and a `pace`
+    — the number of cooldowns between its turns. Both take effect
+    live, PassiveMonitor just has to update the attributes. Entries
+    with a default pace of None aren't scheduled by the cooldown at
+    all (they're driven by mood or message count), so they have no
+    pace.
   - ACTIONS: things Gemini can choose to do in a normal response (see
-    ai/Prompts.py). There's no polling interval — Gemini decides
-    per-turn — so only `enabled` applies. Disabling one removes it
-    from the prompt entirely the next time GeminiWorker builds one.
+    ai/Prompts.py). There's no scheduling — Gemini decides per-turn —
+    so only `enabled` applies. Disabling one removes it from the
+    prompt entirely the next time GeminiWorker builds one.
 
 SETTINGS: plain key/value app settings with no catalog — no
-enable/interval split needed, just a value each.
+enable/pace split needed, just a value each.
 
-id -> (label, description, default_interval_seconds) for monitors,
-id -> (label, description) for actions. These double as the catalog
-PanelWindow's Preferences tab renders rows from.
+id -> (label, description, default_pace) for monitors, id -> (label,
+description) for actions. These double as the catalog PanelWindow's
+Preferences tab renders rows from.
 """
 
 import json
 from pathlib import Path
 from config import STATE_DIR
+
+# One global cooldown: this many seconds without any chat message
+# (either side) = one cooldown elapsed = at most one monitor fires.
+IDLE_COOLDOWN_SECONDS = 300
+
 MONITOR_CATALOG = {
     "boredom": (
         "Boredom comments",
         "Comments on a random image from your Downloads folder when she's bored enough.",
-        3000,
+        None,
     ),
     "hardware": (
         "Hardware alerts",
         "Flags it when overall CPU or RAM usage crosses the limit.",
-        900,
+        3,
     ),
     "uptime": (
         "Uptime nagging",
         "Comments when your PC has been on for a long stretch without a restart.",
-        72000,
+        12,
     ),
     "process": (
         "Process alerts",
         "Flags a single process hogging CPU or RAM.",
-        3600,
+        12,
     ),
     "screenpeek": (
         "Screen peeking",
         "Periodically takes a look at your screen and comments on it.",
-        1200,
+        4,
     ),
     "generic_interaction": (
         "Idle chatter",
         "Asks you something or comments on an open window when nothing else has happened in a while.",
-        2000,
+        7,
     ),
     "email": (
         "Email checking",
         "Checks your inbox for new emails and comments on them.",
-        120,
+        1,
     ),
-    "meetuser": ("Getting to know you",
-                 "Occasionally asks you a question to learn more about you.",
-                 7200
+    "meetuser": (
+        "Getting to know you",
+        "Occasionally asks you a question to learn more about you.",
+        None,
     ),
 }
 
@@ -98,12 +107,14 @@ class Preferences:
         self.file_path = Path(file_path)
         state = self._load()
 
+        # Old files stored a per-monitor "interval" in seconds; it's
+        # simply ignored here and dropped on the next save.
         self.monitors = {}
-        for monitor_id, (_, _, default_interval) in MONITOR_CATALOG.items():
+        for monitor_id, (_, _, default_pace) in MONITOR_CATALOG.items():
             saved = state.get("monitors", {}).get(monitor_id, {})
             self.monitors[monitor_id] = {
                 "enabled": saved.get("enabled", True),
-                "interval": saved.get("interval", default_interval),
+                "pace": saved.get("pace", default_pace),
             }
 
         self.actions = {}
@@ -141,8 +152,7 @@ class Preferences:
         """
         listener(kind, item_id) is called after any change — kind is
         "monitor", "action", or "setting". PassiveMonitor uses this to
-        push enabled/interval changes into the actual running monitor
-        threads without a restart.
+        push enabled/pace changes into the monitors without a restart.
         """
         self._listeners.append(listener)
 
@@ -157,18 +167,17 @@ class Preferences:
     def is_monitor_enabled(self, monitor_id):
         return self.monitors.get(monitor_id, {}).get("enabled", True)
 
-    def get_monitor_interval(self, monitor_id):
-        return self.monitors.get(monitor_id, {}).get(
-            "interval", MONITOR_CATALOG[monitor_id][2]
-        )
+    def get_monitor_pace(self, monitor_id):
+        """Cooldowns between this monitor's turns, or None if it isn't paced."""
+        return self.monitors.get(monitor_id, {}).get("pace", MONITOR_CATALOG[monitor_id][2])
 
     def set_monitor_enabled(self, monitor_id, enabled):
         self.monitors[monitor_id]["enabled"] = enabled
         self._save()
         self._notify("monitor", monitor_id)
 
-    def set_monitor_interval(self, monitor_id, interval_seconds):
-        self.monitors[monitor_id]["interval"] = int(interval_seconds)
+    def set_monitor_pace(self, monitor_id, pace):
+        self.monitors[monitor_id]["pace"] = max(1, int(pace))
         self._save()
         self._notify("monitor", monitor_id)
 
